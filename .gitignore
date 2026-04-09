@@ -18,3 +18,4 @@ _shared/
 
 # Drizzle
 drizzle/meta/
+.vercel
