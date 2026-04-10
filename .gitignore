@@ -19,3 +19,8 @@ _shared/
 # Drizzle
 drizzle/meta/
 .vercel
+
+# Playwright sessions & OAuth 결과
+scripts/.*-session/
+scripts/*-result.json
+scripts/*.png
