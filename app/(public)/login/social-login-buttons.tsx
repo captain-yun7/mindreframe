@@ -47,9 +47,17 @@ export function SocialLoginButtons() {
   const handleSignIn = async (provider: Provider) => {
     setLoadingProvider(provider);
     const redirectTo = `${window.location.origin}/auth/callback`;
+
+    const scopesByProvider: Partial<Record<Provider, string>> = {
+      kakao: "profile_nickname profile_image",
+    };
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider as "kakao" | "google",
-      options: { redirectTo },
+      options: {
+        redirectTo,
+        scopes: scopesByProvider[provider],
+      },
     });
     if (error) {
       alert(`로그인 실패: ${error.message}`);
