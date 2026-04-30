@@ -75,7 +75,7 @@ export function SocialLoginButtons() {
           type="button"
           onClick={() => handleSignIn(provider)}
           disabled={loadingProvider !== null}
-          className={`w-full max-w-[420px] py-3.5 rounded-full font-black text-[16px] flex items-center justify-center gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+          className={`w-full max-w-[420px] py-3.5 rounded-full font-black text-base flex items-center justify-center gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2 ${className}`}
         >
           {loadingProvider === provider ? "이동 중..." : (
             <>

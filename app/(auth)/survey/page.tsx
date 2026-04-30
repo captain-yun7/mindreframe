@@ -98,11 +98,11 @@ export default function SurveyPage() {
     const q = introQuestions[introIndex];
     return (
       <SurveyShell step={q.step}>
-        <h1 className="text-[26px] font-bold leading-[1.4] mb-3 whitespace-pre-line">
+        <h1 className="text-2xl font-bold leading-[1.4] mb-3 whitespace-pre-line">
           {q.title}
         </h1>
-        {q.sub && <p className="text-[16px] text-[#4b5563] mb-8 leading-[1.7]">{q.sub}</p>}
-        <div className="flex flex-col gap-3.5">
+        {q.sub && <p className="text-base text-gs-text-soft mb-8 leading-[1.7]">{q.sub}</p>}
+        <div className="flex flex-col gap-3">
           {q.choices.map((c) => (
             <button
               key={c}
@@ -115,7 +115,7 @@ export default function SurveyPage() {
                   setPhase("depression");
                 }
               }}
-              className="p-4 bg-white border border-[#e5e7eb] rounded-2xl text-[16px] font-medium text-left cursor-pointer hover:border-[#4b7bec] hover:bg-[#f0f5ff] transition-all"
+              className="p-4 bg-white border border-gs-line-soft rounded-2xl text-base font-medium text-left cursor-pointer hover:border-gs-blue hover:bg-gs-blue-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
             >
               {c}
             </button>
@@ -134,7 +134,7 @@ export default function SurveyPage() {
         step={`마음 상태 점검 · 우울 · ${depIndex + 1} / ${depressionQuestions.length}`}
         progress={progress}
       >
-        <h1 className="text-2xl font-bold text-center leading-[1.5] my-7">
+        <h1 className="text-2xl font-bold text-center leading-[1.5] my-8">
           {q.q}
         </h1>
         <div className="flex flex-col gap-3">
@@ -151,13 +151,13 @@ export default function SurveyPage() {
                   setPhase("anxiety");
                 }
               }}
-              className="p-4 bg-white border border-[#e5e7eb] rounded-2xl text-[15px] font-medium text-left cursor-pointer hover:border-[#4b7bec] hover:bg-[#f5f7ff] transition-all"
+              className="p-4 bg-white border border-gs-line-soft rounded-2xl text-[15px] font-medium text-left cursor-pointer hover:border-gs-blue hover:bg-gs-blue-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
             >
               {c}
             </button>
           ))}
         </div>
-        <p className="mt-7 text-[13px] text-[#9ca3af] text-center leading-[1.6]">
+        <p className="mt-8 text-[13px] text-gs-muted-light text-center leading-[1.6]">
           평가하려는 게 아니라, 지금 어디쯤에 있는지 살펴보는 과정이에요.
         </p>
       </SurveyShell>
@@ -173,7 +173,7 @@ export default function SurveyPage() {
         step={`마음 상태 점검 · 불안 · ${anxIndex + 1} / ${anxietyQuestions.length}`}
         progress={progress}
       >
-        <h1 className="text-2xl font-bold text-center leading-[1.5] my-7">
+        <h1 className="text-2xl font-bold text-center leading-[1.5] my-8">
           {q.q}
         </h1>
         <div className="flex flex-col gap-3">
@@ -190,7 +190,7 @@ export default function SurveyPage() {
                   setPhase("result");
                 }
               }}
-              className="p-4 bg-white border border-[#e5e7eb] rounded-2xl text-[15px] font-medium text-left cursor-pointer hover:border-[#4b7bec] hover:bg-[#f5f7ff] transition-all"
+              className="p-4 bg-white border border-gs-line-soft rounded-2xl text-[15px] font-medium text-left cursor-pointer hover:border-gs-blue hover:bg-gs-blue-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
             >
               {c}
             </button>
@@ -208,51 +208,51 @@ export default function SurveyPage() {
 
   return (
     <SurveyShell step="결과">
-      <h1 className="text-[22px] font-extrabold leading-[1.35] mb-4">
+      <h1 className="text-2xl font-extrabold leading-[1.35] mb-6">
         마음 상태 점검 결과
       </h1>
 
       {/* 우울 */}
-      <div className="bg-white border border-[#e5e7eb] rounded-[20px] p-[18px_16px] mb-4">
-        <div className="text-[12px] font-bold text-[#6b7280] mb-1.5">우울 부담 지표</div>
-        <div className="flex items-baseline gap-2.5">
-          <span className="text-[34px] font-black">{depPercent}</span>
-          <span className="text-[14px] text-[#4b5563]">/ 100</span>
+      <div className="bg-white border border-gs-line-soft rounded-[18px] p-5 mb-4 shadow-gs-card">
+        <div className="text-xs font-bold text-gs-muted-soft mb-2">우울 부담 지표</div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-4xl font-black">{depPercent}</span>
+          <span className="text-sm text-gs-text-soft">/ 100</span>
         </div>
-        <div className="mt-3.5">
-          <div className="w-full h-2.5 rounded-full bg-[#e5e7eb] overflow-hidden">
+        <div className="mt-4">
+          <div className="w-full h-2 rounded-full bg-gs-line-soft overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#a5b4fc] to-[#4b7bec] transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-r from-[#a5b4fc] to-gs-blue transition-all duration-300"
               style={{ width: `${depPercent}%` }}
             />
           </div>
-          <div className="flex justify-between text-[11px] text-[#9ca3af] mt-1.5">
+          <div className="flex justify-between text-[11px] text-gs-muted-light mt-2">
             <span>낮음</span><span>중간</span><span>높음</span>
           </div>
         </div>
       </div>
 
       {/* 불안 */}
-      <div className="bg-white border border-[#e5e7eb] rounded-[20px] p-[18px_16px] mb-4">
-        <div className="text-[12px] font-bold text-[#6b7280] mb-1.5">불안 부담 지표</div>
-        <div className="flex items-baseline gap-2.5">
-          <span className="text-[34px] font-black">{anxPercent}</span>
-          <span className="text-[14px] text-[#4b5563]">/ 100</span>
+      <div className="bg-white border border-gs-line-soft rounded-[18px] p-5 mb-6 shadow-gs-card">
+        <div className="text-xs font-bold text-gs-muted-soft mb-2">불안 부담 지표</div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-4xl font-black">{anxPercent}</span>
+          <span className="text-sm text-gs-text-soft">/ 100</span>
         </div>
-        <div className="mt-3.5">
-          <div className="w-full h-2.5 rounded-full bg-[#e5e7eb] overflow-hidden">
+        <div className="mt-4">
+          <div className="w-full h-2 rounded-full bg-gs-line-soft overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-[#fca5a5] to-[#ef4444] transition-all duration-300"
               style={{ width: `${anxPercent}%` }}
             />
           </div>
-          <div className="flex justify-between text-[11px] text-[#9ca3af] mt-1.5">
+          <div className="flex justify-between text-[11px] text-gs-muted-light mt-2">
             <span>낮음</span><span>중간</span><span>높음</span>
           </div>
         </div>
       </div>
 
-      <p className="text-[14px] text-[#4b5563] leading-[1.65] mb-4">
+      <p className="text-sm text-gs-text-soft leading-[1.65] mb-6">
         이 결과는 <b>진단이 아니라</b> 지금의 마음 부담을 가늠해보는 참고값이에요.
         <br />
         프로그램이 시작되면 매주 변화를 추적할 수 있어요.
@@ -262,7 +262,7 @@ export default function SurveyPage() {
         type="button"
         disabled={isPending}
         onClick={() => handleStart("/dashboard")}
-        className="w-full py-4 rounded-[14px] bg-[#4b7bec] text-white text-[16px] font-bold cursor-pointer hover:bg-[#3a63db] transition-colors disabled:opacity-60 disabled:cursor-wait"
+        className="w-full py-4 rounded-[14px] bg-gs-blue text-white text-base font-bold cursor-pointer hover:bg-gs-blue-hover transition-colors disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
       >
         {isPending ? "저장 중..." : "프로그램 시작하기"}
       </button>
@@ -271,12 +271,12 @@ export default function SurveyPage() {
         type="button"
         disabled={isPending}
         onClick={() => handleStart("/pricing")}
-        className="w-full mt-2.5 py-3.5 rounded-[14px] border border-[#d1d5db] bg-white text-[#4b5563] text-[14px] font-semibold cursor-pointer hover:bg-[#f3f4f6] transition-colors disabled:opacity-60 disabled:cursor-wait"
+        className="w-full mt-2 py-3.5 rounded-[14px] border border-gs-line-mid bg-white text-gs-text-soft text-sm font-semibold cursor-pointer hover:bg-gs-surface-mid transition-colors disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
       >
         요금제 먼저 보기
       </button>
 
-      <p className="mt-4 text-[12px] text-[#9ca3af] text-center leading-[1.6]">
+      <p className="mt-4 text-xs text-gs-muted-light text-center leading-[1.6]">
         이 페이지는 결과 고정이 아니라, 시작점 확인용이에요.
       </p>
     </SurveyShell>
@@ -294,16 +294,16 @@ function SurveyShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-gs-surface-muted">
       <div className="max-w-[520px] mx-auto px-5 pt-8 pb-16">
         <div className="mb-6">
-          <div className="text-[13px] font-semibold text-[#6b7280] mb-2">
+          <div className="text-[13px] font-semibold text-gs-muted-soft mb-2">
             {step}
           </div>
           {progress !== undefined && (
-            <div className="w-full h-1.5 rounded-full bg-[#e5e7eb] overflow-hidden">
+            <div className="w-full h-1.5 rounded-full bg-gs-line-soft overflow-hidden">
               <div
-                className="h-full rounded-full bg-[#4b7bec] transition-all duration-300"
+                className="h-full rounded-full bg-gs-blue transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>

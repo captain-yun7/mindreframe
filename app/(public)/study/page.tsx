@@ -28,13 +28,13 @@ export default function StudyPage() {
         note="이 한 문장이 왜 중요한지, 100일 동안 무엇을 훈련하는지 쉽고 직관적으로 알아보세요."
       />
 
-      <main className="max-w-[880px] mx-auto px-4 py-6">
+      <main className="max-w-[880px] mx-auto px-4 py-8">
         {/* 카테고리 탭 */}
         <div className="flex gap-2 mb-6 flex-wrap">
           {categories.map((cat) => (
             <span
               key={cat.key}
-              className="px-4 py-2 rounded-full text-[13px] font-bold border border-gs-line bg-white text-[#374151] hover:bg-[#f3f4f6] cursor-pointer"
+              className="px-4 py-2 rounded-full text-[13px] font-bold border border-gs-line-soft bg-white text-gs-text-soft hover:bg-gs-surface-mid cursor-pointer"
             >
               {cat.label}
             </span>
@@ -47,13 +47,13 @@ export default function StudyPage() {
             <Link
               key={item.slug}
               href={`/study/${item.slug}`}
-              className="block bg-white rounded-[18px] p-5 shadow-gs-card border border-[#e5e7eb] hover:shadow-[0_18px_40px_rgba(15,23,42,0.10)] transition-shadow"
+              className="block bg-white rounded-[18px] p-5 shadow-gs-card border border-gs-line-soft hover:shadow-gs-card-hover transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
             >
               <div className="flex items-center gap-3">
-                <span className="shrink-0 px-2.5 py-1 rounded-full bg-[#eef2ff] text-[#4338ca] text-[11px] font-bold">
+                <span className="shrink-0 px-3 py-1 rounded-full bg-gs-blue-soft text-gs-blue-soft-fg text-[11px] font-bold">
                   {categories.find((c) => c.key === item.category)?.label}
                 </span>
-                <h3 className="text-[16px] font-[950] tracking-[-0.02em]">
+                <h3 className="text-base font-[950] tracking-[-0.02em]">
                   {item.title}
                 </h3>
               </div>

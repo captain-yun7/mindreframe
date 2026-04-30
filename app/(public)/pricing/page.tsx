@@ -49,27 +49,27 @@ const plans = [
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-[#f9fafb]">
+    <div className="min-h-screen bg-gs-surface-muted">
       <div className="max-w-[880px] mx-auto px-5 pt-8 pb-20">
         {/* 상단 */}
         <div className="text-center mb-6">
-          <p className="text-[13px] font-semibold text-[#6b7280] mb-1.5">
+          <p className="text-[13px] font-semibold text-gs-muted-soft mb-2">
             100일 플랜 선택
           </p>
-          <h1 className="text-[22px] font-extrabold leading-[1.45] mb-3">
+          <h1 className="text-2xl font-extrabold leading-[1.45] mb-3">
             나에게 맞는 플랜을 선택하세요
           </h1>
-          <p className="text-[14px] text-[#4b5563] leading-[1.65]">
+          <p className="text-sm text-gs-text-soft leading-[1.65]">
             100일간의 인지행동치료 기반 생각 훈련 프로그램
           </p>
         </div>
 
         {/* 베타 무료 배너 */}
-        <div className="max-w-[480px] mx-auto bg-[#111827] text-white rounded-2xl p-3 text-[13px] leading-[1.6] mb-6">
+        <div className="max-w-[480px] mx-auto bg-gs-text-strong text-white rounded-2xl p-4 text-[13px] leading-[1.6] mb-6">
           <b>지금은 베타 기간!</b> 모든 기능을 무료로 체험할 수 있어요.
           <br />
           정식 출시 후 자동 결제되지 않습니다.
-          <span className="mt-2.5 inline-block bg-[#dcfce7] text-[#166534] font-black px-2.5 py-1.5 rounded-full text-[12px]">
+          <span className="mt-3 inline-block bg-gs-success-bg text-gs-success font-black px-3 py-1.5 rounded-full text-xs">
             베타 기간 0원
           </span>
         </div>
@@ -79,44 +79,44 @@ export default function PricingPage() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`bg-white rounded-[20px] p-5 border-2 ${
+              className={`bg-white rounded-[18px] p-5 border-2 shadow-gs-card transition-shadow hover:shadow-gs-card-hover ${
                 plan.recommended
-                  ? "border-[#4b7bec] shadow-[0_16px_35px_rgba(15,23,42,0.10)]"
-                  : "border-[#e5e7eb]"
+                  ? "border-gs-blue"
+                  : "border-gs-line-soft"
               }`}
             >
               {plan.recommended && (
-                <span className="inline-block mb-2 bg-[#eef2ff] text-[#4338ca] text-[11px] font-bold px-2.5 py-1 rounded-full">
+                <span className="inline-block mb-2 bg-gs-blue-soft text-gs-blue-soft-fg text-[11px] font-bold px-3 py-1 rounded-full">
                   추천
                 </span>
               )}
-              <h3 className="text-[18px] font-[950] mb-1">{plan.name}</h3>
+              <h3 className="text-lg font-[950] mb-1">{plan.name}</h3>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-[28px] font-black">
+                <span className="text-3xl font-black">
                   {plan.price}
                 </span>
-                <span className="text-[14px] text-[#6b7280]">원</span>
+                <span className="text-sm text-gs-muted-soft">원</span>
               </div>
-              <p className="text-[13px] text-[#9ca3af] mb-4">
+              <p className="text-[13px] text-gs-muted-light mb-4">
                 {plan.period}
               </p>
-              <ul className="space-y-2 mb-5">
+              <ul className="space-y-2 mb-6">
                 {plan.features.map((f) => (
                   <li
                     key={f}
-                    className="flex items-start gap-2 text-[13px] text-[#374151]"
+                    className="flex items-start gap-2 text-[13px] text-gs-text-soft"
                   >
-                    <span className="text-[#4b7bec] shrink-0">✓</span>
+                    <span className="text-gs-blue shrink-0">✓</span>
                     {f}
                   </li>
                 ))}
               </ul>
               <button
                 type="button"
-                className={`w-full py-3 rounded-[14px] text-[14px] font-bold cursor-pointer transition-colors ${
+                className={`w-full py-3 rounded-[14px] text-sm font-bold cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2 ${
                   plan.recommended
-                    ? "bg-[#4b7bec] text-white hover:bg-[#3a63db]"
-                    : "bg-white border border-[#d1d5db] text-[#374151] hover:bg-[#f3f4f6]"
+                    ? "bg-gs-blue text-white hover:bg-gs-blue-hover"
+                    : "bg-white border border-gs-line-mid text-gs-text-soft hover:bg-gs-surface-mid"
                 }`}
               >
                 선택하기
@@ -126,27 +126,27 @@ export default function PricingPage() {
         </div>
 
         {/* 월 구독 */}
-        <div className="max-w-[480px] mx-auto mt-6 bg-white border border-[#e5e7eb] rounded-[20px] p-5 text-center">
-          <h3 className="text-[16px] font-[950] mb-1">월 구독</h3>
+        <div className="max-w-[480px] mx-auto mt-6 bg-white border border-gs-line-soft rounded-[18px] p-5 text-center shadow-gs-card">
+          <h3 className="text-base font-[950] mb-1">월 구독</h3>
           <div className="flex items-baseline justify-center gap-1 mb-1">
-            <span className="text-[28px] font-black">9,900</span>
-            <span className="text-[14px] text-[#6b7280]">원/월</span>
+            <span className="text-3xl font-black">9,900</span>
+            <span className="text-sm text-gs-muted-soft">원/월</span>
           </div>
-          <p className="text-[13px] text-[#9ca3af] mb-3">
+          <p className="text-[13px] text-gs-muted-light mb-4">
             AI 분석 1회/일 · 언제든 해지 가능
           </p>
           <button
             type="button"
-            className="w-full py-3 rounded-[14px] border border-[#d1d5db] bg-white text-[14px] font-bold text-[#374151] cursor-pointer hover:bg-[#f3f4f6]"
+            className="w-full py-3 rounded-[14px] border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft cursor-pointer hover:bg-gs-surface-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
           >
             월 구독 시작하기
           </button>
         </div>
 
-        <p className="mt-6 text-center text-[12px] text-[#9ca3af] leading-[1.6]">
+        <p className="mt-6 text-center text-xs text-gs-muted-light leading-[1.6]">
           결제 관련 문의가 있으시면 언제든 연락주세요.
           <br />
-          <Link href="/" className="text-[#4b7bec] font-bold">
+          <Link href="/" className="text-gs-blue font-bold hover:text-gs-blue-hover">
             홈으로 돌아가기
           </Link>
         </p>

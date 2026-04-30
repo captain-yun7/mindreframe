@@ -35,9 +35,9 @@ export default function LandingPage() {
   return (
     <div className="bg-gs-bg">
       {/* ── HERO ── */}
-      <section className="w-full min-h-[85vh] px-4 py-[120px] max-sm:py-24 flex justify-center items-center text-center text-white bg-[radial-gradient(circle_at_20%_0%,rgba(63,99,255,0.4)_0,transparent_50%),linear-gradient(135deg,#0e1430_0%,#1b2f86_40%,#2343e9_100%)]">
+      <section className="w-full min-h-[85vh] px-4 py-32 max-sm:py-24 flex justify-center items-center text-center text-white bg-[radial-gradient(circle_at_20%_0%,rgba(63,99,255,0.4)_0,transparent_50%),linear-gradient(135deg,var(--color-gs-navy)_0%,var(--color-gs-navy-mid)_40%,var(--color-gs-navy-bright)_100%)]">
         <div className="max-w-[880px]">
-          <h1 className="text-[55px] max-sm:text-[40px] leading-[1.6] font-extrabold mb-6 tracking-[-0.03em]">
+          <h1 className="text-5xl max-sm:text-4xl leading-[1.6] font-extrabold mb-6 tracking-[-0.03em]">
             우울·불안은 <em className="text-gs-gold not-italic">생각습관</em>
             이에요.
             <br />
@@ -45,18 +45,18 @@ export default function LandingPage() {
             <br />
             어렵다고요?
           </h1>
-          <p className="text-[17px] max-sm:text-[15px] text-[#e5e7ff] mb-2.5 leading-[1.7]">
+          <p className="text-lg max-sm:text-base text-[#e5e7ff] mb-3 leading-[1.7]">
             당신의 머릿속에서 반복되는 &lsquo;가짜생각(자동사고)&rsquo;을
             <br />
             하루 10분, 쉽고 짧게 바꾸는 훈련.
           </p>
           <Link
             href="/signup"
-            className="mt-8 inline-block px-7 py-3.5 rounded-full border border-gs-gold bg-transparent text-[17px] font-bold text-gs-gold shadow-[0_0_16px_rgba(250,204,107,0.7)] hover:shadow-[0_0_22px_rgba(250,204,107,0.95)] hover:brightness-[1.07] transition-all"
+            className="mt-8 inline-block px-7 py-3.5 rounded-full border border-gs-gold bg-transparent text-lg font-bold text-gs-gold shadow-[0_0_16px_rgba(250,204,107,0.7)] hover:shadow-[0_0_22px_rgba(250,204,107,0.95)] hover:brightness-[1.07] transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gs-gold/40"
           >
             가짜생각바꾸기 바로 시작하기
           </Link>
-          <div className="mt-6 text-[13px] text-[#d1d5db] animate-bounce">
+          <div className="mt-6 text-[13px] text-gs-line-mid animate-bounce">
             ▼ 아래로 스크롤해서 지금 떠오르는 생각을 적어보세요
           </div>
         </div>
@@ -64,21 +64,21 @@ export default function LandingPage() {
 
       {/* ── 토닥챗 소개 ── */}
       <section className="pt-10 px-4">
-        <div className="bg-white rounded-[20px] p-[22px_20px_26px] shadow-[0_18px_40px_rgba(15,23,42,0.08)] max-w-[880px] mx-auto">
-          <h2 className="text-[20px] font-extrabold mb-2">
+        <div className="bg-white rounded-[20px] px-6 py-7 shadow-gs-card-hover max-w-[880px] mx-auto">
+          <h2 className="text-xl font-extrabold mb-2">
             가짜생각바꾸기 대화 시작하기
           </h2>
-          <p className="text-center text-sm text-[#6b7280] mb-4 leading-[1.7]">
+          <p className="text-center text-sm text-gs-muted-soft mb-4 leading-[1.7]">
             기적의 100일, 프로그램 따라만 오세요!
           </p>
-          <div className="w-full h-[720px] max-sm:h-[500px] rounded-[18px] overflow-hidden border border-[#e4e6f2] bg-[#fafbff] flex items-center justify-center text-gs-muted">
+          <div className="w-full h-[720px] max-sm:h-[500px] rounded-[18px] overflow-hidden border border-gs-line-soft bg-gs-surface-muted flex items-center justify-center text-gs-muted">
             {/* TODO: AI 채팅 컴포넌트로 교체 */}
             <p className="text-center">
               가짜생각 분석기가 여기에 표시됩니다.
               <br />
               <Link
                 href="/chat"
-                className="text-gs-blue font-bold mt-2 inline-block"
+                className="text-gs-blue font-bold mt-2 inline-block hover:text-gs-blue-hover"
               >
                 분석기로 이동 →
               </Link>
@@ -100,19 +100,19 @@ export default function LandingPage() {
 
       {/* ── 알고가기 ── */}
       <section className="py-10 px-4">
-        <div className="bg-white rounded-[20px] p-[22px_20px_26px] shadow-[0_18px_40px_rgba(15,23,42,0.08)] max-w-[880px] mx-auto text-center">
-          <h2 className="text-[20px] font-extrabold mb-2">알고가기</h2>
-          <p className="text-[20px] font-bold text-center mb-2">
+        <div className="bg-white rounded-[20px] px-6 py-7 shadow-gs-card-hover max-w-[880px] mx-auto text-center">
+          <h2 className="text-xl font-extrabold mb-2">알고가기</h2>
+          <p className="text-xl font-bold text-center mb-2">
             생각은 곧 &lsquo;나&rsquo;가 아니다.
           </p>
-          <p className="text-sm text-[#6b7280] leading-[1.7] mb-4">
+          <p className="text-sm text-gs-muted-soft leading-[1.7] mb-4">
             이 한 문장이 왜 중요한지, 100일 동안 무엇을 훈련하는지
             <br />
             쉽고 직관적으로 알고 가고 싶다면 눌러주세요.
           </p>
           <Link
             href="/study"
-            className="inline-block px-7 py-3.5 rounded-full border border-gs-gold bg-transparent text-[17px] font-bold text-gs-gold shadow-[0_0_16px_rgba(250,204,107,0.7)] hover:shadow-[0_0_22px_rgba(250,204,107,0.95)] transition-all"
+            className="inline-block px-7 py-3.5 rounded-full border border-gs-gold bg-transparent text-lg font-bold text-gs-gold shadow-[0_0_16px_rgba(250,204,107,0.7)] hover:shadow-[0_0_22px_rgba(250,204,107,0.95)] transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gs-gold/40"
           >
             알고가기 페이지로 이동
           </Link>
