@@ -20,17 +20,17 @@ export function HeroBanner({
         className,
       )}
     >
-      <h1 className="max-w-[720px] mx-auto text-[50px] max-sm:text-[34px] font-extrabold text-white tracking-[-0.02em] mb-2">
+      <h1 className="max-w-[720px] mx-auto text-5xl max-sm:text-3xl font-extrabold text-white tracking-[-0.02em] mb-2">
         {title}
       </h1>
       {subtitle && (
-        <p className="max-w-[720px] mx-auto text-[20px] max-sm:text-[17px] text-white/85 leading-[1.8] mb-2.5 mt-3.5">
+        <p className="max-w-[720px] mx-auto text-xl max-sm:text-base text-white/85 leading-[1.8] mb-2 mt-4">
           {subtitle}
         </p>
       )}
       {note && (
         <p
-          className="max-w-[720px] mx-auto text-[14px] text-white/70"
+          className="max-w-[720px] mx-auto text-sm text-white/70"
           dangerouslySetInnerHTML={{ __html: note }}
         />
       )}

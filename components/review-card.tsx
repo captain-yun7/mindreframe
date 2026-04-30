@@ -74,10 +74,10 @@ export function ReviewCard(props: ReviewCardProps) {
           ★★★★★
         </div>
       </div>
-      <p className="text-[26px] max-sm:text-[22px] font-extrabold text-[#111827] mb-2.5 leading-[1.5]">
+      <p className="text-2xl max-sm:text-xl font-extrabold text-gs-text-strong mb-2 leading-[1.5]">
         {text}
       </p>
-      <p className="text-[16px] text-[#4b5563]">{tag}</p>
+      <p className="text-base text-gs-text-soft">{tag}</p>
     </div>
   );
 }

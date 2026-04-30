@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="bg-[#0b1120] text-white/70 text-[13px] mt-auto">
+    <footer className="bg-gs-navy text-white/70 text-[13px] mt-auto">
       <div className="max-w-[1120px] mx-auto px-4 py-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -20,7 +20,7 @@ export function SiteFooter() {
             </Link>
           </div>
         </div>
-        <div className="mt-6 pt-6 border-t border-white/10 text-[12px] text-white/40">
+        <div className="mt-8 pt-6 border-t border-white/10 text-xs text-white/40">
           &copy; 2026 가짜생각. All rights reserved.
         </div>
       </div>

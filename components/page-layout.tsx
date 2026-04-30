@@ -9,7 +9,7 @@ export function PageLayout({ children, className }: PageLayoutProps) {
   return (
     <main
       className={cn(
-        "max-w-[1120px] mx-auto px-4 py-[22px] pb-[90px]",
+        "max-w-[1120px] mx-auto px-4 pt-6 pb-24",
         className,
       )}
     >
@@ -47,7 +47,7 @@ export function PageLead({
   return (
     <p
       className={cn(
-        "mt-2.5 text-gs-muted text-[13.5px] font-[750]",
+        "mt-2 text-gs-muted text-sm font-[750]",
         className,
       )}
     >

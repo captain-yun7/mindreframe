@@ -46,7 +46,7 @@ export function SiteHeader() {
     "";
 
   return (
-    <header className="sticky top-0 z-50 h-16 bg-white/95 backdrop-blur-[18px] border-b border-[#e5e7eb]">
+    <header className="sticky top-0 z-50 h-16 bg-white/95 backdrop-blur-[18px] border-b border-gs-line-soft">
       <div className="max-w-[1100px] mx-auto h-16 px-4 flex items-center justify-between">
         {/* 로고 */}
         <Link href="/" className="flex items-center h-16">
@@ -62,24 +62,24 @@ export function SiteHeader() {
 
         {/* 햄버거 (모바일) */}
         <button
-          className="hidden max-[860px]:flex w-8 h-8 items-center justify-center flex-col gap-1 bg-transparent border-none cursor-pointer"
+          className="hidden max-lg:flex w-8 h-8 items-center justify-center flex-col gap-1 bg-transparent border-none cursor-pointer"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="메뉴"
           type="button"
         >
-          <span className="block w-[18px] h-0.5 bg-[#111827] rounded-sm" />
-          <span className="block w-[18px] h-0.5 bg-[#111827] rounded-sm" />
-          <span className="block w-[18px] h-0.5 bg-[#111827] rounded-sm" />
+          <span className="block w-[18px] h-0.5 bg-gs-text-strong rounded-sm" />
+          <span className="block w-[18px] h-0.5 bg-gs-text-strong rounded-sm" />
+          <span className="block w-[18px] h-0.5 bg-gs-text-strong rounded-sm" />
         </button>
 
         {/* 네비게이션 */}
         <nav
           className={`
             flex items-center gap-2 text-[13px]
-            max-[860px]:hidden
+            max-lg:hidden
             ${
               menuOpen
-                ? "max-[860px]:!flex max-[860px]:flex-col max-[860px]:absolute max-[860px]:top-16 max-[860px]:right-3 max-[860px]:w-[110px] max-[860px]:p-3.5 max-[860px]:bg-white max-[860px]:rounded-[14px] max-[860px]:shadow-[0_12px_32px_rgba(15,23,42,0.18)] max-[860px]:z-50"
+                ? "max-lg:!flex max-lg:flex-col max-lg:absolute max-lg:top-16 max-lg:right-3 max-lg:w-[110px] max-lg:p-4 max-lg:bg-white max-lg:rounded-[14px] max-lg:shadow-gs-dropdown max-lg:z-50"
                 : ""
             }
           `}
@@ -89,9 +89,9 @@ export function SiteHeader() {
               key={item.href}
               href={item.href}
               className={`
-                text-[#111827] font-medium px-2 py-1.5 rounded-lg tracking-[-0.04em] whitespace-nowrap
-                hover:bg-[#eef2ff] hover:text-[#1d4ed8]
-                ${pathname === item.href ? "bg-[#eef2ff] text-[#1d4ed8]" : ""}
+                text-gs-text-strong font-medium px-2 py-2 rounded-lg tracking-[-0.04em] whitespace-nowrap
+                hover:bg-gs-blue-soft hover:text-gs-blue-hover
+                ${pathname === item.href ? "bg-gs-blue-soft text-gs-blue-hover" : ""}
               `}
               onClick={() => setMenuOpen(false)}
             >
@@ -101,14 +101,14 @@ export function SiteHeader() {
 
           {isLoggedIn ? (
             <>
-              <span className="font-bold text-[#111827] ml-1.5">
+              <span className="font-bold text-gs-text-strong ml-2">
                 {userName}
-                <span className="font-normal text-[#6b7280] ml-px">님</span>
+                <span className="font-normal text-gs-muted-soft ml-px">님</span>
               </span>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="ml-1.5 border border-[#fecaca] bg-[#fee2e2] text-[#b91c1c] px-2.5 py-1.5 rounded-full text-[13px] font-bold cursor-pointer hover:bg-[#fecaca]"
+                className="ml-2 border border-gs-danger-border bg-gs-danger-bg text-gs-danger px-3 py-2 rounded-full text-[13px] font-bold cursor-pointer hover:bg-gs-danger-border"
               >
                 로그아웃
               </button>
@@ -116,7 +116,7 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/login"
-              className="ml-1.5 border border-[#d1d5db] bg-transparent px-2.5 py-1.5 rounded-full text-[13px] font-bold cursor-pointer hover:bg-[#f3f4f6]"
+              className="ml-2 border border-gs-line-mid bg-transparent px-3 py-2 rounded-full text-[13px] font-bold cursor-pointer hover:bg-gs-surface-mid"
             >
               로그인
             </Link>

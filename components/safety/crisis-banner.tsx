@@ -16,15 +16,15 @@ export function CrisisBanner({ visible, onDismiss }: CrisisBannerProps) {
     <div
       role="alert"
       data-testid="crisis-banner"
-      className="mb-4 rounded-[14px] border border-[#fecaca] bg-[#fef2f2] p-4 text-[#991b1b]"
+      className="mb-4 rounded-[14px] border-2 border-gs-danger-border bg-gs-danger-bg-soft p-4 text-gs-danger-strong shadow-gs-card"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="text-[13.5px] leading-[1.7]">
-          <strong className="block text-[14px] font-bold mb-1">
+        <div className="text-sm leading-[1.7]">
+          <strong className="block text-[15px] font-bold mb-1">
             지금 많이 힘드시죠. 혼자 견디지 마세요.
           </strong>
           전문 상담사와 바로 통화하실 수 있어요.
-          <ul className="mt-2 list-disc pl-5 space-y-0.5">
+          <ul className="mt-2 list-disc pl-5 space-y-1">
             <li>
               자살예방상담전화{" "}
               <a className="font-bold underline" href="tel:1393">
@@ -61,7 +61,7 @@ export function CrisisBanner({ visible, onDismiss }: CrisisBannerProps) {
             type="button"
             onClick={onDismiss}
             aria-label="닫기"
-            className="shrink-0 text-[#991b1b] text-[13px] font-bold opacity-70 hover:opacity-100"
+            className="shrink-0 text-gs-danger-strong text-sm font-bold opacity-70 hover:opacity-100"
           >
             ×
           </button>
