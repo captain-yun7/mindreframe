@@ -5,6 +5,8 @@ import { HeroBanner } from "@/components/hero-banner";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
 import { addThoughtRecord } from "@/lib/actions/thought-records";
 import { useToast } from "@/components/ui/toast";
+import { CrisisBanner } from "@/components/safety/crisis-banner";
+import { detectCrisis, CRISIS_GUIDE_MESSAGE } from "@/lib/cbt/crisis-detection";
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
@@ -15,13 +17,20 @@ const INITIAL_MESSAGE: ChatMessage = {
 export default function TrashPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const toast = useToast();
 
   async function handleSend(content: string) {
     const userMsg: ChatMessage = { role: "user", content };
     setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
 
+    const isCrisis = detectCrisis(content).level === "warn";
+    if (isCrisis) {
+      setShowCrisisBanner(true);
+      toast.show("긴급 상담이 필요하시면 1393에 전화해주세요", "error");
+    }
+
+    setIsLoading(true);
     const result = await addThoughtRecord({ situation: content });
 
     if (!result.ok) {
@@ -30,11 +39,13 @@ export default function TrashPage() {
       return;
     }
 
-    const reply: ChatMessage = {
-      role: "assistant",
-      content:
-        "그런 일이 있었군요. 충분히 힘들었을 거예요.\n\n잘 적어주셨어요. 나중에 성장방에서 다시 볼 수 있어요.",
-    };
+    const reply: ChatMessage = isCrisis
+      ? { role: "assistant", content: CRISIS_GUIDE_MESSAGE }
+      : {
+          role: "assistant",
+          content:
+            "그런 일이 있었군요. 충분히 힘들었을 거예요.\n\n잘 적어주셨어요. 나중에 성장방에서 다시 볼 수 있어요.",
+        };
     setMessages((prev) => [...prev, reply]);
     setIsLoading(false);
   }
@@ -48,6 +59,10 @@ export default function TrashPage() {
       />
 
       <main className="max-w-[720px] mx-auto px-3 py-6">
+        <CrisisBanner
+          visible={showCrisisBanner}
+          onDismiss={() => setShowCrisisBanner(false)}
+        />
         <div className="bg-white rounded-[18px] p-4 shadow-gs-card border border-[#e5e7eb]">
           <h2 className="text-[16px] font-semibold mb-1 text-[#111827]">
             왜 생각을 나눌까요?

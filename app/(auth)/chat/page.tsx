@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
 import { sendChatMessage, summarizeAndSaveSession } from "@/lib/actions/chat";
 import { useToast } from "@/components/ui/toast";
+import { CrisisBanner } from "@/components/safety/crisis-banner";
+import { detectCrisis } from "@/lib/cbt/crisis-detection";
 
 const steps = [
   {
@@ -36,13 +38,19 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const toast = useToast();
 
   async function handleSend(content: string) {
     const userMsg: ChatMessage = { role: "user", content };
     setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
 
+    // 클라이언트 1차 감지 — 서버 왕복 전에 즉시 배너 표시
+    if (detectCrisis(content).level === "warn") {
+      setShowCrisisBanner(true);
+    }
+
+    setIsLoading(true);
     const result = await sendChatMessage({ sessionId, content });
     setIsLoading(false);
 
@@ -51,6 +59,10 @@ export default function ChatPage() {
       return;
     }
     setSessionId(result.sessionId);
+    if (result.crisis) {
+      setShowCrisisBanner(true);
+      toast.show("긴급 상담이 필요하시면 1393에 전화해주세요", "error");
+    }
     setMessages((prev) => [...prev, { role: "assistant", content: result.reply }]);
   }
 
@@ -80,6 +92,10 @@ export default function ChatPage() {
 
   return (
     <main className="max-w-[780px] mx-auto px-4 py-6">
+      <CrisisBanner
+        visible={showCrisisBanner}
+        onDismiss={() => setShowCrisisBanner(false)}
+      />
       {/* 사용법 가이드 */}
       <section className="bg-white rounded-[18px] p-5 shadow-gs-card border border-[#e5e7eb] mb-4">
         <h2 className="text-[17px] font-bold mb-3">
