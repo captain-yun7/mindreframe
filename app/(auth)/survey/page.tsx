@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { submitSurvey } from "@/lib/actions/survey";
+import { useToast } from "@/components/ui/toast";
 
 // ─── 설문 데이터 정의 ───
 
@@ -62,6 +64,8 @@ type Phase = "intro" | "depression" | "anxiety" | "result";
 
 export default function SurveyPage() {
   const router = useRouter();
+  const toast = useToast();
+  const [isPending, startTransition] = useTransition();
   const [phase, setPhase] = useState<Phase>("intro");
   const [introIndex, setIntroIndex] = useState(0);
   const [depIndex, setDepIndex] = useState(0);
@@ -69,6 +73,25 @@ export default function SurveyPage() {
   const [introAnswers, setIntroAnswers] = useState<Record<string, string>>({});
   const [depScores, setDepScores] = useState<number[]>([]);
   const [anxScores, setAnxScores] = useState<number[]>([]);
+
+  const handleStart = (target: "/dashboard" | "/pricing") => {
+    startTransition(async () => {
+      const result = await submitSurvey({
+        channel: introAnswers.channel ?? "",
+        program: introAnswers.program ?? "",
+        gender: introAnswers.gender ?? "",
+        ageGroup: introAnswers.ageGroup ?? "",
+        depressionAnswers: depScores,
+        anxietyAnswers: anxScores,
+      });
+      if (!result.ok) {
+        toast.show(result.error, "error");
+        return;
+      }
+      toast.show("설문이 저장되었습니다", "success");
+      router.push(target);
+    });
+  };
 
   // ─── 인트로 ───
   if (phase === "intro") {
@@ -237,19 +260,18 @@ export default function SurveyPage() {
 
       <button
         type="button"
-        onClick={() => {
-          // TODO: API 저장
-          router.push("/dashboard");
-        }}
-        className="w-full py-4 rounded-[14px] bg-[#4b7bec] text-white text-[16px] font-bold cursor-pointer hover:bg-[#3a63db] transition-colors"
+        disabled={isPending}
+        onClick={() => handleStart("/dashboard")}
+        className="w-full py-4 rounded-[14px] bg-[#4b7bec] text-white text-[16px] font-bold cursor-pointer hover:bg-[#3a63db] transition-colors disabled:opacity-60 disabled:cursor-wait"
       >
-        프로그램 시작하기
+        {isPending ? "저장 중..." : "프로그램 시작하기"}
       </button>
 
       <button
         type="button"
-        onClick={() => router.push("/pricing")}
-        className="w-full mt-2.5 py-3.5 rounded-[14px] border border-[#d1d5db] bg-white text-[#4b5563] text-[14px] font-semibold cursor-pointer hover:bg-[#f3f4f6] transition-colors"
+        disabled={isPending}
+        onClick={() => handleStart("/pricing")}
+        className="w-full mt-2.5 py-3.5 rounded-[14px] border border-[#d1d5db] bg-white text-[#4b5563] text-[14px] font-semibold cursor-pointer hover:bg-[#f3f4f6] transition-colors disabled:opacity-60 disabled:cursor-wait"
       >
         요금제 먼저 보기
       </button>
