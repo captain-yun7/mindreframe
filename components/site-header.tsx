@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 const navItems = [
   { href: "/study", label: "알고가기" },
@@ -17,11 +19,31 @@ const navItems = [
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  // TODO: NextAuth 세션으로 교체
-  const isLoggedIn = false;
-  const userName = "";
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: subscription } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
+  const isLoggedIn = !!user;
+  const userName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.user_metadata?.nickname ||
+    user?.email?.split("@")[0] ||
+    "";
 
   return (
     <header className="sticky top-0 z-50 h-16 bg-white/95 backdrop-blur-[18px] border-b border-[#e5e7eb]">
@@ -85,6 +107,7 @@ export function SiteHeader() {
               </span>
               <button
                 type="button"
+                onClick={handleLogout}
                 className="ml-1.5 border border-[#fecaca] bg-[#fee2e2] text-[#b91c1c] px-2.5 py-1.5 rounded-full text-[13px] font-bold cursor-pointer hover:bg-[#fecaca]"
               >
                 로그아웃
