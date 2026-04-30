@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { autoCheckRoutine } from "./dashboard";
 
 type ThoughtInput = {
   situation: string;
@@ -29,6 +30,7 @@ export async function addThoughtRecord(input: ThoughtInput) {
     .single();
 
   if (error) return { ok: false as const, error: error.message };
+  await autoCheckRoutine(supabase, user.id, "trash");
   return { ok: true as const, id: data.id };
 }
 

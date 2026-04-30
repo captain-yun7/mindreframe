@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { autoCheckRoutine } from "./dashboard";
 
 const SYSTEM_PROMPT = `당신은 인지행동치료(CBT) 기반의 다정한 상담 코치입니다.
 사용자가 자동사고와 감정을 표현하면, 다음 흐름으로 대화하세요:
@@ -83,6 +84,8 @@ export async function sendChatMessage({ sessionId, content }: SendInput) {
   await supabase
     .from("chat_messages")
     .insert({ session_id: activeId, role: "assistant", content: assistantText });
+
+  await autoCheckRoutine(supabase, user.id, "analysis");
 
   return { ok: true as const, sessionId: activeId, reply: assistantText };
 }

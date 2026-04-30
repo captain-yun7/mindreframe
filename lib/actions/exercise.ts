@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { autoCheckRoutine } from "./dashboard";
 
 export async function logExercise({
   mode,
@@ -23,5 +24,6 @@ export async function logExercise({
     note: note ?? null,
   });
   if (error) return { ok: false as const, error: error.message };
+  await autoCheckRoutine(supabase, user.id, "courage");
   return { ok: true as const };
 }

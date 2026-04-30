@@ -10,6 +10,7 @@ import {
   saveEmotionScore,
   saveGratitudeEntry,
   toggleRoutineCheck,
+  loadTodayDashboard,
 } from "@/lib/actions/dashboard";
 import { useToast } from "@/components/ui/toast";
 
@@ -88,8 +89,22 @@ export default function DashboardPage() {
     }, 600);
   }
 
+  // 진입 시 오늘 데이터 로드
   useEffect(() => {
+    let cancelled = false;
+    loadTodayDashboard().then((r) => {
+      if (cancelled || !r.ok) return;
+      if (r.moodScore != null) setMoodScore(r.moodScore);
+      const initial: Record<string, boolean> = {};
+      r.checkedKeys.forEach((k) => {
+        initial[k] = true;
+      });
+      if (r.gratitudeDone) initial.gratitude = true;
+      if (r.moodScore != null) initial.mood = true;
+      setChecks(initial);
+    });
     return () => {
+      cancelled = true;
       if (moodDebounce.current) clearTimeout(moodDebounce.current);
     };
   }, []);
