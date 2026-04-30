@@ -12,7 +12,7 @@ test.describe("/mypage 마이페이지", () => {
     if (user) await deleteTestUser(user.id);
   });
 
-  test("로그인된 사용자 프로필 정보 표시 + 로그아웃", async ({ page }) => {
+  test("프로필 표시 + 닉네임 변경 + 로그아웃", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/mypage");
 
@@ -20,8 +20,16 @@ test.describe("/mypage 마이페이지", () => {
     await expect(page.getByTestId("profile-email")).toContainText(user.email);
     await expect(page.getByTestId("profile-plan")).toContainText("free");
 
-    // 로그아웃 클릭 → /login 이동
-    await page.getByRole("button", { name: "로그아웃" }).click();
+    // 닉네임 변경
+    await page.getByRole("button", { name: "변경" }).click();
+    const newNick = "새닉네임_" + Date.now();
+    await page.locator('input[type="text"]').fill(newNick);
+    await page.getByRole("button", { name: "저장" }).click();
+    await expect(page.getByText("닉네임이 변경되었습니다")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("profile-nickname")).toContainText(newNick);
+
+    // 로그아웃 (마이페이지 카드 안의 버튼)
+    await page.getByRole("main").getByRole("button", { name: "로그아웃" }).click();
     await page.waitForURL("**/login", { timeout: 10_000 });
   });
 });

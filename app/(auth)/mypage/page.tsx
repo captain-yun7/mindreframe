@@ -3,6 +3,7 @@ import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card, CardTitle } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { LogoutButton } from "./logout-button";
+import { NicknameForm } from "./nickname-form";
 
 export default async function MyPage() {
   const supabase = await createSupabaseServerClient();
@@ -46,12 +47,7 @@ export default async function MyPage() {
       <Card className="mt-4">
         <CardTitle>프로필</CardTitle>
         <div className="mt-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-gs-muted">닉네임</span>
-            <span data-testid="profile-nickname" className="text-[14px] font-bold">
-              {profile.nickname}
-            </span>
-          </div>
+          <NicknameForm initial={profile.nickname} />
           <div className="flex items-center justify-between">
             <span className="text-[13px] text-gs-muted">이메일</span>
             <span data-testid="profile-email" className="text-[14px] font-bold">
