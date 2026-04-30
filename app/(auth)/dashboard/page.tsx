@@ -119,7 +119,7 @@ export default function DashboardPage() {
       <PageTitle>오늘의 루틴</PageTitle>
       <PageLead>오늘도 1%만 해도 충분해요.</PageLead>
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_320px] gap-4 items-start max-[980px]:grid-cols-1">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)_320px] gap-4 items-start max-lg:grid-cols-1">
         {/* LEFT */}
         <div>
           {/* 감정 점수 */}
@@ -138,7 +138,7 @@ export default function DashboardPage() {
               짧고 가볍게. &quot;완벽&quot;이 아니라 &quot;완료&quot;가 목표예요.
             </CardDescription>
 
-            <div className="mt-3 grid gap-2.5">
+            <div className="mt-4 grid gap-2">
               {checklistItems.map((item) => (
                 <ChecklistItem
                   key={item.key}
@@ -175,17 +175,17 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            <div className="mt-3 flex gap-2.5 flex-wrap">
+            <div className="mt-4 flex gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => setChecks({})}
-                className="border border-gs-line bg-white rounded-xl px-3 py-2.5 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
+                className="border border-gs-line-soft bg-white rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
               >
                 오늘 체크 초기화
               </button>
               <a
                 href="/progress"
-                className="border-[rgba(37,99,235,0.35)] border bg-gs-blue-light rounded-xl px-3 py-2.5 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
+                className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
               >
                 → 나의성장방에서 보기
               </a>
@@ -205,9 +205,9 @@ export default function DashboardPage() {
               placeholder={
                 "예) 오늘은 내가 포기하지 않은 게 고맙다.\n예) 따뜻한 말 한마디가 고마웠다."
               }
-              className="w-full mt-3 border border-[rgba(226,232,240,0.9)] rounded-[14px] p-3 min-h-[120px] resize-y outline-none bg-white focus:border-[rgba(37,99,235,0.35)] focus:shadow-[0_0_0_4px_rgba(37,99,235,0.10)]"
+              className="w-full mt-4 border border-gs-line-soft rounded-[14px] p-3 min-h-[120px] resize-y outline-none bg-white focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20"
             />
-            <div className="mt-3 flex gap-2.5 flex-wrap">
+            <div className="mt-4 flex gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={async () => {
@@ -222,14 +222,14 @@ export default function DashboardPage() {
                   setGratitudeText("");
                   toast.show("감사일기가 저장되었습니다", "success");
                 }}
-                className="border-[rgba(37,99,235,0.35)] border bg-gs-blue-light rounded-xl px-3 py-2.5 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
+                className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
               >
                 감사일기 저장
               </button>
               <button
                 type="button"
                 onClick={() => setGratitudeText("")}
-                className="border border-gs-line bg-white rounded-xl px-3 py-2.5 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
+                className="border border-gs-line-soft bg-white rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
               >
                 내용 지우기
               </button>

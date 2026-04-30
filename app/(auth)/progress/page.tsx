@@ -94,15 +94,15 @@ export default async function ProgressPage() {
       <PageTitle>나의성장방</PageTitle>
       <PageLead>꾸준함이 만드는 변화를 확인해보세요.</PageLead>
 
-      <div className="mt-4 grid grid-cols-4 gap-3 max-sm:grid-cols-2">
+      <div className="mt-6 grid grid-cols-4 gap-3 max-sm:grid-cols-2">
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
             data-testid={`kpi-${kpi.label}`}
-            className="bg-white rounded-[14px] p-4 border border-gs-line text-center"
+            className="bg-white rounded-[14px] p-4 border border-gs-line-soft shadow-gs-card text-center"
           >
-            <div className="text-[12px] text-gs-muted font-[750]">{kpi.label}</div>
-            <div className="text-[20px] font-[950] mt-1">{kpi.value}</div>
+            <div className="text-xs text-gs-muted font-[750]">{kpi.label}</div>
+            <div className="text-xl font-[950] mt-1">{kpi.value}</div>
           </div>
         ))}
       </div>
@@ -110,14 +110,14 @@ export default async function ProgressPage() {
       <Card className="mt-4">
         <CardTitle>감정 변화 추이</CardTitle>
         <CardDescription>루틴에서 입력한 감정 점수의 변화를 확인해보세요.</CardDescription>
-        <div className="mt-4 h-[200px] bg-[#f9fafb] rounded-[14px] flex items-center justify-center text-gs-muted text-[13px]">
+        <div className="mt-4 h-[200px] bg-gs-surface-muted rounded-[14px] flex items-center justify-center text-gs-muted text-[13px]">
           데이터가 쌓이면 감정 변화 그래프가 표시됩니다.
         </div>
       </Card>
 
       <Card className="mt-4">
         <CardTitle>획득 배지</CardTitle>
-        <div className="mt-3 grid grid-cols-4 gap-3 max-sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-4 gap-3 max-sm:grid-cols-2">
           {fixedBadges.map((badge) => {
             const earned = earnedSet.has(badge.title);
             return (
@@ -125,12 +125,12 @@ export default async function ProgressPage() {
                 key={badge.title}
                 className={`rounded-[14px] p-3 text-center border ${
                   earned
-                    ? "bg-gradient-to-br from-[#fef9c3] to-[#fef3c7] border-gs-gold-border"
-                    : "bg-[#f9fafb] border-gs-line opacity-50"
+                    ? "bg-gradient-to-br from-[#fef9c3] to-gs-warning-bg border-gs-gold-border"
+                    : "bg-gs-surface-muted border-gs-line-soft opacity-50"
                 }`}
               >
-                <div className="text-[28px]">{badge.icon}</div>
-                <div className="text-[12px] font-[950] mt-1">{badge.title}</div>
+                <div className="text-3xl">{badge.icon}</div>
+                <div className="text-xs font-[950] mt-1">{badge.title}</div>
                 <div className="text-[11px] text-gs-muted">{badge.desc}</div>
               </div>
             );
@@ -142,18 +142,18 @@ export default async function ProgressPage() {
         <CardTitle>대안적 사고 카드</CardTitle>
         <CardDescription>가짜생각 분석기에서 찾은 대안적 사고들이 모입니다.</CardDescription>
         {stats && stats.recentAlternatives.length > 0 ? (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-4 space-y-2">
             {stats.recentAlternatives.map((r) => (
               <li
                 key={r.id}
-                className="p-3 rounded-[12px] bg-[#f9fafb] border border-gs-line text-[13px]"
+                className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px]"
               >
                 {r.alternative_thought}
               </li>
             ))}
           </ul>
         ) : (
-          <div className="mt-3 text-center text-gs-muted text-[13px] py-8">
+          <div className="mt-4 text-center text-gs-muted text-[13px] py-8">
             아직 저장된 대안사고가 없습니다.
             <br />
             가짜생각 분석기를 사용해보세요.

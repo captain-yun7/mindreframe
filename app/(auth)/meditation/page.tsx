@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { PageLayout, PageTitle } from "@/components/page-layout";
+import { Card } from "@/components/card";
 import { logMeditation } from "@/lib/actions/meditation";
 import { useToast } from "@/components/ui/toast";
 
@@ -90,7 +91,7 @@ export default function MeditationPage() {
       {/* 가이드 */}
       <div className="text-center mb-6">
         <PageTitle className="text-center">지금 어디에 초점을 맞추고 싶나요?</PageTitle>
-        <div className="mt-4 text-[14px] text-[#374151] leading-[1.8] max-w-[600px] mx-auto">
+        <div className="mt-4 text-sm text-gs-text-soft leading-[1.8] max-w-[600px] mx-auto">
           <p>① <b>원하는 것을 하나 선택해 보세요.</b></p>
           <p className="text-gs-muted text-[13px] mb-2">소리, 호흡, 설거지할 때 손에 닿는 물의 감각, 한가지 생각, 어떤 것이든 하나면 충분합니다.</p>
           <p>② <b>선택한 곳에 잠시 초점을 두어봅니다.</b></p>
@@ -111,10 +112,10 @@ export default function MeditationPage() {
             className={`p-6 rounded-[18px] text-center cursor-pointer border-2 transition-all ${
               activeTab === cat.key
                 ? "border-gs-gold-border bg-white shadow-gs-card"
-                : "border-gs-line bg-white hover:border-gs-gold-border/50"
+                : "border-gs-line-soft bg-white hover:border-gs-gold-border/50"
             }`}
           >
-            <p className="text-[18px] font-[950]">{cat.label}</p>
+            <p className="text-lg font-[950]">{cat.label}</p>
             <p className="text-[13px] text-gs-muted mt-1">
               {cat.key === "person" && "가이드 음성으로 함께 명상하기"}
               {cat.key === "nature" && "비, 바람, 숲, 물소리와 함께 있기"}
@@ -134,7 +135,7 @@ export default function MeditationPage() {
             className={`px-4 py-2 rounded-full text-[13px] font-bold border ${
               activeTab === cat.key
                 ? "bg-gs-navy-bright text-white border-gs-navy-bright"
-                : "bg-white text-[#374151] border-gs-line hover:bg-[#f3f4f6]"
+                : "bg-white text-gs-text-soft border-gs-line-soft hover:bg-gs-surface-mid"
             }`}
           >
             {cat.label}
@@ -143,27 +144,27 @@ export default function MeditationPage() {
       </div>
 
       {/* 트랙 목록 */}
-      <div className="bg-white rounded-[18px] p-4 shadow-gs-card border border-[#e5e7eb]">
-        <h2 className="text-[16px] font-bold">{catInfo.title}</h2>
-        <p className="text-[13px] text-gs-muted mb-3">{catInfo.desc}</p>
+      <Card>
+        <h2 className="text-base font-bold">{catInfo.title}</h2>
+        <p className="text-[13px] text-gs-muted mb-4">{catInfo.desc}</p>
 
         <div className="space-y-2">
           {tracks[activeTab].map((track) => (
             <div
               key={track.src}
-              className="flex items-center justify-between p-3 border border-[rgba(226,232,240,0.9)] rounded-[14px]"
+              className="flex items-center justify-between p-3 border border-gs-line-soft rounded-[14px]"
             >
               <div>
-                <div className="font-[950] text-[14px]">{track.name}</div>
-                <div className="text-[12px] text-gs-muted">{track.meta}</div>
+                <div className="font-[950] text-sm">{track.name}</div>
+                <div className="text-xs text-gs-muted">{track.meta}</div>
               </div>
               <button
                 type="button"
                 onClick={() => handlePlay(track)}
                 className={`px-3 py-2 rounded-xl text-[13px] font-bold border ${
                   playing === track.src
-                    ? "bg-[#fee2e2] border-[#fecaca] text-[#b91c1c]"
-                    : "bg-gs-blue-light border-[rgba(37,99,235,0.25)] text-gs-blue"
+                    ? "bg-gs-danger-bg border-gs-danger-border text-gs-danger"
+                    : "bg-gs-blue-light border-gs-blue/25 text-gs-blue"
                 }`}
               >
                 {playing === track.src ? "정지" : "재생"}
@@ -171,7 +172,7 @@ export default function MeditationPage() {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* 숨겨진 오디오 */}
       <audio

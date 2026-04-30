@@ -15,13 +15,13 @@ export function NicknameForm({ initial }: { initial: string }) {
       <div className="flex items-center justify-between">
         <span className="text-[13px] text-gs-muted">닉네임</span>
         <div className="flex items-center gap-2">
-          <span data-testid="profile-nickname" className="text-[14px] font-bold">
+          <span data-testid="profile-nickname" className="text-sm font-bold">
             {initial}
           </span>
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="text-[12px] text-gs-blue underline"
+            className="text-xs text-gs-blue underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 rounded"
           >
             변경
           </button>
@@ -37,7 +37,7 @@ export function NicknameForm({ initial }: { initial: string }) {
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="flex-1 px-2 py-1 border border-gs-line rounded-lg text-[14px] outline-none focus:border-gs-blue"
+        className="flex-1 px-2 py-1 border border-gs-line-soft rounded-lg text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20"
       />
       <button
         type="button"
@@ -53,7 +53,7 @@ export function NicknameForm({ initial }: { initial: string }) {
             setEditing(false);
           })
         }
-        className="text-[12px] text-white bg-gs-navy-bright rounded-md px-2 py-1 disabled:opacity-50"
+        className="text-xs text-white bg-gs-navy-bright rounded-md px-2 py-1 disabled:opacity-50"
       >
         저장
       </button>
@@ -63,7 +63,7 @@ export function NicknameForm({ initial }: { initial: string }) {
           setValue(initial);
           setEditing(false);
         }}
-        className="text-[12px] text-gs-muted"
+        className="text-xs text-gs-muted"
       >
         취소
       </button>

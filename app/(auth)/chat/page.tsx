@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
+import { Card } from "@/components/card";
 import { sendChatMessage, summarizeAndSaveSession } from "@/lib/actions/chat";
 import { useToast } from "@/components/ui/toast";
 import { CrisisBanner } from "@/components/safety/crisis-banner";
@@ -97,31 +98,31 @@ export default function ChatPage() {
         onDismiss={() => setShowCrisisBanner(false)}
       />
       {/* 사용법 가이드 */}
-      <section className="bg-white rounded-[18px] p-5 shadow-gs-card border border-[#e5e7eb] mb-4">
-        <h2 className="text-[17px] font-bold mb-3">
+      <Card className="mb-4 p-5">
+        <h2 className="text-base font-bold mb-3">
           가짜생각 분석기 사용법
         </h2>
-        <ul className="space-y-2.5">
+        <ul className="space-y-3">
           {steps.map((step, i) => (
             <li key={i} className="flex gap-3 items-start">
-              <span className="shrink-0 w-7 h-7 rounded-full bg-gs-blue-light text-gs-blue text-[14px] font-bold flex items-center justify-center">
+              <span className="shrink-0 w-7 h-7 rounded-full bg-gs-blue-light text-gs-blue text-sm font-bold flex items-center justify-center">
                 {step.badge}
               </span>
               <span
-                className="text-[13.5px] leading-[1.6] text-[#374151]"
+                className="text-sm leading-[1.6] text-gs-text-soft"
                 dangerouslySetInnerHTML={{ __html: step.text }}
               />
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[12px] text-[#9ca3af]">
+        <p className="mt-4 text-xs text-gs-muted-light">
           * 처음엔 믿기지 않을 수도 있어요. 하지만 반복하면 새로운 생각에
           &apos;믿음의 힘&apos;이 생깁니다.
         </p>
-      </section>
+      </Card>
 
       {/* 채팅 */}
-      <section className="bg-white rounded-[18px] p-4 shadow-gs-card border border-[#e5e7eb]">
+      <Card>
         <ChatContainer
           messages={messages}
           onSend={handleSend}
@@ -134,11 +135,11 @@ export default function ChatPage() {
           type="button"
           onClick={handleSummarize}
           disabled={isSummarizing || !sessionId || messages.length < 3}
-          className="mt-3 w-full py-3 rounded-[14px] bg-gs-blue-light border border-[rgba(37,99,235,0.35)] text-gs-blue text-[14px] font-bold cursor-pointer hover:translate-y-[-1px] hover:shadow-gs-card transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-4 w-full py-3 rounded-[14px] bg-gs-blue-light border border-gs-blue/35 text-gs-blue text-sm font-bold cursor-pointer hover:translate-y-[-1px] hover:shadow-gs-card transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSummarizing ? "분석 정리 중..." : "이 대화 정리하고 저장"}
         </button>
-      </section>
+      </Card>
     </main>
   );
 }

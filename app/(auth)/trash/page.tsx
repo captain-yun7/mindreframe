@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { HeroBanner } from "@/components/hero-banner";
+import { Card } from "@/components/card";
 import { addThoughtRecord } from "@/lib/actions/thought-records";
 import { useToast } from "@/components/ui/toast";
 import { CrisisBanner } from "@/components/safety/crisis-banner";
@@ -126,17 +127,17 @@ export default function TrashPage() {
         note='생각쓰레기통이 알아서 <b>상황 · 생각 · 감정 · 신체반응 · 행동</b>을 나눠줄게요.'
       />
 
-      <main className="max-w-[720px] mx-auto px-3 py-6">
+      <main className="max-w-[720px] mx-auto px-4 py-6">
         <CrisisBanner
           visible={showCrisisBanner}
           onDismiss={() => setShowCrisisBanner(false)}
         />
 
-        <div className="bg-white rounded-[18px] p-4 shadow-gs-card border border-[#e5e7eb]">
-          <h2 className="text-[16px] font-semibold mb-1 text-[#111827]">
+        <Card>
+          <h2 className="text-base font-semibold mb-1 text-gs-text-strong">
             왜 생각을 나눌까요?
           </h2>
-          <p className="text-[13px] text-[#4b5563] mb-4 leading-[1.6]">
+          <p className="text-[13px] text-gs-text-soft mb-4 leading-[1.6]">
             나누는 순간 <b>생각은 생각으로, 나는 나로</b> 분리됩니다. 쓰면 쓸수록 뇌는
             한 걸음 떨어져 바라봐요. 한 칸이라도 좋으니 적어보세요.
           </p>
@@ -146,12 +147,12 @@ export default function TrashPage() {
               <div key={field.key}>
                 <label
                   htmlFor={`field-${field.key}`}
-                  className="block text-[13.5px] font-bold text-[#111827] mb-1"
+                  className="block text-sm font-bold text-gs-text-strong mb-1"
                 >
                   {field.label}
-                  {field.required && <span className="text-[#dc2626] ml-1">*</span>}
+                  {field.required && <span className="text-gs-danger ml-1">*</span>}
                 </label>
-                <p className="text-[12px] text-[#6b7280] mb-1.5">{field.helper}</p>
+                <p className="text-xs text-gs-muted-soft mb-2">{field.helper}</p>
                 {field.rows > 1 ? (
                   <textarea
                     id={`field-${field.key}`}
@@ -160,7 +161,7 @@ export default function TrashPage() {
                     placeholder={field.placeholder}
                     rows={field.rows}
                     disabled={isPending}
-                    className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-xl text-[14px] outline-none focus:border-gs-blue resize-y disabled:opacity-50"
+                    className="w-full px-3 py-2 border border-gs-line-soft rounded-xl text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 resize-y disabled:opacity-50"
                   />
                 ) : (
                   <input
@@ -170,7 +171,7 @@ export default function TrashPage() {
                     onChange={(e) => update(field.key, e.target.value)}
                     placeholder={field.placeholder}
                     disabled={isPending}
-                    className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-xl text-[14px] outline-none focus:border-gs-blue disabled:opacity-50"
+                    className="w-full px-3 py-2 border border-gs-line-soft rounded-xl text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 disabled:opacity-50"
                   />
                 )}
               </div>
@@ -181,7 +182,7 @@ export default function TrashPage() {
             type="button"
             onClick={handleSubmit}
             disabled={isPending}
-            className="mt-5 w-full py-3.5 rounded-full bg-gs-navy-bright text-white font-bold text-[15px] cursor-pointer hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-6 w-full py-3.5 rounded-full bg-gs-navy-bright text-white font-bold text-base cursor-pointer hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? "저장 중..." : "쏟아내기"}
           </button>
@@ -189,12 +190,12 @@ export default function TrashPage() {
           {savedAt && (
             <p
               role="status"
-              className="mt-3 text-[12.5px] text-[#16a34a] text-center"
+              className="mt-3 text-xs text-gs-success text-center"
             >
               {savedAt} 잘 적어주셨어요. 나중에 성장방에서 다시 볼 수 있어요.
             </p>
           )}
-        </div>
+        </Card>
       </main>
     </div>
   );

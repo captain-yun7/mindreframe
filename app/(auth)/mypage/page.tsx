@@ -44,19 +44,19 @@ export default async function MyPage() {
     <PageLayout>
       <PageTitle>마이페이지</PageTitle>
 
-      <Card className="mt-4">
+      <Card className="mt-6">
         <CardTitle>프로필</CardTitle>
-        <div className="mt-3 space-y-3">
+        <div className="mt-4 space-y-3">
           <NicknameForm initial={profile.nickname} />
           <div className="flex items-center justify-between">
             <span className="text-[13px] text-gs-muted">이메일</span>
-            <span data-testid="profile-email" className="text-[14px] font-bold">
+            <span data-testid="profile-email" className="text-sm font-bold">
               {profile.email || "미등록"}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[13px] text-gs-muted">현재 플랜</span>
-            <span data-testid="profile-plan" className="text-[14px] font-bold uppercase">
+            <span data-testid="profile-plan" className="text-sm font-bold uppercase">
               {profile.plan}
             </span>
           </div>
@@ -65,17 +65,17 @@ export default async function MyPage() {
 
       <Card className="mt-4">
         <CardTitle>구독 & 결제</CardTitle>
-        <div className="mt-3 space-y-2">
+        <div className="mt-4 space-y-2">
           <Link
             href="/pricing"
-            className="block w-full py-3 text-center rounded-[14px] border border-gs-line bg-white text-[14px] font-bold hover:bg-[#f3f4f6] transition-colors"
+            className="block w-full py-3 text-center rounded-[14px] border border-gs-line-soft bg-white text-sm font-bold hover:bg-gs-surface-mid transition-colors"
           >
             요금제 변경
           </Link>
           <button
             type="button"
             disabled
-            className="w-full py-3 rounded-[14px] border border-gs-line bg-white text-[14px] font-bold text-gs-muted cursor-not-allowed opacity-60"
+            className="w-full py-3 rounded-[14px] border border-gs-line-soft bg-white text-sm font-bold text-gs-muted cursor-not-allowed opacity-60"
           >
             결제 내역 보기 (PG 심사 후)
           </button>
@@ -84,7 +84,7 @@ export default async function MyPage() {
 
       <Card className="mt-4">
         <CardTitle>설정</CardTitle>
-        <div className="mt-3 space-y-2">
+        <div className="mt-4 space-y-2">
           <LogoutButton />
         </div>
       </Card>
