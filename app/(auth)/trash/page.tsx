@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import type { Metadata } from "next";
 import { HeroBanner } from "@/components/hero-banner";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
+import { addThoughtRecord } from "@/lib/actions/thought-records";
+import { useToast } from "@/components/ui/toast";
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
@@ -14,23 +15,28 @@ const INITIAL_MESSAGE: ChatMessage = {
 export default function TrashPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
+  const toast = useToast();
 
   async function handleSend(content: string) {
     const userMsg: ChatMessage = { role: "user", content };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
-    // TODO: API Route로 교체 (/api/trash)
-    // 현재는 프로토타입용 더미 응답
-    setTimeout(() => {
-      const reply: ChatMessage = {
-        role: "assistant",
-        content:
-          "그런 일이 있었군요. 충분히 힘들었을 거예요.\n\n그때 머릿속에 가장 먼저 떠오른 생각은 뭐였나요?",
-      };
-      setMessages((prev) => [...prev, reply]);
+    const result = await addThoughtRecord({ situation: content });
+
+    if (!result.ok) {
+      toast.show(result.error, "error");
       setIsLoading(false);
-    }, 800);
+      return;
+    }
+
+    const reply: ChatMessage = {
+      role: "assistant",
+      content:
+        "그런 일이 있었군요. 충분히 힘들었을 거예요.\n\n잘 적어주셨어요. 나중에 성장방에서 다시 볼 수 있어요.",
+    };
+    setMessages((prev) => [...prev, reply]);
+    setIsLoading(false);
   }
 
   return (

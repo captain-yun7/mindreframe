@@ -24,3 +24,8 @@ drizzle/meta/
 scripts/.*-session/
 scripts/*-result.json
 scripts/*.png
+
+# Playwright e2e
+/test-results/
+/playwright-report/
+/playwright/.cache/

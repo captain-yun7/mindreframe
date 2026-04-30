@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardTitle, CardDescription } from "@/components/card";
 import { PageLayout, PageTitle, PageLead } from "@/components/page-layout";
 import { ChecklistItem } from "@/components/routine/checklist-item";
 import { MoodSlider } from "@/components/routine/mood-slider";
 import { RoutineSidebar } from "@/components/routine/sidebar";
+import {
+  saveEmotionScore,
+  saveGratitudeEntry,
+  toggleRoutineCheck,
+} from "@/lib/actions/dashboard";
+import { useToast } from "@/components/ui/toast";
 
 const checklistItems = [
   {
@@ -58,15 +64,35 @@ export default function DashboardPage() {
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [gratitudeText, setGratitudeText] = useState("");
   const gratitudeRef = useRef<HTMLTextAreaElement>(null);
+  const moodDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toast = useToast();
 
+  // 체크리스트 토글 → DB 저장
   function handleCheck(key: string, checked: boolean) {
     setChecks((prev) => ({ ...prev, [key]: checked }));
+    if (key === "mood") return; // mood는 별도 처리
+    toggleRoutineCheck(key, checked).then((r) => {
+      if (!r.ok) toast.show(r.error, "error");
+    });
   }
 
+  // 감정 점수 슬라이더 → 디바운스 후 DB upsert
   function handleMoodChange(value: number) {
     setMoodScore(value);
     setChecks((prev) => ({ ...prev, mood: true }));
+    if (moodDebounce.current) clearTimeout(moodDebounce.current);
+    moodDebounce.current = setTimeout(() => {
+      saveEmotionScore(value).then((r) => {
+        if (!r.ok) toast.show(r.error, "error");
+      });
+    }, 600);
   }
+
+  useEffect(() => {
+    return () => {
+      if (moodDebounce.current) clearTimeout(moodDebounce.current);
+    };
+  }, []);
 
   const totalChecks = checklistItems.length;
   const doneChecks = Object.values(checks).filter(Boolean).length;
@@ -169,11 +195,17 @@ export default function DashboardPage() {
             <div className="mt-3 flex gap-2.5 flex-wrap">
               <button
                 type="button"
-                onClick={() => {
-                  if (!gratitudeText.trim()) return;
-                  // TODO: API 저장
+                onClick={async () => {
+                  const trimmed = gratitudeText.trim();
+                  if (!trimmed) return;
+                  const r = await saveGratitudeEntry(trimmed);
+                  if (!r.ok) {
+                    toast.show(r.error, "error");
+                    return;
+                  }
                   setChecks((prev) => ({ ...prev, gratitude: true }));
-                  alert("감사일기가 저장되었습니다.");
+                  setGratitudeText("");
+                  toast.show("감사일기가 저장되었습니다", "success");
                 }}
                 className="border-[rgba(37,99,235,0.35)] border bg-gs-blue-light rounded-xl px-3 py-2.5 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
               >

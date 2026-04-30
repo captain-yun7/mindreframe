@@ -1,8 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { surveyResponses } from "@/lib/db/schema";
-import { getCurrentUser } from "@/lib/supabase-server";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 type SurveyInput = {
   channel: string;
@@ -29,7 +27,8 @@ const gad7Severity = (score: number) => {
 };
 
 export async function submitSurvey(input: SurveyInput) {
-  const user = await getCurrentUser();
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return { ok: false as const, error: "로그인이 필요합니다" };
   }
@@ -44,21 +43,25 @@ export async function submitSurvey(input: SurveyInput) {
         ? "anxiety"
         : "balanced";
 
-  await db.insert(surveyResponses).values({
-    userId: user.id,
+  const { error } = await supabase.from("survey_responses").insert({
+    user_id: user.id,
     channel: input.channel,
     gender: input.gender,
-    ageGroup: input.ageGroup,
-    concernAreas: [input.program],
-    depressionAnswers: input.depressionAnswers,
-    depressionScore,
-    depressionSeverity: phq9Severity(depressionScore),
-    anxietyAnswers: input.anxietyAnswers,
-    anxietyScore,
-    anxietySeverity: gad7Severity(anxietyScore),
-    recommendedTrack,
-    completedAt: new Date(),
+    age_group: input.ageGroup,
+    concern_areas: [input.program],
+    depression_answers: input.depressionAnswers,
+    depression_score: depressionScore,
+    depression_severity: phq9Severity(depressionScore),
+    anxiety_answers: input.anxietyAnswers,
+    anxiety_score: anxietyScore,
+    anxiety_severity: gad7Severity(anxietyScore),
+    recommended_track: recommendedTrack,
+    completed_at: new Date().toISOString(),
   });
+
+  if (error) {
+    return { ok: false as const, error: error.message };
+  }
 
   return {
     ok: true as const,

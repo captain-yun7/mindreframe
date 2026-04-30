@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
+import { sendChatMessage } from "@/lib/actions/chat";
+import { useToast } from "@/components/ui/toast";
 
 const steps = [
   {
@@ -32,22 +34,23 @@ const INITIAL_MESSAGE: ChatMessage = {
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const toast = useToast();
 
   async function handleSend(content: string) {
     const userMsg: ChatMessage = { role: "user", content };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
-    // TODO: /api/chat AI 스트리밍 연동
-    setTimeout(() => {
-      const reply: ChatMessage = {
-        role: "assistant",
-        content:
-          "그 상황이 정말 힘드셨겠어요.\n\n혹시 그때 '다들 나를 무시하는 것 같다'는 생각이 사실이라는 증거가 있었나요?\n구체적으로 누군가 무시하는 말이나 행동을 했는지 떠올려 보세요.",
-      };
-      setMessages((prev) => [...prev, reply]);
-      setIsLoading(false);
-    }, 1000);
+    const result = await sendChatMessage({ sessionId, content });
+    setIsLoading(false);
+
+    if (!result.ok) {
+      toast.show(result.error, "error");
+      return;
+    }
+    setSessionId(result.sessionId);
+    setMessages((prev) => [...prev, { role: "assistant", content: result.reply }]);
   }
 
   return (

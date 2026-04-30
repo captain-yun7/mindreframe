@@ -4,6 +4,8 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 const connectionString = process.env.DATABASE_URL!;
-const client = postgres(connectionString);
+
+// Supabase Transaction Pooler 호환: prepared statements 비활성화 필수
+const client = postgres(connectionString, { prepare: false });
 
 export const db = drizzle(client, { schema });
