@@ -3,11 +3,31 @@
 import { useState } from "react";
 import { PageLayout, PageTitle, PageLead } from "@/components/page-layout";
 import { Card, CardTitle, CardDescription } from "@/components/card";
+import { logExercise } from "@/lib/actions/exercise";
+import { useToast } from "@/components/ui/toast";
 
 type Mode = null | "courage" | "exposure";
 
 export default function ExercisePage() {
   const [mode, setMode] = useState<Mode>(null);
+  const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+
+  async function handleSave() {
+    if (!title.trim() || !mode) return;
+    setSaving(true);
+    const r = await logExercise({ mode, title: title.trim(), note: note.trim() || undefined });
+    setSaving(false);
+    if (!r.ok) {
+      toast.show(r.error, "error");
+      return;
+    }
+    toast.show("기록이 저장되었습니다", "success");
+    setTitle("");
+    setNote("");
+  }
 
   if (!mode) {
     return (
@@ -79,6 +99,8 @@ export default function ExercisePage() {
             </label>
             <input
               type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder={
                 isCourage
                   ? "예) 5분 산책, 설거지, 친구에게 문자"
@@ -93,6 +115,8 @@ export default function ExercisePage() {
             </label>
             <input
               type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
               placeholder={
                 isCourage ? "예) 생각보다 괜찮았다" : "예) 시작 전 70 → 끝나고 40"
               }
@@ -101,9 +125,11 @@ export default function ExercisePage() {
           </div>
           <button
             type="button"
-            className="border-[rgba(37,99,235,0.35)] border bg-gs-blue-light rounded-xl px-4 py-2.5 text-[13px] font-[950] cursor-pointer hover:translate-y-[-1px] hover:shadow-gs-card transition-transform"
+            disabled={saving || !title.trim()}
+            onClick={handleSave}
+            className="border-[rgba(37,99,235,0.35)] border bg-gs-blue-light rounded-xl px-4 py-2.5 text-[13px] font-[950] cursor-pointer hover:translate-y-[-1px] hover:shadow-gs-card transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            기록 저장
+            {saving ? "저장 중..." : "기록 저장"}
           </button>
         </div>
       </Card>

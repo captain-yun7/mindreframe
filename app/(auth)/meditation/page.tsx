@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { PageLayout, PageTitle } from "@/components/page-layout";
+import { logMeditation } from "@/lib/actions/meditation";
+import { useToast } from "@/components/ui/toast";
 
 type Category = "person" | "nature" | "music";
 
@@ -49,16 +51,34 @@ export default function MeditationPage() {
   const [activeTab, setActiveTab] = useState<Category>("person");
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playStartRef = useRef<number | null>(null);
+  const toast = useToast();
+
+  async function recordCompletion(track: Track) {
+    const elapsed = playStartRef.current
+      ? Math.round((Date.now() - playStartRef.current) / 1000)
+      : track.minutes * 60;
+    playStartRef.current = null;
+    const r = await logMeditation({
+      trackSlug: track.meta,
+      trackTitle: track.name,
+      duration: Math.min(elapsed, track.minutes * 60),
+    });
+    if (!r.ok) toast.show(r.error, "error");
+    else toast.show("명상 기록이 저장되었습니다", "success");
+  }
 
   function handlePlay(track: Track) {
     if (playing === track.src) {
       audioRef.current?.pause();
       setPlaying(null);
+      void recordCompletion(track);
       return;
     }
     if (audioRef.current) {
       audioRef.current.src = track.src;
-      audioRef.current.play();
+      audioRef.current.play().catch(() => {});
+      playStartRef.current = Date.now();
       setPlaying(track.src);
     }
   }
@@ -156,7 +176,12 @@ export default function MeditationPage() {
       {/* 숨겨진 오디오 */}
       <audio
         ref={audioRef}
-        onEnded={() => setPlaying(null)}
+        onEnded={() => {
+          const currentSrc = audioRef.current?.src;
+          const track = (Object.values(tracks).flat() as Track[]).find((t) => t.src === currentSrc);
+          setPlaying(null);
+          if (track) void recordCompletion(track);
+        }}
         className="hidden"
       />
     </PageLayout>

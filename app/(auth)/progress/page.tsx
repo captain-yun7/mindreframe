@@ -47,9 +47,18 @@ async function loadStats() {
     .eq("user_id", user.id);
   const uniqueDays = new Set((distinctDates ?? []).map((r) => r.checked_at)).size;
 
+  // 스트릭: 오늘부터 거꾸로 연속된 날 수
+  const dateSet = new Set((distinctDates ?? []).map((r) => r.checked_at));
+  let streak = 0;
+  const cursor = new Date();
+  while (dateSet.has(cursor.toISOString().slice(0, 10))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
   return {
     totalDays: uniqueDays,
-    streak: 0, // 후속 작업: 연속 날짜 계산
+    streak,
     analysesCount: analysesCount.count ?? 0,
     alternativesCount: alternativesCount.count ?? 0,
     gratitudeCount: gratitudeCount.count ?? 0,

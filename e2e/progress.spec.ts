@@ -36,6 +36,16 @@ test.describe("/progress 나의성장방", () => {
         alternative_thought: "한 번의 실수가 나를 정의하지 않는다",
       });
     }
+
+    // routine_checks: 오늘 + 어제 → streak 2 기대
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    await admin.from("routine_checks").insert([
+      { user_id: user.id, item_key: "trash", week: 1, checked_at: fmt(today) },
+      { user_id: user.id, item_key: "trash", week: 1, checked_at: fmt(yesterday) },
+    ]);
   });
 
   test.afterAll(async () => {
@@ -50,6 +60,8 @@ test.describe("/progress 나의성장방", () => {
     // KPI 검증
     await expect(page.getByTestId("kpi-분석 횟수")).toContainText("1회");
     await expect(page.getByTestId("kpi-대안사고")).toContainText("1개");
+    await expect(page.getByTestId("kpi-총 훈련일수")).toContainText("2일");
+    await expect(page.getByTestId("kpi-연속 스트릭")).toContainText("2일");
 
     // "첫 시작" 배지 획득 (analyses >= 1)
     const firstBadge = page.locator("text=첫 시작").first();
