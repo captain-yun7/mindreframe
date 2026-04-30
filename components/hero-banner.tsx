@@ -16,7 +16,7 @@ export function HeroBanner({
   return (
     <section
       className={cn(
-        "w-screen relative left-1/2 -ml-[50vw] bg-[radial-gradient(1200px_520px_at_18%_28%,rgba(255,255,255,0.12),rgba(255,255,255,0)_55%),linear-gradient(135deg,#0b2a78_0%,#133ea9_45%,#1f56d6_100%)] px-4 py-[52px] pb-12 text-center",
+        "w-screen relative left-1/2 -ml-[50vw] bg-[radial-gradient(1200px_520px_at_18%_28%,rgba(255,255,255,0.12),rgba(255,255,255,0)_55%),linear-gradient(135deg,#0b2a78_0%,#133ea9_45%,#1f56d6_100%)] px-4 pt-14 pb-12 text-center",
         className,
       )}
     >
