@@ -55,15 +55,17 @@ test.describe("위기 감지 안전망", () => {
     expect(messages![1].content).toContain("1393");
   });
 
-  test("/trash — 자해 키워드 입력 시 안내 배너 + 안내 메시지 응답", async ({ page }) => {
+  test("/trash — 자해 키워드 입력 시 안내 배너 노출", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/trash");
 
     const dangerous = "요즘 너무 힘들어서 자해하고 싶어요";
-    await page.locator('input[type="text"]').fill(dangerous);
-    await page.getByRole("button", { name: "전송" }).click();
+    await page.locator("#field-situation").fill(dangerous);
+    await page.getByRole("button", { name: "쏟아내기" }).click();
 
     await expect(page.getByTestId("crisis-banner")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("자살예방상담전화 1393").first()).toBeVisible();
+    await expect(
+      page.getByTestId("crisis-banner").getByRole("link", { name: "1393" }),
+    ).toBeVisible();
   });
 });

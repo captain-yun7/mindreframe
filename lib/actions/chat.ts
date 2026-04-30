@@ -6,6 +6,7 @@ import {
   detectCrisis,
   CRISIS_GUIDE_MESSAGE,
 } from "@/lib/cbt/crisis-detection";
+import { checkAndIncrementUsage } from "@/lib/ai/usage";
 
 const SYSTEM_PROMPT = `당신은 인지행동치료(CBT) 기반의 다정한 상담 코치입니다.
 사용자가 자동사고와 감정을 표현하면, 다음 흐름으로 대화하세요:
@@ -64,6 +65,12 @@ export async function sendChatMessage({ sessionId, content }: SendInput) {
       reply: CRISIS_GUIDE_MESSAGE,
       crisis: true as const,
     };
+  }
+
+  // [사용량] 플랜별 일일 한도 차감 (위기 응답은 차감 X — 안전 우선)
+  const usage = await checkAndIncrementUsage(supabase, user.id);
+  if (!usage.ok) {
+    return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
   // 이전 메시지 컨텍스트 로드 (마지막 10개)
