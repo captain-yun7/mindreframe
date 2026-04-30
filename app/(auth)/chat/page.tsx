@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
-import { sendChatMessage } from "@/lib/actions/chat";
+import { sendChatMessage, summarizeAndSaveSession } from "@/lib/actions/chat";
 import { useToast } from "@/components/ui/toast";
 
 const steps = [
@@ -34,6 +34,7 @@ const INITIAL_MESSAGE: ChatMessage = {
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const toast = useToast();
 
@@ -51,6 +52,30 @@ export default function ChatPage() {
     }
     setSessionId(result.sessionId);
     setMessages((prev) => [...prev, { role: "assistant", content: result.reply }]);
+  }
+
+  async function handleSummarize() {
+    if (!sessionId) {
+      toast.show("아직 대화가 없어요", "error");
+      return;
+    }
+    setIsSummarizing(true);
+    const r = await summarizeAndSaveSession(sessionId);
+    setIsSummarizing(false);
+    if (!r.ok) {
+      toast.show(r.error, "error");
+      return;
+    }
+    toast.show("분석이 저장되었습니다. 성장방에서 확인하세요", "success");
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "system",
+        content: `📌 분석 정리 저장됨\n• 상황: ${r.situation}\n• 자동사고: ${r.automaticThought}\n• 대안사고: ${r.alternativeThought}${
+          r.distortionTypes.length > 0 ? `\n• 인지왜곡: ${r.distortionTypes.join(", ")}` : ""
+        }`,
+      },
+    ]);
   }
 
   return (
@@ -89,6 +114,14 @@ export default function ChatPage() {
           headerTitle="가짜생각 분석기"
           headerTag="인지왜곡 분석 · 대안사고"
         />
+        <button
+          type="button"
+          onClick={handleSummarize}
+          disabled={isSummarizing || !sessionId || messages.length < 3}
+          className="mt-3 w-full py-3 rounded-[14px] bg-gs-blue-light border border-[rgba(37,99,235,0.35)] text-gs-blue text-[14px] font-bold cursor-pointer hover:translate-y-[-1px] hover:shadow-gs-card transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSummarizing ? "분석 정리 중..." : "이 대화 정리하고 저장"}
+        </button>
       </section>
     </main>
   );

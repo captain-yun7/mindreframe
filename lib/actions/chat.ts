@@ -118,3 +118,97 @@ export async function saveChatAnalysis({
   if (error) return { ok: false as const, error: error.message };
   return { ok: true as const };
 }
+
+const ANALYSIS_PROMPT = `당신은 인지행동치료(CBT) 전문가입니다.
+지금까지의 대화 전체를 보고 다음 항목을 추출해서 **JSON만** 출력하세요. 다른 텍스트 금지.
+
+{
+  "situation": "사건/상황 한 문장",
+  "automatic_thought": "사용자가 떠올린 자동사고 한 문장",
+  "alternative_thought": "대안적인 합리적 사고 한 문장",
+  "distortion_types": ["흑백사고" 같은 한글 인지왜곡 명칭 배열, 0~3개]
+}`;
+
+export async function summarizeAndSaveSession(sessionId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
+
+  const { data: history } = await supabase
+    .from("chat_messages")
+    .select("role, content")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true });
+  if (!history || history.length < 2) {
+    return { ok: false as const, error: "대화가 충분하지 않습니다" };
+  }
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) return { ok: false as const, error: "OPENAI_API_KEY 미설정" };
+
+  const transcript = history
+    .map((m) => `${m.role === "user" ? "사용자" : "코치"}: ${m.content}`)
+    .join("\n");
+
+  let parsed: {
+    situation: string;
+    automatic_thought: string;
+    alternative_thought: string;
+    distortion_types: string[];
+  };
+
+  try {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openaiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: ANALYSIS_PROMPT },
+          { role: "user", content: transcript },
+        ],
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        max_tokens: 500,
+      }),
+    });
+    const json = await resp.json();
+    if (!resp.ok) {
+      return { ok: false as const, error: `OpenAI: ${json.error?.message ?? resp.status}` };
+    }
+    const text = json.choices?.[0]?.message?.content ?? "{}";
+    parsed = JSON.parse(text);
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: `분석 실패: ${e instanceof Error ? e.message : String(e)}`,
+    };
+  }
+
+  const { error } = await supabase.from("chat_analyses").insert({
+    session_id: sessionId,
+    user_id: user.id,
+    situation: parsed.situation ?? "",
+    automatic_thought: parsed.automatic_thought ?? "",
+    alternative_thought: parsed.alternative_thought ?? "",
+    distortion_types: Array.isArray(parsed.distortion_types) ? parsed.distortion_types : [],
+  });
+  if (error) return { ok: false as const, error: error.message };
+
+  // 세션 종료 표시
+  await supabase
+    .from("chat_sessions")
+    .update({ status: "summarized" })
+    .eq("id", sessionId);
+
+  return {
+    ok: true as const,
+    situation: parsed.situation,
+    automaticThought: parsed.automatic_thought,
+    alternativeThought: parsed.alternative_thought,
+    distortionTypes: parsed.distortion_types ?? [],
+  };
+}
