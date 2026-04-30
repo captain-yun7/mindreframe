@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/toast";
 
 type Provider = "kakao" | "google" | "custom:naver";
 
@@ -43,6 +44,7 @@ const buttons: { provider: Provider; label: string; className: string; logo: Rea
 
 export function SocialLoginButtons() {
   const [loadingProvider, setLoadingProvider] = useState<Provider | null>(null);
+  const toast = useToast();
 
   const handleSignIn = async (provider: Provider) => {
     setLoadingProvider(provider);
@@ -60,7 +62,7 @@ export function SocialLoginButtons() {
       },
     });
     if (error) {
-      alert(`로그인 실패: ${error.message}`);
+      toast.show(`로그인 실패: ${error.message}`, "error");
       setLoadingProvider(null);
     }
   };
