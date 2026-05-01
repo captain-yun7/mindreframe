@@ -5,6 +5,12 @@ export const metadata: Metadata = {
   title: "요금제",
 };
 
+const PLAN_LABEL: Record<string, string> = {
+  light: "라이트 AI",
+  pro: "프로",
+  premium: "프리미엄",
+};
+
 const plans = [
   {
     name: "라이트 AI",
@@ -47,7 +53,14 @@ const plans = [
   },
 ];
 
-export default function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; required?: string }>;
+}) {
+  const params = await searchParams;
+  const requiredPlan = params.required && PLAN_LABEL[params.required] ? params.required : null;
+
   return (
     <div className="min-h-screen bg-gs-surface-muted">
       <div className="max-w-[880px] mx-auto px-5 pt-8 pb-20">
@@ -63,6 +76,15 @@ export default function PricingPage() {
             100일간의 인지행동치료 기반 생각 훈련 프로그램
           </p>
         </div>
+
+        {requiredPlan && (
+          <div
+            role="alert"
+            className="max-w-[640px] mx-auto mb-4 px-4 py-3 rounded-xl bg-gs-warning-bg border border-gs-warning-border text-gs-warning text-sm font-medium"
+          >
+            요청하신 페이지는 <b>{PLAN_LABEL[requiredPlan]}</b> 이상 플랜에서 이용 가능합니다. 아래에서 플랜을 선택해주세요.
+          </div>
+        )}
 
         {/* 베타 무료 배너 */}
         <div className="max-w-[480px] mx-auto bg-gs-text-strong text-white rounded-2xl p-4 text-[13px] leading-[1.6] mb-6">

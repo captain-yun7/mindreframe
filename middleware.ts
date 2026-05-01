@@ -1,5 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import {
+  getRoutePlanRequirement,
+  isPlanGateEnabled,
+  normalizePlan,
+  planAtLeast,
+} from "@/lib/auth/plan";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -43,6 +49,25 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Plan 가드 — ENV 토글 (베타: PLAN_GATE_ENABLED=false)
+  if (user && isPlanGateEnabled()) {
+    const required = getRoutePlanRequirement(pathname);
+    if (required) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("plan")
+        .eq("id", user.id)
+        .single();
+      const currentPlan = normalizePlan(profile?.plan);
+      if (!planAtLeast(currentPlan, required)) {
+        const upgradeUrl = new URL("/pricing", request.url);
+        upgradeUrl.searchParams.set("from", pathname);
+        upgradeUrl.searchParams.set("required", required);
+        return NextResponse.redirect(upgradeUrl);
+      }
+    }
   }
 
   return response;
