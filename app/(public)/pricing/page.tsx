@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SelectPlanButton } from "./select-button";
 import type { Plan } from "@/lib/auth/plan";
 
 export const metadata: Metadata = {
@@ -145,7 +144,16 @@ export default async function PricingPage({
                   </li>
                 ))}
               </ul>
-              <SelectPlanButton plan={plan.key} recommended={plan.recommended} />
+              <Link
+                href={`/checkout?plan=${plan.key}`}
+                className={`block w-full py-3 rounded-[14px] text-sm font-bold text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2 ${
+                  plan.recommended
+                    ? "bg-gs-blue text-white hover:bg-gs-blue-hover"
+                    : "bg-white border border-gs-line-mid text-gs-text-soft hover:bg-gs-surface-mid"
+                }`}
+              >
+                선택하기
+              </Link>
             </div>
           ))}
         </div>
@@ -166,9 +174,10 @@ export default async function PricingPage({
           </p>
           <button
             type="button"
-            className="w-full py-3 rounded-[14px] border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft cursor-pointer hover:bg-gs-surface-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
+            disabled
+            className="w-full py-3 rounded-[14px] border border-gs-line-mid bg-gs-surface-mid text-sm font-bold text-gs-muted-soft cursor-not-allowed"
           >
-            월 구독 시작하기
+            월 구독 준비 중
           </button>
         </div>
 
