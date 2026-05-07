@@ -64,6 +64,9 @@ export default function DashboardPage() {
   const [moodScore, setMoodScore] = useState(50);
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [gratitudeText, setGratitudeText] = useState("");
+  const [savedGratitude, setSavedGratitude] = useState<string>("");
+  const [todayDate, setTodayDate] = useState<string>("");
+  const [loaded, setLoaded] = useState(false);
   const gratitudeRef = useRef<HTMLTextAreaElement>(null);
   const moodDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToast();
@@ -102,12 +105,28 @@ export default function DashboardPage() {
       if (r.gratitudeDone) initial.gratitude = true;
       if (r.moodScore != null) initial.mood = true;
       setChecks(initial);
+      setSavedGratitude(r.gratitudeContent ?? "");
+      setTodayDate(r.today);
+      setLoaded(true);
     });
     return () => {
       cancelled = true;
       if (moodDebounce.current) clearTimeout(moodDebounce.current);
     };
   }, []);
+
+  // F13: 자정 갱신 + 탭 포커스 시 데이터 재로드
+  useEffect(() => {
+    const onFocus = () => {
+      const newDate = new Date().toISOString().slice(0, 10);
+      if (todayDate && newDate !== todayDate) {
+        // 날짜 바뀜 → 새로고침 (router.refresh로는 client state 못 비움 → 단순 reload)
+        window.location.reload();
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [todayDate]);
 
   const totalChecks = checklistItems.length;
   const doneChecks = Object.values(checks).filter(Boolean).length;
@@ -198,12 +217,28 @@ export default function DashboardPage() {
             <CardDescription>
               오늘의 감사 한 줄. 저장하면 성장방에 날짜별로 쌓입니다.
             </CardDescription>
+
+            {/* F16: 오늘 저장된 감사일기를 흐리게 잔존 */}
+            {savedGratitude && (
+              <div
+                data-testid="saved-gratitude"
+                className="mt-4 p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px] text-gs-text-soft opacity-70 whitespace-pre-line"
+              >
+                <div className="text-[11px] font-bold text-gs-muted mb-1">
+                  ✓ 오늘 저장됨
+                </div>
+                {savedGratitude}
+              </div>
+            )}
+
             <textarea
               ref={gratitudeRef}
               value={gratitudeText}
               onChange={(e) => setGratitudeText(e.target.value)}
               placeholder={
-                "예) 오늘은 내가 포기하지 않은 게 고맙다.\n예) 따뜻한 말 한마디가 고마웠다."
+                savedGratitude
+                  ? "추가로 더 적어볼까요?"
+                  : "예) 오늘은 내가 포기하지 않은 게 고맙다.\n예) 따뜻한 말 한마디가 고마웠다."
               }
               className="w-full mt-4 border border-gs-line-soft rounded-[14px] p-3 min-h-[120px] resize-y outline-none bg-white focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20"
             />
@@ -219,6 +254,7 @@ export default function DashboardPage() {
                     return;
                   }
                   setChecks((prev) => ({ ...prev, gratitude: true }));
+                  setSavedGratitude(trimmed);
                   setGratitudeText("");
                   toast.show("감사일기가 저장되었습니다", "success");
                 }}

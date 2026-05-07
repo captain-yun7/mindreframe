@@ -53,10 +53,12 @@ export async function loadTodayDashboard() {
       .maybeSingle(),
     supabase
       .from("gratitude_entries")
-      .select("id")
+      .select("id, content")
       .eq("user_id", user.id)
       .eq("recorded_at", today)
-      .limit(1),
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
     supabase
       .from("routine_checks")
       .select("item_key")
@@ -67,8 +69,10 @@ export async function loadTodayDashboard() {
   return {
     ok: true as const,
     moodScore: mood.data?.score ?? null,
-    gratitudeDone: (gratitude.data?.length ?? 0) > 0,
+    gratitudeDone: !!gratitude.data,
+    gratitudeContent: gratitude.data?.content ?? "",
     checkedKeys: (checks.data ?? []).map((r) => r.item_key),
+    today,
   };
 }
 
