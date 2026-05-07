@@ -60,8 +60,8 @@ test.describe("위기 감지 안전망", () => {
     await page.goto("/trash");
 
     const dangerous = "요즘 너무 힘들어서 자해하고 싶어요";
-    await page.locator("#field-situation").fill(dangerous);
-    await page.getByRole("button", { name: "쏟아내기" }).click();
+    await page.locator('input[type="text"]').fill(dangerous);
+    await page.getByRole("button", { name: "전송" }).click();
 
     await expect(page.getByTestId("crisis-banner")).toBeVisible({ timeout: 10_000 });
     await expect(
