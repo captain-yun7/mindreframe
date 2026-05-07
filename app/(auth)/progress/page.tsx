@@ -1,6 +1,7 @@
 import { PageLayout, PageTitle, PageLead } from "@/components/page-layout";
 import { Card, CardTitle, CardDescription } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { AnalysisCardList, type AnalysisItem } from "./analysis-card-list";
 
 const fixedBadges = [
   { icon: "🌱", title: "첫 시작", desc: "첫 가짜생각 분석 완료" },
@@ -208,44 +209,12 @@ export default async function ProgressPage() {
         )}
       </Card>
 
-      {/* 가짜생각 분석기 — JSON 카드 */}
+      {/* 가짜생각 분석기 — JSON 카드 + 클릭 시 대화 전체 모달 */}
       <Card className="mt-4">
         <CardTitle>가짜생각 분석 기록</CardTitle>
         <CardDescription>분석기와 나눈 대화에서 추출된 인지왜곡·자동사고·대안사고.</CardDescription>
         {stats && stats.recentAnalyses.length > 0 ? (
-          <ul className="mt-4 space-y-3" data-testid="recent-analyses">
-            {stats.recentAnalyses.map((a) => (
-              <li
-                key={a.id}
-                className="p-4 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px] space-y-1.5"
-              >
-                <div>
-                  <span className="text-gs-muted font-bold">상황 · </span>
-                  {a.situation || "—"}
-                </div>
-                <div>
-                  <span className="text-gs-muted font-bold">자동사고 · </span>
-                  {a.automatic_thought || "—"}
-                </div>
-                <div>
-                  <span className="text-gs-muted font-bold">대안사고 · </span>
-                  {a.alternative_thought || "—"}
-                </div>
-                {Array.isArray(a.distortion_types) && a.distortion_types.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {a.distortion_types.map((d: string) => (
-                      <span
-                        key={d}
-                        className="inline-block px-2 py-0.5 rounded-full text-[11px] bg-gs-blue-soft text-gs-blue-soft-fg"
-                      >
-                        #{d}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+          <AnalysisCardList items={stats.recentAnalyses as AnalysisItem[]} />
         ) : (
           <div className="mt-4 text-center text-gs-muted text-[13px] py-6">
             분석기에서 대화 후 &ldquo;정리하고 저장&rdquo;을 누르면 여기에 모입니다.

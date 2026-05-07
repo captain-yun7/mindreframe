@@ -77,6 +77,13 @@ test.describe("/progress 나의성장방", () => {
 
     // F8: 감사일기 카드
     await expect(page.getByTestId("recent-gratitudes")).toContainText("오늘 잘 견뎠다");
+
+    // F7: "대화 전체 보기" 클릭 → 모달 노출
+    await page.getByRole("button", { name: /대화 전체 보기/ }).first().click();
+    await expect(page.getByRole("dialog", { name: "대화 전체 보기" })).toBeVisible();
+    // 닫기
+    await page.getByRole("button", { name: "닫기" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
   test("F8: 통합 카드 — 모든 카테고리 fallback 메시지 노출 (데이터 없을 때)", async ({ page }) => {
