@@ -65,4 +65,27 @@ test.describe("/survey 온보딩 설문", () => {
     expect(data!.depression_severity).toBe("severe");
     expect(data!.anxiety_severity).toBe("severe");
   });
+
+  test("F23 — 결과 페이지에 추천 플랜 카드 노출", async ({ page }) => {
+    const u = await createTestUser();
+    await loginAs(page, u);
+    await page.goto("/survey");
+
+    // 빠르게 끝까지 (점수 무관, 카드 노출만 확인)
+    await page.getByRole("button", { name: "인스타그램" }).click();
+    await page.getByRole("button", { name: "우울 관리" }).click();
+    await page.getByRole("button", { name: "여성" }).click();
+    await page.getByRole("button", { name: "30대" }).click();
+    for (let i = 0; i < 9; i++) {
+      await page.getByRole("button", { name: /거의 매일/ }).first().click();
+    }
+    for (let i = 0; i < 7; i++) {
+      await page.getByRole("button", { name: /거의 매일/ }).first().click();
+    }
+
+    await expect(page.getByTestId("recommended-plan")).toBeVisible();
+    await expect(page.getByTestId("recommended-plan")).toContainText("플랜");
+
+    await deleteTestUser(u.id);
+  });
 });

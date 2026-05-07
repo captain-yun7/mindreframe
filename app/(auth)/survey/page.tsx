@@ -252,6 +252,37 @@ export default function SurveyPage() {
         </div>
       </div>
 
+      {/* F23 — 추천 플랜 카드 (점수 기반) */}
+      {(() => {
+        // 추천 룰: 부담 합 100 이하 → 라이트, 100~140 → 프로, 140 초과 → 프리미엄
+        const total = depPercent + anxPercent;
+        const recommended =
+          total > 140
+            ? { key: "premium", label: "프리미엄", reason: "전담 상담사와 함께 깊이 있는 변화를" }
+            : total > 100
+              ? { key: "pro", label: "프로", reason: "행동연습장·명상·1:1 코칭으로 입체적 케어를" }
+              : { key: "light", label: "라이트 AI", reason: "AI 분석과 기록으로 부드러운 시작을" };
+
+        return (
+          <div
+            data-testid="recommended-plan"
+            className="mb-6 p-5 rounded-[18px] bg-gs-blue text-white shadow-gs-card-hover"
+          >
+            <div className="text-[11px] font-bold opacity-80 mb-1">📌 당신에게 추천</div>
+            <div className="text-xl font-black mb-1">{recommended.label} 플랜</div>
+            <p className="text-sm opacity-90 leading-[1.6] mb-4">{recommended.reason}</p>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => handleStart("/pricing")}
+              className="px-4 py-2 rounded-full bg-white text-gs-blue text-sm font-bold disabled:opacity-60"
+            >
+              플랜 자세히 보기 →
+            </button>
+          </div>
+        );
+      })()}
+
       <p className="text-sm text-gs-text-soft leading-[1.65] mb-6">
         이 결과는 <b>진단이 아니라</b> 지금의 마음 부담을 가늠해보는 참고값이에요.
         <br />
