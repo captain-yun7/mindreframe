@@ -56,6 +56,40 @@ async function loadStats() {
     cursor.setDate(cursor.getDate() - 1);
   }
 
+  // 통합 노출용 5개 카테고리 최근 기록 (각 5건)
+  const [thoughts, gratitudes, exercises, meditations, analyses] = await Promise.all([
+    supabase
+      .from("thought_records")
+      .select("id, situation, thought, emotion, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("gratitude_entries")
+      .select("id, content, recorded_at, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("exercise_logs")
+      .select("id, exercise_key, exercise_title, note, completed_at")
+      .eq("user_id", user.id)
+      .order("completed_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("meditation_logs")
+      .select("id, track_title, duration, completed_at")
+      .eq("user_id", user.id)
+      .order("completed_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("chat_analyses")
+      .select("id, session_id, situation, automatic_thought, alternative_thought, distortion_types, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+  ]);
+
   return {
     totalDays: uniqueDays,
     streak,
@@ -65,6 +99,11 @@ async function loadStats() {
     meditationCount: meditationCount.count ?? 0,
     recentAlternatives: recentAlternatives.data ?? [],
     routineCount: routineCount.count ?? 0,
+    recentThoughts: thoughts.data ?? [],
+    recentGratitudes: gratitudes.data ?? [],
+    recentExercises: exercises.data ?? [],
+    recentMeditations: meditations.data ?? [],
+    recentAnalyses: analyses.data ?? [],
   };
 }
 
@@ -165,6 +204,158 @@ export default async function ProgressPage() {
             아직 저장된 대안사고가 없습니다.
             <br />
             가짜생각 분석기를 사용해보세요.
+          </div>
+        )}
+      </Card>
+
+      {/* 가짜생각 분석기 — JSON 카드 */}
+      <Card className="mt-4">
+        <CardTitle>가짜생각 분석 기록</CardTitle>
+        <CardDescription>분석기와 나눈 대화에서 추출된 인지왜곡·자동사고·대안사고.</CardDescription>
+        {stats && stats.recentAnalyses.length > 0 ? (
+          <ul className="mt-4 space-y-3" data-testid="recent-analyses">
+            {stats.recentAnalyses.map((a) => (
+              <li
+                key={a.id}
+                className="p-4 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px] space-y-1.5"
+              >
+                <div>
+                  <span className="text-gs-muted font-bold">상황 · </span>
+                  {a.situation || "—"}
+                </div>
+                <div>
+                  <span className="text-gs-muted font-bold">자동사고 · </span>
+                  {a.automatic_thought || "—"}
+                </div>
+                <div>
+                  <span className="text-gs-muted font-bold">대안사고 · </span>
+                  {a.alternative_thought || "—"}
+                </div>
+                {Array.isArray(a.distortion_types) && a.distortion_types.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {a.distortion_types.map((d: string) => (
+                      <span
+                        key={d}
+                        className="inline-block px-2 py-0.5 rounded-full text-[11px] bg-gs-blue-soft text-gs-blue-soft-fg"
+                      >
+                        #{d}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-4 text-center text-gs-muted text-[13px] py-6">
+            분석기에서 대화 후 &ldquo;정리하고 저장&rdquo;을 누르면 여기에 모입니다.
+          </div>
+        )}
+      </Card>
+
+      {/* 생각쓰레기통 */}
+      <Card className="mt-4">
+        <CardTitle>생각쓰레기통 기록</CardTitle>
+        <CardDescription>상황·생각·감정·신체반응·행동으로 분리된 기록.</CardDescription>
+        {stats && stats.recentThoughts.length > 0 ? (
+          <ul className="mt-4 space-y-2" data-testid="recent-thoughts">
+            {stats.recentThoughts.map((t) => (
+              <li
+                key={t.id}
+                className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px]"
+              >
+                <div className="text-gs-muted text-[11px] mb-1">
+                  {new Date(t.created_at).toLocaleString("ko-KR")}
+                </div>
+                <div className="font-bold">{t.situation}</div>
+                {t.thought && <div className="text-gs-text-soft mt-0.5">생각 · {t.thought}</div>}
+                {t.emotion && <div className="text-gs-text-soft">감정 · {t.emotion}</div>}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-4 text-center text-gs-muted text-[13px] py-6">
+            생각쓰레기통에 기록을 남기면 여기에 모입니다.
+          </div>
+        )}
+      </Card>
+
+      {/* 감사일기 */}
+      <Card className="mt-4">
+        <CardTitle>감사일기</CardTitle>
+        <CardDescription>오늘 감사했던 한 줄을 모았어요.</CardDescription>
+        {stats && stats.recentGratitudes.length > 0 ? (
+          <ul className="mt-4 space-y-2" data-testid="recent-gratitudes">
+            {stats.recentGratitudes.map((g) => (
+              <li
+                key={g.id}
+                className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px]"
+              >
+                <div className="text-gs-muted text-[11px] mb-1">{g.recorded_at}</div>
+                <div>{g.content}</div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-4 text-center text-gs-muted text-[13px] py-6">
+            오늘의 루틴에서 감사일기를 저장하면 여기에 모입니다.
+          </div>
+        )}
+      </Card>
+
+      {/* 행동연습장 */}
+      <Card className="mt-4">
+        <CardTitle>행동연습장 기록</CardTitle>
+        <CardDescription>용기있는 행동·불안 노출 실천 기록.</CardDescription>
+        {stats && stats.recentExercises.length > 0 ? (
+          <ul className="mt-4 space-y-2" data-testid="recent-exercises">
+            {stats.recentExercises.map((e) => (
+              <li
+                key={e.id}
+                className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px]"
+              >
+                <div className="text-gs-muted text-[11px] mb-1">
+                  {e.exercise_key === "courage" ? "용기있는 행동" : "불안노출"} ·{" "}
+                  {new Date(e.completed_at).toLocaleString("ko-KR")}
+                </div>
+                <div className="font-bold">{e.exercise_title}</div>
+                {e.note && <div className="text-gs-text-soft mt-0.5">{e.note}</div>}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-4 text-center text-gs-muted text-[13px] py-6">
+            행동연습장에서 기록을 저장하면 여기에 모입니다.
+          </div>
+        )}
+      </Card>
+
+      {/* 명상 */}
+      <Card className="mt-4">
+        <CardTitle>명상 기록</CardTitle>
+        <CardDescription>명상 트랙 재생 기록.</CardDescription>
+        {stats && stats.recentMeditations.length > 0 ? (
+          <ul className="mt-4 space-y-2" data-testid="recent-meditations">
+            {stats.recentMeditations.map((m) => (
+              <li
+                key={m.id}
+                className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px] flex justify-between"
+              >
+                <div>
+                  <div className="font-bold">{m.track_title}</div>
+                  <div className="text-gs-muted text-[11px] mt-0.5">
+                    {new Date(m.completed_at).toLocaleString("ko-KR")}
+                  </div>
+                </div>
+                <div className="text-gs-muted text-xs self-center">
+                  {Math.round((m.duration ?? 0) / 60)}분
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="mt-4 text-center text-gs-muted text-[13px] py-6">
+            명상 트랙을 재생/완료하면 여기에 모입니다.
           </div>
         )}
       </Card>

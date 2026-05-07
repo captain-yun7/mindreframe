@@ -68,6 +68,28 @@ test.describe("/progress 나의성장방", () => {
     await expect(firstBadge).toBeVisible();
 
     // 대안사고 카드에 실제 텍스트 노출
-    await expect(page.getByText("한 번의 실수가 나를 정의하지 않는다")).toBeVisible();
+    await expect(page.getByText("한 번의 실수가 나를 정의하지 않는다").first()).toBeVisible();
+
+    // F8: 가짜생각 분석 기록 카드 (situation/automatic/alternative + distortion 태그)
+    const analyses = page.getByTestId("recent-analyses");
+    await expect(analyses).toContainText("발표 망침");
+    await expect(analyses).toContainText("나는 무능하다");
+
+    // F8: 감사일기 카드
+    await expect(page.getByTestId("recent-gratitudes")).toContainText("오늘 잘 견뎠다");
+  });
+
+  test("F8: 통합 카드 — 모든 카테고리 fallback 메시지 노출 (데이터 없을 때)", async ({ page }) => {
+    // 새 사용자
+    const fresh = await createTestUser();
+    await loginAs(page, fresh);
+    await page.goto("/progress");
+
+    await expect(page.getByText("생각쓰레기통에 기록을 남기면")).toBeVisible();
+    await expect(page.getByText("오늘의 루틴에서 감사일기를 저장하면")).toBeVisible();
+    await expect(page.getByText("행동연습장에서 기록을 저장하면")).toBeVisible();
+    await expect(page.getByText("명상 트랙을 재생/완료하면")).toBeVisible();
+
+    await deleteTestUser(fresh.id);
   });
 });

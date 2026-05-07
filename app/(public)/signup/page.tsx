@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signUpAnonymousWithNickname } from "@/lib/actions/signup";
 import { useToast } from "@/components/ui/toast";
+import { supabase } from "@/lib/supabase";
 
 export default function SignupPage() {
+  // 이미 로그인된 사용자는 /dashboard로 즉시 이동
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        window.location.replace("/dashboard");
+      }
+    });
+  }, []);
   const router = useRouter();
   const toast = useToast();
   const [nickname, setNickname] = useState("");

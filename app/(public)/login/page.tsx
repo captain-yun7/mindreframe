@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SocialLoginButtons } from "./social-login-buttons";
+import { getCurrentUser } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
   title: "로그인",
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  // 이미 로그인된 사용자는 next 또는 /dashboard로 즉시 redirect
+  const user = await getCurrentUser();
+  if (user) {
+    const params = await searchParams;
+    redirect(params.next ?? "/dashboard");
+  }
   return (
     <div className="flex-1 bg-gs-bg flex items-center justify-center px-4 py-16">
       <div className="bg-white w-full max-w-[520px] px-7 py-8 rounded-[18px] shadow-gs-card-hover text-center">
