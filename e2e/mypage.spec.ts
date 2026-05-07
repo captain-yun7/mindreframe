@@ -18,7 +18,7 @@ test.describe("/mypage 마이페이지", () => {
 
     await expect(page.getByRole("heading", { name: "마이페이지" })).toBeVisible();
     await expect(page.getByTestId("profile-email")).toContainText(user.email);
-    await expect(page.getByTestId("profile-plan")).toContainText("free");
+    await expect(page.getByTestId("profile-plan")).toContainText("premium");
 
     // 닉네임 변경
     await page.getByRole("button", { name: "변경" }).click();

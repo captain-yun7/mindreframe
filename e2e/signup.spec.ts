@@ -17,7 +17,7 @@ test.describe("/signup 닉네임 익명 가입", () => {
     await page.getByRole("button", { name: "바로 시작하기" }).click();
 
     // 두 가지 가능성 중 하나는 반드시 발생해야 함.
-    const survey = page.waitForURL("**/survey/intro", { timeout: 15_000 }).then(() => "survey" as const);
+    const survey = page.waitForURL("**/survey", { timeout: 15_000 }).then(() => "survey" as const);
     const fallback = page
       .getByText("익명 가입을 사용할 수 없어요")
       .waitFor({ timeout: 15_000 })

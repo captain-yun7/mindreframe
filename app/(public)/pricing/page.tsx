@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SelectPlanButton } from "./select-button";
+import type { Plan } from "@/lib/auth/plan";
 
 export const metadata: Metadata = {
   title: "요금제",
@@ -11,8 +13,16 @@ const PLAN_LABEL: Record<string, string> = {
   premium: "프리미엄",
 };
 
-const plans = [
+const plans: Array<{
+  key: Plan;
+  name: string;
+  price: string;
+  period: string;
+  features: string[];
+  recommended: boolean;
+}> = [
   {
+    key: "light",
     name: "라이트 AI",
     price: "254,000",
     period: "100일",
@@ -26,6 +36,7 @@ const plans = [
     recommended: false,
   },
   {
+    key: "pro",
     name: "프로",
     price: "394,000",
     period: "100일",
@@ -39,6 +50,7 @@ const plans = [
     recommended: true,
   },
   {
+    key: "premium",
     name: "프리미엄",
     price: "694,000",
     period: "100일",
@@ -133,19 +145,14 @@ export default async function PricingPage({
                   </li>
                 ))}
               </ul>
-              <button
-                type="button"
-                className={`w-full py-3 rounded-[14px] text-sm font-bold cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2 ${
-                  plan.recommended
-                    ? "bg-gs-blue text-white hover:bg-gs-blue-hover"
-                    : "bg-white border border-gs-line-mid text-gs-text-soft hover:bg-gs-surface-mid"
-                }`}
-              >
-                선택하기
-              </button>
+              <SelectPlanButton plan={plan.key} recommended={plan.recommended} />
             </div>
           ))}
         </div>
+        {/* 베타 안내 */}
+        <p className="mt-3 text-center text-xs text-gs-muted-light leading-[1.6]">
+          베타 기간엔 결제 없이 100일 체험 활성화됩니다 (PG 심사 후 실결제로 전환).
+        </p>
 
         {/* 월 구독 */}
         <div className="max-w-[480px] mx-auto mt-6 bg-white border border-gs-line-soft rounded-[18px] p-5 text-center shadow-gs-card">

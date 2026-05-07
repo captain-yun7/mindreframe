@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,6 +22,7 @@ export function SiteHeader() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -30,6 +31,23 @@ export function SiteHeader() {
     });
     return () => subscription.subscription.unsubscribe();
   }, []);
+
+  // 라우트 변경 시 메뉴 자동 닫힘
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  // 외부 클릭 시 메뉴 자동 닫힘
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -74,12 +92,13 @@ export function SiteHeader() {
 
         {/* 네비게이션 */}
         <nav
+          ref={navRef}
           className={`
             flex items-center gap-2 text-[13px]
             max-lg:hidden
             ${
               menuOpen
-                ? "max-lg:!flex max-lg:flex-col max-lg:absolute max-lg:top-16 max-lg:right-3 max-lg:w-[110px] max-lg:p-4 max-lg:bg-white max-lg:rounded-[14px] max-lg:shadow-gs-dropdown max-lg:z-50"
+                ? "max-lg:!flex max-lg:flex-col max-lg:items-stretch max-lg:absolute max-lg:top-16 max-lg:right-3 max-lg:w-[180px] max-lg:p-4 max-lg:bg-white max-lg:rounded-[14px] max-lg:shadow-gs-dropdown max-lg:z-50"
                 : ""
             }
           `}
@@ -89,9 +108,10 @@ export function SiteHeader() {
               key={item.href}
               href={item.href}
               className={`
-                text-gs-text-strong font-medium px-2 py-2 rounded-lg tracking-[-0.04em] whitespace-nowrap
+                text-gs-text-strong font-medium px-3 py-2 rounded-lg tracking-[-0.04em] whitespace-nowrap text-center
                 hover:bg-gs-blue-soft hover:text-gs-blue-hover
                 ${pathname === item.href ? "bg-gs-blue-soft text-gs-blue-hover" : ""}
+                max-lg:text-left
               `}
               onClick={() => setMenuOpen(false)}
             >
@@ -101,14 +121,14 @@ export function SiteHeader() {
 
           {isLoggedIn ? (
             <>
-              <span className="font-bold text-gs-text-strong ml-2">
+              <span className="font-bold text-gs-text-strong ml-2 max-lg:ml-0 max-lg:mt-2 max-lg:px-3 whitespace-nowrap">
                 {userName}
                 <span className="font-normal text-gs-muted-soft ml-px">님</span>
               </span>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="ml-2 border border-gs-danger-border bg-gs-danger-bg text-gs-danger px-3 py-2 rounded-full text-[13px] font-bold cursor-pointer hover:bg-gs-danger-border"
+                className="ml-2 border border-gs-danger-border bg-gs-danger-bg text-gs-danger px-3 py-2 rounded-full text-[13px] font-bold cursor-pointer hover:bg-gs-danger-border whitespace-nowrap max-lg:ml-0 max-lg:mt-1 max-lg:rounded-lg max-lg:text-center"
               >
                 로그아웃
               </button>
@@ -116,7 +136,7 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/login"
-              className="ml-2 border border-gs-line-mid bg-transparent px-3 py-2 rounded-full text-[13px] font-bold cursor-pointer hover:bg-gs-surface-mid"
+              className="ml-2 border border-gs-line-mid bg-transparent px-3 py-2 rounded-full text-[13px] font-bold cursor-pointer hover:bg-gs-surface-mid whitespace-nowrap max-lg:ml-0 max-lg:mt-1 max-lg:rounded-lg max-lg:text-center"
             >
               로그인
             </Link>

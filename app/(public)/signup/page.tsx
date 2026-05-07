@@ -30,7 +30,7 @@ export default function SignupPage() {
         return;
       }
       toast.show(`환영해요, ${trimmed}님!`, "success");
-      router.push("/survey/intro");
+      router.push("/survey");
       router.refresh();
     });
   }
@@ -59,7 +59,7 @@ export default function SignupPage() {
             placeholder="어떻게 불러드릴까요?"
             disabled={isPending}
             maxLength={30}
-            className="w-full py-4 px-4 rounded-[14px] border-none text-base text-gs-text-strong outline-none focus:ring-4 focus:ring-gs-gold/40 placeholder:text-gs-muted-light disabled:opacity-60"
+            className="w-full py-4 px-4 rounded-[14px] border-2 border-white/30 bg-white/10 text-base text-white outline-none focus:border-gs-gold focus:ring-4 focus:ring-gs-gold/40 placeholder:text-white/50 disabled:opacity-60"
           />
           <button
             type="button"

@@ -80,7 +80,15 @@ export default async function ProgressPage() {
 
   // 자동 배지 판정 (임시 — 추후 user_badges 테이블 정식 운영)
   const earnedSet = new Set<string>();
-  if ((stats?.analysesCount ?? 0) >= 1) earnedSet.add("첫 시작");
+  // 첫 시작: 분석 1회 또는 어떤 활동이라도 1건 (가입 후 첫 인터랙션)
+  if (
+    (stats?.analysesCount ?? 0) >= 1 ||
+    (stats?.totalDays ?? 0) >= 1 ||
+    (stats?.gratitudeCount ?? 0) >= 1 ||
+    (stats?.meditationCount ?? 0) >= 1
+  ) {
+    earnedSet.add("첫 시작");
+  }
   if ((stats?.totalDays ?? 0) >= 3) earnedSet.add("3일 연속");
   if ((stats?.totalDays ?? 0) >= 7) earnedSet.add("7일 연속");
   if ((stats?.totalDays ?? 0) >= 30) earnedSet.add("30일 돌파");

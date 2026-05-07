@@ -10,7 +10,7 @@ const admin = createClient(supabaseUrl, serviceKey, {
 
 export type TestUser = { id: string; email: string; password: string };
 
-export async function createTestUser(): Promise<TestUser> {
+export async function createTestUser(plan: "free" | "light" | "pro" | "premium" = "premium"): Promise<TestUser> {
   const tag = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const email = `e2e+${tag}@mindreframe.local`;
   const password = "Test1234!" + tag;
@@ -22,6 +22,18 @@ export async function createTestUser(): Promise<TestUser> {
     user_metadata: { full_name: `E2E ${tag}` },
   });
   if (error) throw new Error(`createTestUser: ${error.message}`);
+
+  // PLAN_GATE_ENABLED=true 환경에서 모든 페이지 접근 가능하도록 기본 premium.
+  // 트리거가 public.users 자동 생성하므로 update만 필요. 생성 전이면 한 번 retry.
+  for (let i = 0; i < 3; i++) {
+    const { error: updateError, count } = await admin
+      .from("users")
+      .update({ plan }, { count: "exact" })
+      .eq("id", data.user.id);
+    if (!updateError && (count ?? 0) > 0) break;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
   return { id: data.user.id, email, password };
 }
 
