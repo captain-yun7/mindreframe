@@ -3,6 +3,7 @@ import { Card, CardTitle, CardDescription } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { AnalysisCardList, type AnalysisItem } from "./analysis-card-list";
 import { parseExerciseNote } from "@/lib/exercise-payload";
+import { EmotionChart } from "./emotion-chart";
 
 const fixedBadges = [
   { icon: "🌱", title: "첫 시작", desc: "첫 가짜생각 분석 완료" },
@@ -58,6 +59,21 @@ async function loadStats() {
     cursor.setDate(cursor.getDate() - 1);
   }
 
+  // F18: 감정 점수 14일치 (그래프용)
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
+  const { data: emotionRows } = await supabase
+    .from("emotion_scores")
+    .select("score, recorded_at")
+    .eq("user_id", user.id)
+    .eq("source", "routine")
+    .gte("recorded_at", fourteenDaysAgo.toISOString().slice(0, 10))
+    .order("recorded_at", { ascending: true });
+  const emotionPoints = (emotionRows ?? []).map((r) => ({
+    date: r.recorded_at as string,
+    score: r.score as number,
+  }));
+
   // 통합 노출용 5개 카테고리 최근 기록 (각 5건)
   const [thoughts, gratitudes, exercises, meditations, analyses] = await Promise.all([
     supabase
@@ -106,6 +122,7 @@ async function loadStats() {
     recentExercises: exercises.data ?? [],
     recentMeditations: meditations.data ?? [],
     recentAnalyses: analyses.data ?? [],
+    emotionPoints,
   };
 }
 
@@ -158,10 +175,8 @@ export default async function ProgressPage() {
 
       <Card className="mt-4">
         <CardTitle>감정 변화 추이</CardTitle>
-        <CardDescription>루틴에서 입력한 감정 점수의 변화를 확인해보세요.</CardDescription>
-        <div className="mt-4 h-[200px] bg-gs-surface-muted rounded-[14px] flex items-center justify-center text-gs-muted text-[13px]">
-          데이터가 쌓이면 감정 변화 그래프가 표시됩니다.
-        </div>
+        <CardDescription>최근 14일간 오늘의 루틴에서 입력한 감정 점수.</CardDescription>
+        <EmotionChart points={stats?.emotionPoints ?? []} />
       </Card>
 
       <Card className="mt-4">
