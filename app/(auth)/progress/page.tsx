@@ -2,6 +2,7 @@ import { PageLayout, PageTitle, PageLead } from "@/components/page-layout";
 import { Card, CardTitle, CardDescription } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { AnalysisCardList, type AnalysisItem } from "./analysis-card-list";
+import { parseExerciseNote } from "@/lib/exercise-payload";
 
 const fixedBadges = [
   { icon: "🌱", title: "첫 시작", desc: "첫 가짜생각 분석 완료" },
@@ -275,22 +276,54 @@ export default async function ProgressPage() {
       {/* 행동연습장 */}
       <Card className="mt-4">
         <CardTitle>행동연습장 기록</CardTitle>
-        <CardDescription>용기있는 행동·불안 노출 실천 기록.</CardDescription>
+        <CardDescription>계획 → 실행 → 회고 순서로 정리된 기록.</CardDescription>
         {stats && stats.recentExercises.length > 0 ? (
           <ul className="mt-4 space-y-2" data-testid="recent-exercises">
-            {stats.recentExercises.map((e) => (
-              <li
-                key={e.id}
-                className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px]"
-              >
-                <div className="text-gs-muted text-[11px] mb-1">
-                  {e.exercise_key === "courage" ? "용기있는 행동" : "불안노출"} ·{" "}
-                  {new Date(e.completed_at).toLocaleString("ko-KR")}
-                </div>
-                <div className="font-bold">{e.exercise_title}</div>
-                {e.note && <div className="text-gs-text-soft mt-0.5">{e.note}</div>}
-              </li>
-            ))}
+            {stats.recentExercises.map((e) => {
+              const parsed = parseExerciseNote(e.note as string | null);
+              const isStructured = "plan" in parsed;
+              return (
+                <li
+                  key={e.id}
+                  className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px]"
+                >
+                  <div className="text-gs-muted text-[11px] mb-1">
+                    {e.exercise_key === "courage" ? "용기있는 행동" : "불안노출"} ·{" "}
+                    {new Date(e.completed_at).toLocaleString("ko-KR")}
+                  </div>
+                  <div className="font-bold">{e.exercise_title}</div>
+                  {isStructured ? (
+                    <div className="mt-1 space-y-0.5 text-gs-text-soft">
+                      {parsed.plan.when && <div>📅 {parsed.plan.when}</div>}
+                      {parsed.plan.whereWho && <div>📍 {parsed.plan.whereWho}</div>}
+                      {parsed.execution && (
+                        <div>
+                          {parsed.execution.did ? "✓ 실행함" : "✕ 못 함"}
+                          {parsed.execution.before != null &&
+                            parsed.execution.after != null && (
+                              <>
+                                {" · "}
+                                {e.exercise_key === "courage" ? "기분" : "불안"}{" "}
+                                {parsed.execution.before} → {parsed.execution.after}
+                              </>
+                            )}
+                        </div>
+                      )}
+                      {parsed.reflection && (
+                        <div className="mt-1 text-gs-muted text-[12px]">
+                          💭 {parsed.reflection}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    "plain" in parsed &&
+                    parsed.plain && (
+                      <div className="text-gs-text-soft mt-0.5">{parsed.plain}</div>
+                    )
+                  )}
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <div className="mt-4 text-center text-gs-muted text-[13px] py-6">

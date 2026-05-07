@@ -8,7 +8,7 @@ const admin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
-test.describe("/exercise 행동연습장", () => {
+test.describe("/exercise 행동연습장 (계획·실행·회고)", () => {
   let user: TestUser;
 
   test.beforeAll(async () => {
@@ -19,20 +19,29 @@ test.describe("/exercise 행동연습장", () => {
     if (user) await deleteTestUser(user.id);
   });
 
-  test("용기있는 행동 모드 → 입력 + 저장 시 exercise_logs 생성", async ({ page }) => {
+  test("3단 입력 → exercise_logs.note에 JSON 저장 + /progress에 구조화 표시", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/exercise");
 
     await page.getByRole("button", { name: /용기있는 행동/ }).click();
 
-    const titleInput = page.locator('input[type="text"]').first();
-    const noteInput = page.locator('input[type="text"]').nth(1);
-    await titleInput.fill("5분 산책");
-    await noteInput.fill("생각보다 괜찮았다");
+    // ① 계획
+    await page.getByTestId("plan-what").fill("5분 산책");
+    await page.locator('input[placeholder*="오후 2시"]').fill("점심 먹고 2시쯤");
+    await page.locator('input[placeholder*="공원"]').fill("집 앞 공원, 혼자");
+
+    // ② 실행
+    await page.getByRole("button", { name: "✓ 했어요" }).click();
+    await page.locator('input[type="number"]').first().fill("70");
+    await page.locator('input[type="number"]').nth(1).fill("40");
+
+    // ③ 회고
+    await page.locator("textarea").fill("막상 해보니 생각보다 괜찮았다");
 
     await page.getByRole("button", { name: "기록 저장" }).click();
     await expect(page.getByText("기록이 저장되었습니다")).toBeVisible({ timeout: 10_000 });
 
+    // DB — note에 JSON
     const { data } = await admin
       .from("exercise_logs")
       .select("*")
@@ -40,6 +49,20 @@ test.describe("/exercise 행동연습장", () => {
       .single();
     expect(data!.exercise_key).toBe("courage");
     expect(data!.exercise_title).toBe("5분 산책");
-    expect(data!.note).toBe("생각보다 괜찮았다");
+    const payload = JSON.parse(data!.note);
+    expect(payload.plan.what).toBe("5분 산책");
+    expect(payload.plan.when).toBe("점심 먹고 2시쯤");
+    expect(payload.execution.did).toBe(true);
+    expect(payload.execution.before).toBe(70);
+    expect(payload.execution.after).toBe(40);
+    expect(payload.reflection).toBe("막상 해보니 생각보다 괜찮았다");
+
+    // /progress에 구조화 표시
+    await page.goto("/progress");
+    const exerciseCard = page.getByTestId("recent-exercises");
+    await expect(exerciseCard).toContainText("5분 산책");
+    await expect(exerciseCard).toContainText("점심 먹고 2시쯤");
+    await expect(exerciseCard).toContainText("기분 70 → 40");
+    await expect(exerciseCard).toContainText("막상 해보니 생각보다 괜찮았다");
   });
 });
