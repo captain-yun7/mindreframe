@@ -97,11 +97,25 @@ export default function ChatPage() {
         visible={showCrisisBanner}
         onDismiss={() => setShowCrisisBanner(false)}
       />
+
+      {/* F27: 히어로 — 디자인 보강 */}
+      <div className="mb-4 rounded-[20px] bg-gradient-to-br from-gs-navy via-gs-navy-mid to-gs-navy-bright text-white px-6 py-7 shadow-gs-card-hover">
+        <div className="text-[12px] font-bold opacity-80 mb-1">CBT 인지왜곡 분석</div>
+        <h1 className="text-2xl font-black leading-[1.4] mb-2">
+          지금 떠오른 그 생각,
+          <br />
+          <span className="text-gs-gold">정말 사실일까요?</span>
+        </h1>
+        <p className="text-sm opacity-90 leading-[1.6]">
+          AI가 16가지 인지왜곡 패턴 중 어떤 게 작동했는지 함께 찾고,
+          <br />
+          더 합리적인 <b>대안사고</b>를 만들어 드려요.
+        </p>
+      </div>
+
       {/* 사용법 가이드 */}
       <Card className="mb-4 p-5">
-        <h2 className="text-base font-bold mb-3">
-          가짜생각 분석기 사용법
-        </h2>
+        <h2 className="text-base font-bold mb-3">가짜생각 분석기 사용법</h2>
         <ul className="space-y-3">
           {steps.map((step, i) => (
             <li key={i} className="flex gap-3 items-start">
@@ -120,6 +134,23 @@ export default function ChatPage() {
           &apos;믿음의 힘&apos;이 생깁니다.
         </p>
       </Card>
+
+      {/* F27: 자주 발견되는 인지왜곡 — 시각적 변별 */}
+      <div className="mb-4 grid grid-cols-3 gap-2 max-sm:grid-cols-1">
+        {[
+          { tag: "흑백사고", desc: "전부 아니면 아예 안 돼" },
+          { tag: "독심술", desc: "쟤가 분명히 나를 무시해" },
+          { tag: "파국화", desc: "분명히 최악이 일어날 거야" },
+        ].map((d) => (
+          <div
+            key={d.tag}
+            className="p-3 rounded-[14px] bg-white border border-gs-line-soft text-center"
+          >
+            <div className="text-[12px] font-bold text-gs-blue mb-1">#{d.tag}</div>
+            <div className="text-[11px] text-gs-muted">{d.desc}</div>
+          </div>
+        ))}
+      </div>
 
       {/* 채팅 */}
       <Card>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ReviewCard } from "@/components/review-card";
+import { LandingAnalyzerPreview } from "@/components/landing-analyzer-preview";
 
 const reviews = [
   {
@@ -71,19 +72,7 @@ export default function LandingPage() {
           <p className="text-center text-sm text-gs-muted-soft mb-4 leading-[1.7]">
             기적의 100일, 프로그램 따라만 오세요!
           </p>
-          <div className="w-full h-[720px] max-sm:h-[500px] rounded-[18px] overflow-hidden border border-gs-line-soft bg-gs-surface-muted flex items-center justify-center text-gs-muted">
-            {/* TODO: AI 채팅 컴포넌트로 교체 */}
-            <p className="text-center">
-              가짜생각 분석기가 여기에 표시됩니다.
-              <br />
-              <Link
-                href="/chat"
-                className="text-gs-blue font-bold mt-2 inline-block hover:text-gs-blue-hover"
-              >
-                분석기로 이동 →
-              </Link>
-            </p>
-          </div>
+          <LandingAnalyzerPreview />
         </div>
       </section>
 
