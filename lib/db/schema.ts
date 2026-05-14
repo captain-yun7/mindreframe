@@ -22,10 +22,28 @@ export const users = pgTable("users", {
   plan: text("plan").default("free"),
   planExpiresAt: timestamp("plan_expires_at", { withTimezone: true }),
   role: text("role").notNull().default("user"),
+  phoneNumber: text("phone_number"),
+  notificationHour: integer("notification_hour").notNull().default(9),
+  notificationsStartedAt: date("notifications_started_at"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+// ─── notification_logs ───
+export const notificationLogs = pgTable("notification_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  dayNumber: integer("day_number").notNull(),
+  channel: text("channel").notNull().default("kakao_alimtalk"),
+  status: text("status").notNull().default("pending"),
+  externalMessageId: text("external_message_id"),
+  errorMessage: text("error_message"),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 // ─── coach_chat_sessions ───
