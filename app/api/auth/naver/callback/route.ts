@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 const NAVER_TOKEN = "https://nid.naver.com/oauth2.0/token";
 const NAVER_USERINFO = "https://openapi.naver.com/v1/nid/me";
@@ -128,14 +129,23 @@ export async function GET(request: Request) {
     await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
       email,
-      options: {
-        redirectTo: `${url.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
     });
 
-  if (linkErr || !linkData?.properties?.action_link) {
+  if (linkErr || !linkData?.properties?.email_otp) {
     return redirectErr(url.origin, "naver_link_failed");
   }
 
-  return NextResponse.redirect(linkData.properties.action_link);
+  // server-side에서 OTP 직접 검증 → 쿠키로 세션 발급 (fragment 흐름 우회)
+  const supabase = await createSupabaseServerClient();
+  const { error: verifyErr } = await supabase.auth.verifyOtp({
+    email,
+    token: linkData.properties.email_otp,
+    type: "email",
+  });
+
+  if (verifyErr) {
+    return redirectErr(url.origin, "naver_verify_failed");
+  }
+
+  return NextResponse.redirect(new URL(next, url.origin));
 }
