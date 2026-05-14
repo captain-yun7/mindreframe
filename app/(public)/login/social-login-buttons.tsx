@@ -58,7 +58,7 @@ export function SocialLoginButtons() {
     const redirectTo = `${window.location.origin}/auth/callback`;
 
     const scopesByProvider: Partial<Record<Provider, string>> = {
-      kakao: "profile_nickname profile_image",
+      kakao: "profile_nickname profile_image account_email",
     };
 
     const { error } = await supabase.auth.signInWithOAuth({
