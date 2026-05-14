@@ -16,6 +16,48 @@ const fixedBadges = [
   { icon: "🎯", title: "100일 완주", desc: "100일 프로그램 완주" },
 ];
 
+interface ProgressStats {
+  totalDays: number;
+  analysesCount: number;
+  alternativesCount: number;
+  gratitudeCount: number;
+  meditationCount: number;
+  distinctDates: string[];
+  recentAlternatives: {
+    id: string;
+    alternative_thought: string;
+    created_at: string;
+  }[];
+  recentAnalyses: AnalysisItem[];
+  recentThoughts: {
+    id: string;
+    situation: string;
+    thought: string | null;
+    emotion: string | null;
+    created_at: string;
+  }[];
+  recentGratitudes: {
+    id: string;
+    content: string;
+    recorded_at: string;
+    created_at: string;
+  }[];
+  recentExercises: {
+    id: string;
+    exercise_key: string;
+    exercise_title: string;
+    note: string | null;
+    completed_at: string;
+  }[];
+  recentMeditations: {
+    id: string;
+    track_title: string;
+    duration: number | null;
+    completed_at: string;
+  }[];
+  emotionPoints: { score: number; recorded_at: string }[];
+}
+
 async function loadStats() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -23,35 +65,16 @@ async function loadStats() {
     return null;
   }
 
-  const [routineCount, analysesCount, alternativesCount, gratitudeCount, meditationCount, recentAlternatives] =
-    await Promise.all([
-      supabase.from("routine_checks").select("checked_at", { count: "exact", head: true }).eq("user_id", user.id),
-      supabase.from("chat_analyses").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-      supabase
-        .from("chat_analyses")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .not("alternative_thought", "is", null),
-      supabase.from("gratitude_entries").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-      supabase.from("meditation_logs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-      supabase
-        .from("chat_analyses")
-        .select("id, alternative_thought, created_at")
-        .eq("user_id", user.id)
-        .not("alternative_thought", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(5),
-    ]);
+  const { data, error } = await supabase.rpc("get_progress_stats", {
+    p_user_id: user.id,
+  });
+  if (error || !data) {
+    return null;
+  }
+  const stats = data as ProgressStats;
 
-  // 총 훈련일수: distinct checked_at
-  const { data: distinctDates } = await supabase
-    .from("routine_checks")
-    .select("checked_at")
-    .eq("user_id", user.id);
-  const uniqueDays = new Set((distinctDates ?? []).map((r) => r.checked_at)).size;
-
-  // 스트릭: 오늘부터 거꾸로 연속된 날 수
-  const dateSet = new Set((distinctDates ?? []).map((r) => r.checked_at));
+  // streak: distinctDates로 오늘부터 거꾸로 연속된 날 수 (DB에서 계산하려면 윈도 함수 필요 — 단순 set 매칭이 충분)
+  const dateSet = new Set(stats.distinctDates);
   let streak = 0;
   const cursor = new Date();
   while (dateSet.has(cursor.toISOString().slice(0, 10))) {
@@ -59,70 +82,23 @@ async function loadStats() {
     cursor.setDate(cursor.getDate() - 1);
   }
 
-  // F18: 감정 점수 14일치 (그래프용)
-  const fourteenDaysAgo = new Date();
-  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
-  const { data: emotionRows } = await supabase
-    .from("emotion_scores")
-    .select("score, recorded_at")
-    .eq("user_id", user.id)
-    .eq("source", "routine")
-    .gte("recorded_at", fourteenDaysAgo.toISOString().slice(0, 10))
-    .order("recorded_at", { ascending: true });
-  const emotionPoints = (emotionRows ?? []).map((r) => ({
-    date: r.recorded_at as string,
-    score: r.score as number,
-  }));
-
-  // 통합 노출용 5개 카테고리 최근 기록 (각 5건)
-  const [thoughts, gratitudes, exercises, meditations, analyses] = await Promise.all([
-    supabase
-      .from("thought_records")
-      .select("id, situation, thought, emotion, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(5),
-    supabase
-      .from("gratitude_entries")
-      .select("id, content, recorded_at, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(5),
-    supabase
-      .from("exercise_logs")
-      .select("id, exercise_key, exercise_title, note, completed_at")
-      .eq("user_id", user.id)
-      .order("completed_at", { ascending: false })
-      .limit(5),
-    supabase
-      .from("meditation_logs")
-      .select("id, track_title, duration, completed_at")
-      .eq("user_id", user.id)
-      .order("completed_at", { ascending: false })
-      .limit(5),
-    supabase
-      .from("chat_analyses")
-      .select("id, session_id, situation, automatic_thought, alternative_thought, distortion_types, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(5),
-  ]);
-
   return {
-    totalDays: uniqueDays,
+    totalDays: stats.totalDays,
     streak,
-    analysesCount: analysesCount.count ?? 0,
-    alternativesCount: alternativesCount.count ?? 0,
-    gratitudeCount: gratitudeCount.count ?? 0,
-    meditationCount: meditationCount.count ?? 0,
-    recentAlternatives: recentAlternatives.data ?? [],
-    routineCount: routineCount.count ?? 0,
-    recentThoughts: thoughts.data ?? [],
-    recentGratitudes: gratitudes.data ?? [],
-    recentExercises: exercises.data ?? [],
-    recentMeditations: meditations.data ?? [],
-    recentAnalyses: analyses.data ?? [],
-    emotionPoints,
+    analysesCount: stats.analysesCount,
+    alternativesCount: stats.alternativesCount,
+    gratitudeCount: stats.gratitudeCount,
+    meditationCount: stats.meditationCount,
+    recentAlternatives: stats.recentAlternatives,
+    recentThoughts: stats.recentThoughts,
+    recentGratitudes: stats.recentGratitudes,
+    recentExercises: stats.recentExercises,
+    recentMeditations: stats.recentMeditations,
+    recentAnalyses: stats.recentAnalyses,
+    emotionPoints: stats.emotionPoints.map((p) => ({
+      date: p.recorded_at,
+      score: p.score,
+    })),
   };
 }
 
