@@ -21,10 +21,36 @@ export const users = pgTable("users", {
   providerId: text("provider_id"),
   plan: text("plan").default("free"),
   planExpiresAt: timestamp("plan_expires_at", { withTimezone: true }),
+  role: text("role").notNull().default("user"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+// ─── coach_chat_sessions ───
+export const coachChatSessions = pgTable("coach_chat_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("active"),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  endedAt: timestamp("ended_at", { withTimezone: true }),
+});
+
+// ─── coach_chat_messages ───
+export const coachChatMessages = pgTable("coach_chat_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sessionId: uuid("session_id")
+    .notNull()
+    .references(() => coachChatSessions.id, { onDelete: "cascade" }),
+  senderId: uuid("sender_id")
+    .notNull()
+    .references(() => users.id),
+  senderRole: text("sender_role").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
 // ─── subscriptions ───

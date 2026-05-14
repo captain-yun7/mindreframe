@@ -48,10 +48,18 @@ export const ROUTE_PLAN_REQUIREMENT: Array<{ prefix: string; required: Plan }> =
   { prefix: "/trash", required: "light" },
   { prefix: "/chat", required: "light" },
   { prefix: "/progress", required: "light" },
-  // 프로 이상 (행동연습장 + 명상)
+  // 프로 이상 (행동연습장 + 명상 + 1:1 코칭)
   { prefix: "/exercise", required: "pro" },
   { prefix: "/meditation", required: "pro" },
+  { prefix: "/coach", required: "pro" },
 ];
+
+/** 플랜별 주간 코치 채팅 세션 한도. 프로=2, 프리미엄=4, 그 외=0. */
+export function getCoachWeeklyLimit(plan: Plan): number {
+  if (plan === "premium") return 4;
+  if (plan === "pro") return 2;
+  return 0;
+}
 
 export function getRoutePlanRequirement(pathname: string): Plan | null {
   for (const rule of ROUTE_PLAN_REQUIREMENT) {

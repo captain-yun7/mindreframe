@@ -14,6 +14,7 @@ const navItems = [
   { href: "/chat", label: "가짜생각 분석기", auth: true },
   { href: "/exercise", label: "행동연습장", auth: true },
   { href: "/meditation", label: "명상하기", auth: true },
+  { href: "/coach", label: "코치 채팅", auth: true },
   { href: "/progress", label: "나의성장방", auth: true },
 ];
 
