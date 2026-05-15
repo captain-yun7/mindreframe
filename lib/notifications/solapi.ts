@@ -42,6 +42,49 @@ interface SendAlimtalkResult {
   error?: string;
 }
 
+/**
+ * 일반 SMS 발송 — 검수 불필요. 카톡 답변 알림 등 즉시성 알림에 사용.
+ * 90byte 초과 시 자동 LMS 전환.
+ */
+export async function sendSms({
+  to,
+  text,
+}: {
+  to: string;
+  text: string;
+}): Promise<SendAlimtalkResult> {
+  const sender = process.env.SOLAPI_SENDER;
+  if (!sender) return { ok: false, error: "SOLAPI_SENDER 미설정" };
+
+  const body = { message: { to, from: sender, text } };
+
+  try {
+    const res = await fetch(`${SOLAPI_BASE}/messages/v4/send`, {
+      method: "POST",
+      headers: {
+        Authorization: authHeader(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const data = (await res.json()) as {
+      messageId?: string;
+      errorCode?: string;
+      errorMessage?: string;
+    };
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `${data.errorCode ?? res.status} ${data.errorMessage ?? "SMS 발송 실패"}`,
+      };
+    }
+    return { ok: true, messageId: data.messageId };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown";
+    return { ok: false, error: `network: ${msg}` };
+  }
+}
+
 export async function sendAlimtalk({
   to,
   templateId,

@@ -210,8 +210,38 @@ export async function sendCoachReply(sessionId: string, content: string) {
   });
   if (error) return { ok: false as const, error: "답변 전송에 실패했어요" };
 
+  // 답변 알림 SMS — 유저의 phone_number가 있으면 발송 (실패해도 답변 자체는 성공)
+  notifyUserOfCoachReply(sessionId).catch((e) => {
+    console.error("coach reply notification failed:", e);
+  });
+
   revalidatePath("/coach");
   revalidatePath(`/admin/coach/${sessionId}`);
   revalidatePath("/admin/coach");
   return { ok: true as const };
+}
+
+async function notifyUserOfCoachReply(sessionId: string) {
+  const { supabaseAdmin } = await import("@/lib/supabase-admin");
+  const { sendSms } = await import("@/lib/notifications/solapi");
+
+  const { data: session } = await supabaseAdmin
+    .from("coach_chat_sessions")
+    .select("user_id")
+    .eq("id", sessionId)
+    .single();
+  if (!session) return;
+
+  const { data: u } = await supabaseAdmin
+    .from("users")
+    .select("phone_number")
+    .eq("id", session.user_id)
+    .single();
+  const phone = u?.phone_number;
+  if (!phone) return;
+
+  await sendSms({
+    to: phone.replace(/[^0-9]/g, ""),
+    text: "[가짜생각] 상담사가 답변을 보냈어요. 앱에서 확인해주세요.\nhttps://mindreframe.net/coach",
+  });
 }
