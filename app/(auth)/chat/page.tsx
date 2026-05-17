@@ -107,7 +107,7 @@ export default function ChatPage() {
           <span className="text-gs-gold">정말 사실일까요?</span>
         </h1>
         <p className="text-sm opacity-90 leading-[1.6]">
-          AI가 16가지 인지왜곡 패턴 중 어떤 게 작동했는지 함께 찾고,
+          AI가 11가지 인지왜곡 패턴 중 어떤 게 작동했는지 함께 찾고,
           <br />
           더 합리적인 <b>대안사고</b>를 만들어 드려요.
         </p>
@@ -140,7 +140,7 @@ export default function ChatPage() {
         {[
           { tag: "흑백사고", desc: "전부 아니면 아예 안 돼" },
           { tag: "독심술", desc: "쟤가 분명히 나를 무시해" },
-          { tag: "파국화", desc: "분명히 최악이 일어날 거야" },
+          { tag: "재앙화", desc: "분명히 최악이 일어날 거야" },
         ].map((d) => (
           <div
             key={d.tag}

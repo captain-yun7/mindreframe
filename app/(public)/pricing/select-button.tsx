@@ -30,7 +30,7 @@ export function SelectPlanButton({
         toast.show(r.error, "error");
         return;
       }
-      toast.show(`${plan.toUpperCase()} 플랜이 활성화되었습니다 (베타)`, "success");
+      toast.show(`${plan.toUpperCase()} 플랜이 활성화되었습니다`, "success");
       router.push("/dashboard");
       router.refresh();
     });

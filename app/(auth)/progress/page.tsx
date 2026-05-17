@@ -149,7 +149,7 @@ export default async function ProgressPage() {
         ))}
       </div>
 
-      <Card className="mt-4">
+      <Card className="mt-4 scroll-mt-28" id="emotion-chart">
         <CardTitle>감정 변화 추이</CardTitle>
         <CardDescription>최근 14일간 오늘의 루틴에서 입력한 감정 점수.</CardDescription>
         <EmotionChart points={stats?.emotionPoints ?? []} />

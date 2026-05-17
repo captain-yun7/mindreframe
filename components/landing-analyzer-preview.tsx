@@ -37,7 +37,7 @@ const DEMO_FLOW: DemoMessage[] = [
 const DISTORTIONS = [
   { tag: "흑백사고", desc: "전부 아니면 아예 안 돼" },
   { tag: "독심술", desc: "쟤가 분명히 나를 무시해" },
-  { tag: "파국화", desc: "분명히 최악의 일이 일어날 거야" },
+  { tag: "재앙화", desc: "분명히 최악의 일이 일어날 거야" },
 ];
 
 export function LandingAnalyzerPreview() {
