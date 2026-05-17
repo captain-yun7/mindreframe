@@ -8,10 +8,9 @@ import {
   isPlanGateEnabled,
   planAtLeast,
 } from "@/lib/auth/plan";
-import {
-  getCoachMessages,
-  getMyCoachSessions,
-  type CoachMessage,
+import type {
+  CoachMessage,
+  CoachSessionSummary,
 } from "@/lib/actions/coach-chat";
 import { CoachChatClient } from "./coach-chat-client";
 
@@ -20,12 +19,19 @@ export default async function CoachPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("plan")
-    .eq("id", user.id)
-    .single();
-  const plan = normalizePlan(userRow?.plan);
+  // plan/count/sessions 병렬 로드 (server action 우회 → getUser 중복 호출 제거)
+  const [userRowRes, usedRes, sessionsRes] = await Promise.all([
+    supabase.from("users").select("plan").eq("id", user.id).single(),
+    supabase.rpc("count_coach_sessions_this_week", { p_user_id: user.id }),
+    supabase
+      .from("coach_chat_sessions")
+      .select("id, status, started_at, ended_at")
+      .eq("user_id", user.id)
+      .order("started_at", { ascending: false })
+      .limit(20),
+  ]);
+
+  const plan = normalizePlan(userRowRes.data?.plan);
 
   // 플랜 가드
   if (isPlanGateEnabled() && !planAtLeast(plan, "light")) {
@@ -49,23 +55,19 @@ export default async function CoachPage() {
   }
 
   const limit = getCoachWeeklyLimit(plan);
-
-  // 이번 주 카운트
-  const { data: usedRaw } = await supabase.rpc("count_coach_sessions_this_week", {
-    p_user_id: user.id,
-  });
-  const used = (usedRaw as number | null) ?? 0;
-
-  // 세션 목록
-  const sessionsRes = await getMyCoachSessions();
-  const sessions = sessionsRes.ok ? sessionsRes.sessions : [];
+  const used = (usedRes.data as number | null) ?? 0;
+  const sessions = (sessionsRes.data ?? []) as CoachSessionSummary[];
   const activeSession = sessions.find((s) => s.status === "active") ?? null;
 
   // 활성 세션이 있으면 메시지도 로드
   let initialMessages: CoachMessage[] = [];
   if (activeSession) {
-    const msgRes = await getCoachMessages(activeSession.id);
-    if (msgRes.ok) initialMessages = msgRes.messages;
+    const { data: msgs } = await supabase
+      .from("coach_chat_messages")
+      .select("id, sender_role, content, created_at")
+      .eq("session_id", activeSession.id)
+      .order("created_at", { ascending: true });
+    initialMessages = (msgs ?? []) as CoachMessage[];
   }
 
   return (

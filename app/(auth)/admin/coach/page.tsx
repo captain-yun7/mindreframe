@@ -47,7 +47,12 @@ export default async function CoachAdminPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="font-bold text-sm">{s.nickname}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm">{s.nickname}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gs-blue-light text-gs-blue font-bold uppercase">
+                        {s.plan}
+                      </span>
+                    </div>
                     <div className="text-xs text-gs-muted mt-0.5">
                       시작 · {new Date(s.started_at).toLocaleString("ko-KR")}
                     </div>

@@ -29,49 +29,38 @@ export async function autoCheckRoutine(
     );
 }
 
+interface TodayDashboardRpc {
+  mood: number | null;
+  gratitude: { id: string; content: string } | null;
+  todayCheckedKeys: string[];
+  allCheckedDates: string[];
+}
+
 export async function loadTodayDashboard() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
 
   const today = todayDate();
-  const [mood, gratitude, checks, allDates] = await Promise.all([
-    supabase
-      .from("emotion_scores")
-      .select("score")
-      .eq("user_id", user.id)
-      .eq("recorded_at", today)
-      .eq("source", "routine")
-      .maybeSingle(),
-    supabase
-      .from("gratitude_entries")
-      .select("id, content")
-      .eq("user_id", user.id)
-      .eq("recorded_at", today)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("routine_checks")
-      .select("item_key")
-      .eq("user_id", user.id)
-      .eq("checked_at", today),
-    supabase
-      .from("routine_checks")
-      .select("checked_at")
-      .eq("user_id", user.id),
-  ]);
+  const { data, error } = await supabase.rpc("get_today_dashboard", {
+    p_user_id: user.id,
+    p_today: today,
+  });
+  if (error || !data) {
+    return { ok: false as const, error: error?.message ?? "데이터 로드 실패" };
+  }
+  const rpc = data as TodayDashboardRpc;
 
-  const dateSet = new Set((allDates.data ?? []).map((r) => r.checked_at as string));
+  const dateSet = new Set(rpc.allCheckedDates);
   const streak = calcStreak(dateSet);
   const totalDays = dateSet.size;
 
   return {
     ok: true as const,
-    moodScore: mood.data?.score ?? null,
-    gratitudeDone: !!gratitude.data,
-    gratitudeContent: gratitude.data?.content ?? "",
-    checkedKeys: (checks.data ?? []).map((r) => r.item_key),
+    moodScore: rpc.mood ?? null,
+    gratitudeDone: !!rpc.gratitude,
+    gratitudeContent: rpc.gratitude?.content ?? "",
+    checkedKeys: rpc.todayCheckedKeys,
     today,
     streak,
     totalDays,

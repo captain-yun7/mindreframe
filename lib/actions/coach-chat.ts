@@ -153,19 +153,20 @@ export type CoachActiveSession = {
   id: string;
   user_id: string;
   nickname: string;
+  plan: string;
   started_at: string;
   last_message_at: string | null;
   last_message_preview: string | null;
 };
 
-/** 상담사 어드민 대시보드용 — 활성 세션 목록 + 최근 메시지 미리보기. */
+/** 상담사 어드민 대시보드용 — 활성 세션 목록 + 최근 메시지 미리보기 + 회원 플랜. */
 export async function listActiveSessionsForCoach() {
   const c = await requireCoach();
   if (!c.ok) return { ok: false as const, error: c.error };
 
   const { data: sessions } = await c.supabase
     .from("coach_chat_sessions")
-    .select("id, user_id, started_at, users:user_id (nickname)")
+    .select("id, user_id, started_at, users:user_id (nickname, plan)")
     .eq("status", "active")
     .order("started_at", { ascending: false });
 
@@ -181,11 +182,12 @@ export async function listActiveSessionsForCoach() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      const nickname = (s.users as { nickname?: string } | null)?.nickname ?? "사용자";
+      const u = s.users as { nickname?: string; plan?: string } | null;
       return {
         id: s.id,
         user_id: s.user_id,
-        nickname,
+        nickname: u?.nickname ?? "사용자",
+        plan: u?.plan ?? "free",
         started_at: s.started_at,
         last_message_at: last?.created_at ?? null,
         last_message_preview: last?.content ? last.content.slice(0, 60) : null,
