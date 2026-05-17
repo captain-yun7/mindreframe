@@ -2,18 +2,10 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { todayKst, isoWeekKst, calcStreak } from "@/lib/dates";
 
-const todayDate = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
-const isoWeek = () => {
-  const now = new Date();
-  return Math.ceil(
-    ((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86_400_000 +
-      new Date(now.getFullYear(), 0, 1).getDay() +
-      1) /
-      7,
-  );
-};
+const todayDate = todayKst;
+const isoWeek = isoWeekKst;
 
 /**
  * routine_checks 자동 등록 (다른 server action에서 호출).
@@ -43,7 +35,7 @@ export async function loadTodayDashboard() {
   if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
 
   const today = todayDate();
-  const [mood, gratitude, checks] = await Promise.all([
+  const [mood, gratitude, checks, allDates] = await Promise.all([
     supabase
       .from("emotion_scores")
       .select("score")
@@ -64,7 +56,15 @@ export async function loadTodayDashboard() {
       .select("item_key")
       .eq("user_id", user.id)
       .eq("checked_at", today),
+    supabase
+      .from("routine_checks")
+      .select("checked_at")
+      .eq("user_id", user.id),
   ]);
+
+  const dateSet = new Set((allDates.data ?? []).map((r) => r.checked_at as string));
+  const streak = calcStreak(dateSet);
+  const totalDays = dateSet.size;
 
   return {
     ok: true as const,
@@ -73,6 +73,8 @@ export async function loadTodayDashboard() {
     gratitudeContent: gratitude.data?.content ?? "",
     checkedKeys: (checks.data ?? []).map((r) => r.item_key),
     today,
+    streak,
+    totalDays,
   };
 }
 

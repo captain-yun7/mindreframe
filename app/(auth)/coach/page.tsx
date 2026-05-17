@@ -28,11 +28,11 @@ export default async function CoachPage() {
   const plan = normalizePlan(userRow?.plan);
 
   // 플랜 가드
-  if (isPlanGateEnabled() && !planAtLeast(plan, "pro")) {
+  if (isPlanGateEnabled() && !planAtLeast(plan, "light")) {
     return (
       <PageLayout>
         <PageTitle>코치와 1:1 채팅</PageTitle>
-        <PageLead>1:1 상담사 채팅은 프로 이상 플랜에서 이용할 수 있어요.</PageLead>
+        <PageLead>1:1 상담사 채팅은 라이트 이상 플랜에서 이용할 수 있어요.</PageLead>
         <Card className="mt-4 p-6 text-center">
           <p className="text-sm text-gs-text-soft mb-4">
             현재 플랜: <b>{plan}</b>

@@ -66,6 +66,8 @@ export interface DashboardInitial {
   gratitudeDone: boolean;
   checkedKeys: string[];
   today: string;
+  streak: number;
+  totalDays: number;
 }
 
 export function DashboardClient({ initial }: { initial: DashboardInitial }) {
@@ -248,8 +250,8 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
         <RoutineSidebar
           moodScore={moodScore}
           completionRate={completionRate}
-          streak={0}
-          totalDays={1}
+          streak={initial.streak}
+          totalDays={initial.totalDays}
           hint="혼합형은 '하나만 선택'이 승리예요. 오늘은 1개만 해도 OK."
         />
       </div>

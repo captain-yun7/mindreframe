@@ -34,6 +34,8 @@ interface ProgressStats {
     situation: string;
     thought: string | null;
     emotion: string | null;
+    body_reaction: string | null;
+    behavior: string | null;
     created_at: string;
   }[];
   recentGratitudes: {
@@ -231,6 +233,10 @@ export default async function ProgressPage() {
                 <div className="font-bold">{t.situation}</div>
                 {t.thought && <div className="text-gs-text-soft mt-0.5">생각 · {t.thought}</div>}
                 {t.emotion && <div className="text-gs-text-soft">감정 · {t.emotion}</div>}
+                {t.body_reaction && (
+                  <div className="text-gs-text-soft">신체반응 · {t.body_reaction}</div>
+                )}
+                {t.behavior && <div className="text-gs-text-soft">행동 · {t.behavior}</div>}
               </li>
             ))}
           </ul>

@@ -12,6 +12,8 @@ export default async function DashboardPage() {
         gratitudeDone: r.gratitudeDone,
         checkedKeys: r.checkedKeys,
         today: r.today,
+        streak: r.streak,
+        totalDays: r.totalDays,
       }
     : {
         moodScore: null,
@@ -19,6 +21,8 @@ export default async function DashboardPage() {
         gratitudeDone: false,
         checkedKeys: [],
         today: new Date().toISOString().slice(0, 10),
+        streak: 0,
+        totalDays: 0,
       };
 
   return <DashboardClient initial={initial} />;

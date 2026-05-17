@@ -50,7 +50,7 @@ export async function startCoachSession() {
   const plan: Plan = normalizePlan(userRow?.plan);
   const limit = getCoachWeeklyLimit(plan);
   if (limit === 0) {
-    return { ok: false as const, error: "프로 이상 플랜에서만 코치 채팅을 이용할 수 있어요" };
+    return { ok: false as const, error: "라이트 이상 플랜에서만 코치 채팅을 이용할 수 있어요" };
   }
 
   // 활성 세션 있으면 그것 반환
