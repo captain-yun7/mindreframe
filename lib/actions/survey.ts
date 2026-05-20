@@ -63,6 +63,12 @@ export async function submitSurvey(input: SurveyInput) {
     return { ok: false as const, error: error.message };
   }
 
+  // 온보딩 완료 표시 — middleware의 /survey 강제 redirect 해제
+  await supabase
+    .from("users")
+    .update({ onboarding_completed: true })
+    .eq("id", user.id);
+
   return {
     ok: true as const,
     depressionScore,

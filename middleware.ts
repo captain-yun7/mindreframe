@@ -51,21 +51,41 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Plan 가드 — ENV 토글 (베타: PLAN_GATE_ENABLED=false)
-  if (user && isPlanGateEnabled()) {
-    const required = getRoutePlanRequirement(pathname);
-    if (required) {
+  // 온보딩 가드 — 가입했지만 우울불안검사 미완료자는 /survey로 강제
+  // 통과 경로: /survey 본인, /login, /signup, /pricing, /auth/*, /api/*, 공개 페이지(/, /study)
+  if (user) {
+    const onboardingExempt =
+      pathname.startsWith("/survey") ||
+      pathname.startsWith("/login") ||
+      pathname.startsWith("/signup") ||
+      pathname.startsWith("/pricing") ||
+      pathname.startsWith("/auth") ||
+      pathname.startsWith("/api") ||
+      pathname === "/" ||
+      pathname.startsWith("/study");
+    if (!onboardingExempt) {
       const { data: profile } = await supabase
         .from("users")
-        .select("plan")
+        .select("onboarding_completed, plan")
         .eq("id", user.id)
         .single();
-      const currentPlan = normalizePlan(profile?.plan);
-      if (!planAtLeast(currentPlan, required)) {
-        const upgradeUrl = new URL("/pricing", request.url);
-        upgradeUrl.searchParams.set("from", pathname);
-        upgradeUrl.searchParams.set("required", required);
-        return NextResponse.redirect(upgradeUrl);
+      if (profile && !profile.onboarding_completed) {
+        const surveyUrl = new URL("/survey", request.url);
+        return NextResponse.redirect(surveyUrl);
+      }
+
+      // Plan 가드 — ENV 토글 (베타: PLAN_GATE_ENABLED=false)
+      if (isPlanGateEnabled()) {
+        const required = getRoutePlanRequirement(pathname);
+        if (required) {
+          const currentPlan = normalizePlan(profile?.plan);
+          if (!planAtLeast(currentPlan, required)) {
+            const upgradeUrl = new URL("/pricing", request.url);
+            upgradeUrl.searchParams.set("from", pathname);
+            upgradeUrl.searchParams.set("required", required);
+            return NextResponse.redirect(upgradeUrl);
+          }
+        }
       }
     }
   }

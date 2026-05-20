@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SelectPlanButton } from "./select-button";
 import type { Plan } from "@/lib/auth/plan";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
   title: "요금제",
@@ -73,6 +74,18 @@ export default async function PricingPage({
   const params = await searchParams;
   const requiredPlan = params.required && PLAN_LABEL[params.required] ? params.required : null;
 
+  // 월 구독은 2회 이상 결제자만 노출 (재구매 충성 고객 한정)
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let showMonthly = false;
+  if (user) {
+    const { count } = await supabase
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    showMonthly = (count ?? 0) >= 2;
+  }
+
   return (
     <div className="min-h-screen bg-gs-surface-muted">
       <div className="max-w-[880px] mx-auto px-5 pt-8 pb-20">
@@ -139,23 +152,26 @@ export default async function PricingPage({
             </div>
           ))}
         </div>
-        {/* 월 구독 */}
-        <div className="max-w-[480px] mx-auto mt-6 bg-white border border-gs-line-soft rounded-[18px] p-5 text-center shadow-gs-card">
-          <h3 className="text-base font-[950] mb-1">월 구독</h3>
-          <div className="flex items-baseline justify-center gap-1 mb-1">
-            <span className="text-3xl font-black">9,900</span>
-            <span className="text-sm text-gs-muted-soft">원/월</span>
+        {/* 월 구독 — 2회 이상 결제자 한정 노출 */}
+        {showMonthly && (
+          <div className="max-w-[480px] mx-auto mt-6 bg-white border border-gs-line-soft rounded-[18px] p-5 text-center shadow-gs-card">
+            <div className="text-[11px] font-bold text-gs-blue mb-1">재구독 회원 전용</div>
+            <h3 className="text-base font-[950] mb-1">월 구독</h3>
+            <div className="flex items-baseline justify-center gap-1 mb-1">
+              <span className="text-3xl font-black">9,900</span>
+              <span className="text-sm text-gs-muted-soft">원/월</span>
+            </div>
+            <p className="text-[13px] text-gs-muted-light mb-4">
+              가짜생각 분석기 1회/일 · 언제든 해지 가능
+            </p>
+            <button
+              type="button"
+              className="w-full py-3 rounded-[14px] border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft cursor-pointer hover:bg-gs-surface-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
+            >
+              월 구독 시작하기
+            </button>
           </div>
-          <p className="text-[13px] text-gs-muted-light mb-4">
-            AI 분석 1회/일 · 언제든 해지 가능
-          </p>
-          <button
-            type="button"
-            className="w-full py-3 rounded-[14px] border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft cursor-pointer hover:bg-gs-surface-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
-          >
-            월 구독 시작하기
-          </button>
-        </div>
+        )}
 
         <p className="mt-6 text-center text-xs text-gs-muted-light leading-[1.6]">
           결제 관련 문의가 있으시면 언제든 연락주세요.
