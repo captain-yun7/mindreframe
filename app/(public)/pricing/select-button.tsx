@@ -59,6 +59,11 @@ export function SelectPlanButton({
             disabled={pending}
             className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
           />
+          <p className="mt-2 text-[11px] text-gs-muted-light leading-[1.5]">
+            가입일로부터 100일 동안 매일 오전 9시에 훈련 메시지가 알림톡으로 발송됩니다.
+            <br />
+            발송 시간은 마이페이지에서 변경 가능하며, 언제든 해지할 수 있어요.
+          </p>
         </div>
       )}
       <button
