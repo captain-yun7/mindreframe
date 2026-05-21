@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Plan } from "@/lib/auth/plan";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
   title: "요금제",
 };
 
 const PLAN_LABEL: Record<string, string> = {
-  light: "라이트 AI",
+  light: "라이트",
   pro: "프로",
   premium: "프리미엄",
 };
@@ -22,11 +23,12 @@ const plans: Array<{
 }> = [
   {
     key: "light",
-    name: "라이트 AI",
+    name: "라이트",
     price: "254,000",
     period: "100일",
     features: [
-      "가짜생각 분석기 1회/일",
+      "가짜생각 분석기 5회/일",
+      "주 1회 1:1 코칭",
       "생각쓰레기통",
       "오늘의 루틴",
       "알고가기(학습) 전체",
@@ -40,8 +42,8 @@ const plans: Array<{
     price: "394,000",
     period: "100일",
     features: [
-      "라이트 AI 전체 포함",
-      "가짜생각 분석기 2회/일",
+      "라이트 전체 포함",
+      "가짜생각 분석기 7회/일",
       "주 2회 1:1 코칭",
       "행동연습장",
       "명상하기",
@@ -55,9 +57,8 @@ const plans: Array<{
     period: "100일",
     features: [
       "프로 전체 포함",
-      "가짜생각 분석기 4회/일",
+      "가짜생각 분석기 무제한/일",
       "주 4회 1:1 코칭",
-      "전담 상담사 배정",
       "우선 고객 지원",
     ],
     recommended: false,
@@ -71,6 +72,18 @@ export default async function PricingPage({
 }) {
   const params = await searchParams;
   const requiredPlan = params.required && PLAN_LABEL[params.required] ? params.required : null;
+
+  // 월 구독은 2회 이상 결제자만 노출 (재구매 충성 고객 한정)
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let showMonthly = false;
+  if (user) {
+    const { count } = await supabase
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    showMonthly = (count ?? 0) >= 2;
+  }
 
   return (
     <div className="min-h-screen bg-gs-surface-muted">
@@ -96,16 +109,6 @@ export default async function PricingPage({
             요청하신 페이지는 <b>{PLAN_LABEL[requiredPlan]}</b> 이상 플랜에서 이용 가능합니다. 아래에서 플랜을 선택해주세요.
           </div>
         )}
-
-        {/* 베타 무료 배너 */}
-        <div className="max-w-[480px] mx-auto bg-gs-text-strong text-white rounded-2xl p-4 text-[13px] leading-[1.6] mb-6">
-          <b>지금은 베타 기간!</b> 모든 기능을 무료로 체험할 수 있어요.
-          <br />
-          정식 출시 후 자동 결제되지 않습니다.
-          <span className="mt-3 inline-block bg-gs-success-bg text-gs-success font-black px-3 py-1.5 rounded-full text-xs">
-            베타 기간 0원
-          </span>
-        </div>
 
         {/* 플랜 카드 */}
         <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
@@ -157,29 +160,26 @@ export default async function PricingPage({
             </div>
           ))}
         </div>
-        {/* 베타 안내 */}
-        <p className="mt-3 text-center text-xs text-gs-muted-light leading-[1.6]">
-          베타 기간엔 결제 없이 100일 체험 활성화됩니다 (PG 심사 후 실결제로 전환).
-        </p>
-
-        {/* 월 구독 */}
-        <div className="max-w-[480px] mx-auto mt-6 bg-white border border-gs-line-soft rounded-[18px] p-5 text-center shadow-gs-card">
-          <h3 className="text-base font-[950] mb-1">월 구독</h3>
-          <div className="flex items-baseline justify-center gap-1 mb-1">
-            <span className="text-3xl font-black">9,900</span>
-            <span className="text-sm text-gs-muted-soft">원/월</span>
+        {/* 월 구독 — 2회 이상 결제자 한정 노출 */}
+        {showMonthly && (
+          <div className="max-w-[480px] mx-auto mt-6 bg-white border border-gs-line-soft rounded-[18px] p-5 text-center shadow-gs-card">
+            <div className="text-[11px] font-bold text-gs-blue mb-1">재구독 회원 전용</div>
+            <h3 className="text-base font-[950] mb-1">월 구독</h3>
+            <div className="flex items-baseline justify-center gap-1 mb-1">
+              <span className="text-3xl font-black">9,900</span>
+              <span className="text-sm text-gs-muted-soft">원/월</span>
+            </div>
+            <p className="text-[13px] text-gs-muted-light mb-4">
+              가짜생각 분석기 1회/일 · 언제든 해지 가능
+            </p>
+            <button
+              type="button"
+              className="w-full py-3 rounded-[14px] border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft cursor-pointer hover:bg-gs-surface-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
+            >
+              월 구독 시작하기
+            </button>
           </div>
-          <p className="text-[13px] text-gs-muted-light mb-4">
-            AI 분석 1회/일 · 언제든 해지 가능
-          </p>
-          <button
-            type="button"
-            disabled
-            className="w-full py-3 rounded-[14px] border border-gs-line-mid bg-gs-surface-mid text-sm font-bold text-gs-muted-soft cursor-not-allowed"
-          >
-            월 구독 준비 중
-          </button>
-        </div>
+        )}
 
         <p className="mt-6 text-center text-xs text-gs-muted-light leading-[1.6]">
           결제 관련 문의가 있으시면 언제든 연락주세요.

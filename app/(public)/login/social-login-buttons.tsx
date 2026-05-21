@@ -48,10 +48,17 @@ export function SocialLoginButtons() {
 
   const handleSignIn = async (provider: Provider) => {
     setLoadingProvider(provider);
+
+    // 네이버는 Supabase Custom Provider가 응답 wrapping(response.email)을 못 풀어 자체 라우트로 우회
+    if (provider === "custom:naver") {
+      window.location.href = "/api/auth/naver";
+      return;
+    }
+
     const redirectTo = `${window.location.origin}/auth/callback`;
 
     const scopesByProvider: Partial<Record<Provider, string>> = {
-      kakao: "profile_nickname profile_image",
+      kakao: "profile_nickname profile_image account_email",
     };
 
     const { error } = await supabase.auth.signInWithOAuth({

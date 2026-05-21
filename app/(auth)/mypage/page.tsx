@@ -4,21 +4,32 @@ import { Card, CardTitle } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { LogoutButton } from "./logout-button";
 import { NicknameForm } from "./nickname-form";
+import { NotificationSettings } from "./notification-settings";
 
 export default async function MyPage() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let profile: { nickname: string; email: string; plan: string } = {
+  let profile: {
+    nickname: string;
+    email: string;
+    plan: string;
+    phoneNumber: string | null;
+    notificationHour: number;
+    notificationsStartedAt: string | null;
+  } = {
     nickname: "사용자",
     plan: "free",
     email: "",
+    phoneNumber: null,
+    notificationHour: 9,
+    notificationsStartedAt: null,
   };
 
   if (user) {
     const { data } = await supabase
       .from("users")
-      .select("nickname, email, plan")
+      .select("nickname, email, plan, phone_number, notification_hour, notifications_started_at")
       .eq("id", user.id)
       .single();
     if (data) {
@@ -26,6 +37,9 @@ export default async function MyPage() {
         nickname: data.nickname || user.user_metadata?.full_name || "사용자",
         email: data.email?.endsWith("@oauth.local") ? "(이메일 미제공)" : data.email,
         plan: data.plan ?? "free",
+        phoneNumber: data.phone_number ?? null,
+        notificationHour: data.notification_hour ?? 9,
+        notificationsStartedAt: data.notifications_started_at ?? null,
       };
     } else {
       profile = {
@@ -36,6 +50,9 @@ export default async function MyPage() {
           "사용자",
         email: user.email ?? "",
         plan: "free",
+        phoneNumber: null,
+        notificationHour: 9,
+        notificationsStartedAt: null,
       };
     }
   }
@@ -79,6 +96,17 @@ export default async function MyPage() {
           >
             결제 내역 보기 (PG 심사 후)
           </button>
+        </div>
+      </Card>
+
+      <Card className="mt-4">
+        <CardTitle>알림</CardTitle>
+        <div className="mt-4">
+          <NotificationSettings
+            initialHour={profile.notificationHour}
+            phoneRegistered={!!profile.phoneNumber}
+            notificationsActive={!!profile.notificationsStartedAt}
+          />
         </div>
       </Card>
 

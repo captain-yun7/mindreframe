@@ -2,12 +2,10 @@
  * 플랜 정의 + 페이지/기능별 권한 매트릭스.
  *
  * 요구사항 (`/pricing` 명세):
- *   free      체험 (베타 기간 무료, 정식 출시 후엔 결제 유도)
- *   light     라이트 AI (254,000원/100일) — 분석 1회/일, 분석기/쓰레기통/루틴/알고가기/성장방
- *   pro       프로 (394,000원/100일)     — 라이트 + 행동연습장 + 명상하기 + 1:1 코칭 주2회
- *   premium   프리미엄 (694,000원/100일) — 프로 + 전담 상담사 + 우선 지원
- *
- * 베타 기간엔 `PLAN_GATE_ENABLED=false`로 두고 모두 허용.
+ *   free      미결제 (체험)
+ *   light     라이트 (254,000원/100일) — 가짜생각 분석기 5회/일, 주 1회 1:1 코칭, 쓰레기통/루틴/알고가기/성장방
+ *   pro       프로 (394,000원/100일)   — 라이트 전체 + 가짜생각 분석기 7회/일 + 주 2회 1:1 코칭 + 행동연습장 + 명상
+ *   premium   프리미엄 (694,000원/100일) — 프로 전체 + 가짜생각 분석기 무제한/일 + 주 4회 1:1 코칭 + 우선 지원
  */
 
 export type Plan = "free" | "light" | "pro" | "premium";
@@ -51,7 +49,17 @@ export const ROUTE_PLAN_REQUIREMENT: Array<{ prefix: string; required: Plan }> =
   // 프로 이상 (행동연습장 + 명상)
   { prefix: "/exercise", required: "pro" },
   { prefix: "/meditation", required: "pro" },
+  // 라이트 이상 (1:1 코칭 — 라이트도 주1회 사용 가능)
+  { prefix: "/coach", required: "light" },
 ];
+
+/** 플랜별 주간 코치 채팅 세션 한도. 라이트=1, 프로=2, 프리미엄=4. */
+export function getCoachWeeklyLimit(plan: Plan): number {
+  if (plan === "premium") return 4;
+  if (plan === "pro") return 2;
+  if (plan === "light") return 1;
+  return 0;
+}
 
 export function getRoutePlanRequirement(pathname: string): Plan | null {
   for (const rule of ROUTE_PLAN_REQUIREMENT) {

@@ -14,6 +14,7 @@ const navItems = [
   { href: "/chat", label: "가짜생각 분석기", auth: true },
   { href: "/exercise", label: "행동연습장", auth: true },
   { href: "/meditation", label: "명상하기", auth: true },
+  { href: "/coach", label: "코치 채팅", auth: true },
   { href: "/progress", label: "나의성장방", auth: true },
 ];
 
@@ -22,12 +23,27 @@ export function SiteHeader() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-    const { data: subscription } = supabase.auth.onAuthStateChange((_e, session) => {
-      setUser(session?.user ?? null);
+    async function load() {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", data.user.id)
+          .single();
+        setIsAdmin(profile?.role === "admin");
+      } else {
+        setIsAdmin(false);
+      }
+    }
+    load();
+    const { data: subscription } = supabase.auth.onAuthStateChange(() => {
+      load();
     });
     return () => subscription.subscription.unsubscribe();
   }, []);
@@ -118,6 +134,21 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={`
+                text-gs-gold font-bold px-3 py-2 rounded-lg tracking-[-0.04em] whitespace-nowrap text-center
+                hover:bg-gs-warning-bg
+                ${pathname.startsWith("/admin") ? "bg-gs-warning-bg" : ""}
+                max-lg:text-left
+              `}
+              onClick={() => setMenuOpen(false)}
+            >
+              관리자
+            </Link>
+          )}
 
           {isLoggedIn ? (
             <>

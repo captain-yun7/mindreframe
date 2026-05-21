@@ -19,6 +19,7 @@ const checklistItems = [
     label: "감정 점수 체크",
     description: "슬라이더를 한 번 움직이면 완료로 처리돼요.",
     actionLabel: "보기",
+    actionHref: "/progress#emotion-chart",
     ghost: true,
   },
   {
@@ -65,6 +66,8 @@ export interface DashboardInitial {
   gratitudeDone: boolean;
   checkedKeys: string[];
   today: string;
+  streak: number;
+  totalDays: number;
 }
 
 export function DashboardClient({ initial }: { initial: DashboardInitial }) {
@@ -182,13 +185,6 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
             </div>
 
             <div className="mt-4 flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setChecks({})}
-                className="border border-gs-line-soft bg-white rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
-              >
-                오늘 체크 초기화
-              </button>
               <a
                 href="/progress"
                 className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
@@ -247,13 +243,6 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
               >
                 감사일기 저장
               </button>
-              <button
-                type="button"
-                onClick={() => setGratitudeText("")}
-                className="border border-gs-line-soft bg-white rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
-              >
-                내용 지우기
-              </button>
             </div>
           </Card>
         </div>
@@ -261,8 +250,8 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
         <RoutineSidebar
           moodScore={moodScore}
           completionRate={completionRate}
-          streak={0}
-          totalDays={1}
+          streak={initial.streak}
+          totalDays={initial.totalDays}
           hint="혼합형은 '하나만 선택'이 승리예요. 오늘은 1개만 해도 OK."
         />
       </div>

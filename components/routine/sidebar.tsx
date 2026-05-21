@@ -36,16 +36,10 @@ export function RoutineSidebar({
 
       <div className="mt-4 flex gap-2 flex-wrap">
         <Link
-          href="/"
-          className="border border-gs-line bg-white rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
-        >
-          홈으로
-        </Link>
-        <Link
           href="/progress"
           className="border border-gs-blue/35 bg-gs-blue-light rounded-xl px-3 py-2 text-[13px] font-[950] text-gs-blue cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
         >
-          성장방
+          나의 성장방에서 보기
         </Link>
       </div>
     </aside>
