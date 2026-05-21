@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card, CardTitle } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
+import { AdminUserActions } from "./admin-user-actions";
 
 export default async function AdminUserDetailPage({
   params,
@@ -114,6 +115,19 @@ export default async function AdminUserDetailPage({
         ) : (
           <p className="mt-3 text-sm text-gs-muted">검사 미완료</p>
         )}
+      </Card>
+
+      <Card className="mt-4">
+        <CardTitle>관리자 직접 수정</CardTitle>
+        <div className="mt-3">
+          <AdminUserActions
+            userId={user.id}
+            currentPlan={user.plan ?? "free"}
+            currentRole={user.role}
+            currentNotificationHour={user.notification_hour}
+            notificationsActive={!!user.notifications_started_at}
+          />
+        </div>
       </Card>
 
       <Card className="mt-4">

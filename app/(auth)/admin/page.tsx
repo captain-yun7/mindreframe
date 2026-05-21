@@ -73,8 +73,12 @@ export default async function AdminDashboardPage() {
         <CardTitle>관리 메뉴</CardTitle>
         <div className="mt-4 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
           {[
-            { href: "/admin/users", label: "사용자 관리", desc: "검색·플랜·알림 상태" },
+            { href: "/admin/users", label: "사용자 관리", desc: "검색·플랜·알림 상태 + 직접 수정" },
+            { href: "/admin/payments", label: "결제 이력", desc: "전체 결제 + 상태 필터" },
+            { href: "/admin/notifications", label: "알림 발송 이력", desc: "성공·실패·재시도" },
+            { href: "/admin/stats", label: "통계", desc: "가입·분석·플랜·인지왜곡 분포" },
             { href: "/admin/coach", label: "코치 채팅", desc: "활성 세션 답변" },
+            { href: "/admin/prompts", label: "분석기 프롬프트", desc: "AI 지시문 뷰어" },
           ].map((m) => (
             <Link
               key={m.href}
