@@ -225,7 +225,13 @@ export async function sendCoachReply(sessionId: string, content: string) {
 
 async function notifyUserOfCoachReply(sessionId: string) {
   const { supabaseAdmin } = await import("@/lib/supabase-admin");
-  const { sendSms } = await import("@/lib/notifications/solapi");
+  const { sendAlimtalk } = await import("@/lib/notifications/solapi");
+
+  const templateId = process.env.SOLAPI_ALIMTALK_REPLY_TEMPLATE_ID;
+  if (!templateId) {
+    // 코치 답변 알림톡 템플릿 미설정 시 발송 생략 (검수 통과 전)
+    return;
+  }
 
   const { data: session } = await supabaseAdmin
     .from("coach_chat_sessions")
@@ -242,8 +248,9 @@ async function notifyUserOfCoachReply(sessionId: string) {
   const phone = u?.phone_number;
   if (!phone) return;
 
-  await sendSms({
+  await sendAlimtalk({
     to: phone.replace(/[^0-9]/g, ""),
-    text: "[가짜생각] 상담사가 답변을 보냈어요. 앱에서 확인해주세요.\nhttps://mindreframe.net/coach",
+    templateId,
+    variables: {},
   });
 }
