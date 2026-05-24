@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { AnalysisCardList, type AnalysisItem } from "./analysis-card-list";
 import { parseExerciseNote } from "@/lib/exercise-payload";
 import { EmotionChart } from "./emotion-chart";
+import { GratitudeList } from "./gratitude-list";
 
 export const dynamic = "force-dynamic";
 
@@ -253,23 +254,7 @@ export default async function ProgressPage() {
       <Card className="mt-4">
         <CardTitle>감사일기</CardTitle>
         <CardDescription>오늘 감사했던 한 줄을 모았어요.</CardDescription>
-        {stats && stats.recentGratitudes.length > 0 ? (
-          <ul className="mt-4 space-y-2" data-testid="recent-gratitudes">
-            {stats.recentGratitudes.map((g) => (
-              <li
-                key={g.id}
-                className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px]"
-              >
-                <div className="text-gs-muted text-[11px] mb-1">{g.recorded_at}</div>
-                <div>{g.content}</div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="mt-4 text-center text-gs-muted text-[13px] py-6">
-            오늘의 루틴에서 감사일기를 저장하면 여기에 모입니다.
-          </div>
-        )}
+        <GratitudeList initial={stats?.recentGratitudes ?? []} />
       </Card>
 
       {/* 행동연습장 */}

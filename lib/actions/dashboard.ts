@@ -114,6 +114,38 @@ export async function saveGratitudeEntry(content: string) {
   return { ok: true as const, id: data.id };
 }
 
+/**
+ * 감사일기 페이지네이션. /progress 의 "더 보기" 버튼이 호출.
+ * `beforeCursor` 이전(더 옛날)에 작성된 감사일기를 최대 `pageSize`개 반환.
+ */
+export async function loadMoreGratitudes(beforeCursor: string, pageSize: number = 20) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
+
+  const safeSize = Math.min(Math.max(1, pageSize), 50);
+
+  const { data, error } = await supabase
+    .from("gratitude_entries")
+    .select("id, content, recorded_at, created_at")
+    .eq("user_id", user.id)
+    .lt("created_at", beforeCursor)
+    .order("created_at", { ascending: false })
+    .limit(safeSize + 1);
+
+  if (error) return { ok: false as const, error: error.message };
+
+  const hasMore = (data?.length ?? 0) > safeSize;
+  const entries = (data ?? []).slice(0, safeSize);
+
+  return {
+    ok: true as const,
+    entries,
+    hasMore,
+    nextCursor: entries.length > 0 ? entries[entries.length - 1].created_at : null,
+  };
+}
+
 export async function toggleRoutineCheck(itemKey: string, checked: boolean) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
