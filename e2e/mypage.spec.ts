@@ -12,21 +12,19 @@ test.describe("/mypage 마이페이지", () => {
     if (user) await deleteTestUser(user.id);
   });
 
-  test("프로필 표시 + 닉네임 변경 + 로그아웃", async ({ page }) => {
+  test("프로필 표시 + 로그아웃 (F75: 닉네임 변경 불가)", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/mypage");
 
     await expect(page.getByRole("heading", { name: "마이페이지" })).toBeVisible();
     await expect(page.getByTestId("profile-email")).toContainText(user.email);
     await expect(page.getByTestId("profile-plan")).toContainText("premium");
+    await expect(page.getByTestId("profile-nickname")).toBeVisible();
 
-    // 닉네임 변경
-    await page.getByRole("button", { name: "변경" }).click();
-    const newNick = "새닉네임_" + Date.now();
-    await page.locator('input[type="text"]').fill(newNick);
-    await page.getByRole("button", { name: "저장" }).click();
-    await expect(page.getByText("닉네임이 변경되었습니다")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("profile-nickname")).toContainText(newNick);
+    // 닉네임 변경 UI가 마이페이지에 없어야 함
+    await expect(
+      page.getByRole("main").getByRole("button", { name: "변경" }),
+    ).toHaveCount(0);
 
     // 로그아웃 (마이페이지 카드 안의 버튼)
     await page.getByRole("main").getByRole("button", { name: "로그아웃" }).click();

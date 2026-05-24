@@ -24,12 +24,15 @@ export async function createTestUser(plan: "free" | "light" | "pro" | "premium" 
   if (error) throw new Error(`createTestUser: ${error.message}`);
 
   // PLAN_GATE_ENABLED=true 환경에서 모든 페이지 접근 가능하도록 기본 premium.
-  // 또 onboarding 가드(F41) 우회를 위해 onboarding_completed=true도 자동 설정.
+  // F41 onboarding 가드 + F75 닉네임 가드 우회를 위해 onboarding_completed/nickname_set=true 자동 설정.
   // 트리거가 public.users 자동 생성하므로 update만 필요. 생성 전이면 한 번 retry.
   for (let i = 0; i < 3; i++) {
     const { error: updateError, count } = await admin
       .from("users")
-      .update({ plan, onboarding_completed: true }, { count: "exact" })
+      .update(
+        { plan, onboarding_completed: true, nickname_set: true },
+        { count: "exact" },
+      )
       .eq("id", data.user.id);
     if (!updateError && (count ?? 0) > 0) break;
     await new Promise((r) => setTimeout(r, 200));

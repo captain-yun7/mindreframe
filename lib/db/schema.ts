@@ -26,6 +26,7 @@ export const users = pgTable("users", {
   notificationHour: integer("notification_hour").notNull().default(9),
   notificationsStartedAt: date("notifications_started_at"),
   onboardingCompleted: boolean("onboarding_completed").default(false),
+  nicknameSet: boolean("nickname_set").notNull().default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),

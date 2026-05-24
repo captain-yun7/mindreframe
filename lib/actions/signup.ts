@@ -30,9 +30,14 @@ export async function signUpAnonymousWithNickname(rawNickname: string) {
     data: { user: existing },
   } = await supabase.auth.getUser();
   if (existing) {
+    // 익명 가입 페이지에서 사용자가 직접 닉네임 입력 → nickname_set=true.
     const { error: updateErr } = await supabase
       .from("users")
-      .update({ nickname, updated_at: new Date().toISOString() })
+      .update({
+        nickname,
+        nickname_set: true,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", existing.id);
     if (updateErr) return { ok: false as const, error: updateErr.message };
     return { ok: true as const, alreadySignedIn: true };
@@ -61,10 +66,14 @@ export async function signUpAnonymousWithNickname(rawNickname: string) {
   }
 
   // 트리거가 metadata.nickname을 못 읽었거나 빈 값일 때 대비해 명시적 동기화
-  // (트리거는 full_name → name → nickname 순으로 보지만 안전망)
+  // 익명 가입은 사용자가 닉네임을 직접 입력했으므로 nickname_set=true.
   const { error: syncErr } = await supabase
     .from("users")
-    .update({ nickname, updated_at: new Date().toISOString() })
+    .update({
+      nickname,
+      nickname_set: true,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", data.user.id);
   if (syncErr) {
     // 트리거 미동작 가능성 — 행이 없을 수 있다. upsert로 폴백.
@@ -73,6 +82,7 @@ export async function signUpAnonymousWithNickname(rawNickname: string) {
         id: data.user.id,
         email: `${data.user.id}@anon.local`,
         nickname,
+        nickname_set: true,
         provider: "anonymous",
       },
       { onConflict: "id" },

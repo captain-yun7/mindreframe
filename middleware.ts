@@ -51,10 +51,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 온보딩 가드 — 가입했지만 우울불안검사 미완료자는 /survey로 강제
-  // 통과 경로: /survey 본인, /login, /signup, /pricing, /auth/*, /api/*, 공개 페이지(/, /study)
+  // 온보딩 가드 — 닉네임 미설정자는 /onboarding/nickname, 설문 미완료자는 /survey로 강제
+  // 통과 경로: /onboarding 본인, /survey 본인, /login, /signup, /pricing, /auth/*, /api/*, 공개 페이지(/, /study)
   if (user) {
     const onboardingExempt =
+      pathname.startsWith("/onboarding") ||
       pathname.startsWith("/survey") ||
       pathname.startsWith("/login") ||
       pathname.startsWith("/signup") ||
@@ -66,9 +67,16 @@ export async function middleware(request: NextRequest) {
     if (!onboardingExempt) {
       const { data: profile } = await supabase
         .from("users")
-        .select("onboarding_completed, plan")
+        .select("onboarding_completed, nickname_set, plan")
         .eq("id", user.id)
         .single();
+
+      // F75 — 닉네임 미설정자는 먼저 /onboarding/nickname으로
+      if (profile && !profile.nickname_set) {
+        const nickUrl = new URL("/onboarding/nickname", request.url);
+        return NextResponse.redirect(nickUrl);
+      }
+
       if (profile && !profile.onboarding_completed) {
         const surveyUrl = new URL("/survey", request.url);
         return NextResponse.redirect(surveyUrl);

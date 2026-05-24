@@ -3,7 +3,6 @@ import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card, CardTitle } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { LogoutButton } from "./logout-button";
-import { NicknameForm } from "./nickname-form";
 import { NotificationSettings } from "./notification-settings";
 
 export default async function MyPage() {
@@ -64,7 +63,12 @@ export default async function MyPage() {
       <Card className="mt-6">
         <CardTitle>프로필</CardTitle>
         <div className="mt-4 space-y-3">
-          <NicknameForm initial={profile.nickname} />
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-gs-muted">닉네임</span>
+            <span data-testid="profile-nickname" className="text-sm font-bold">
+              {profile.nickname}
+            </span>
+          </div>
           <div className="flex items-center justify-between">
             <span className="text-[13px] text-gs-muted">이메일</span>
             <span data-testid="profile-email" className="text-sm font-bold">
