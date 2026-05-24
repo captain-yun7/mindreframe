@@ -261,7 +261,7 @@ export default function SurveyPage() {
             ? { key: "premium", label: "프리미엄", reason: "전담 상담사와 함께 깊이 있는 변화를" }
             : total > 100
               ? { key: "pro", label: "프로", reason: "행동연습장·명상·1:1 코칭으로 입체적 케어를" }
-              : { key: "light", label: "라이트 AI", reason: "AI 분석과 기록으로 부드러운 시작을" };
+              : { key: "light", label: "라이트", reason: "분석기와 기록으로 부드러운 시작을" };
 
         return (
           <div

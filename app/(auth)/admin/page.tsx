@@ -78,7 +78,7 @@ export default async function AdminDashboardPage() {
             { href: "/admin/notifications", label: "알림 발송 이력", desc: "성공·실패·재시도" },
             { href: "/admin/stats", label: "통계", desc: "가입·분석·플랜·인지왜곡 분포" },
             { href: "/admin/coach", label: "코치 채팅", desc: "활성 세션 답변" },
-            { href: "/admin/prompts", label: "분석기 프롬프트", desc: "AI 지시문 뷰어" },
+            { href: "/admin/prompts", label: "분석기 프롬프트", desc: "분석기 지시문 뷰어" },
           ].map((m) => (
             <Link
               key={m.href}

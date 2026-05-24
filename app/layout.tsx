@@ -12,11 +12,11 @@ const pretendard = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "가짜생각 — AI 인지행동치료 생각 훈련",
+    default: "가짜생각 — 인지행동치료 기반 생각 훈련",
     template: "%s | 가짜생각",
   },
   description:
-    "우울·불안·공황장애의 원인인 왜곡된 생각을 AI가 찾아 교정하는 인지행동치료 기반 생각 훈련 프로그램",
+    "우울·불안·공황장애의 원인인 왜곡된 생각을 가짜생각 분석기가 찾아 교정하는 인지행동치료 기반 생각 훈련 프로그램",
 };
 
 export const viewport: Viewport = {

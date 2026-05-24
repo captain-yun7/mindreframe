@@ -10,7 +10,7 @@ export type PlanSpec = {
 };
 
 export const PLAN_SPECS: Record<PaidPlan, PlanSpec> = {
-  light: { slug: "light", name: "라이트 AI", amount: 254000, durationDays: 100 },
+  light: { slug: "light", name: "라이트", amount: 254000, durationDays: 100 },
   pro: { slug: "pro", name: "프로", amount: 394000, durationDays: 100 },
   premium: { slug: "premium", name: "프리미엄", amount: 694000, durationDays: 100 },
 };

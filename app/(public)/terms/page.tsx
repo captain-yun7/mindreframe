@@ -43,7 +43,7 @@ export default function TermsPage() {
 
         <h2 className="text-lg font-black mt-8 mb-2">제5조 (서비스의 제공 및 변경)</h2>
         <ul className="list-disc pl-6">
-          <li>회사는 회원에게 인지행동치료 기반 콘텐츠, AI 분석, 명상·행동연습 기록 등의 서비스를 제공합니다.</li>
+          <li>회사는 회원에게 인지행동치료 기반 콘텐츠, 가짜생각 분석, 명상·행동연습 기록 등의 서비스를 제공합니다.</li>
           <li>회사는 운영상·기술상의 필요에 따라 서비스의 일부 또는 전부를 변경·중단할 수 있으며, 사전 공지합니다(긴급한 경우 사후 공지).</li>
         </ul>
 

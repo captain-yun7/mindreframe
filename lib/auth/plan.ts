@@ -71,3 +71,20 @@ export function getRoutePlanRequirement(pathname: string): Plan | null {
 export function isPlanGateEnabled(): boolean {
   return process.env.PLAN_GATE_ENABLED === "true";
 }
+
+/**
+ * 설문 점수(우울 0~27, 불안 0~21) 기반 추천 플랜 계산.
+ * 백분율 환산 후 합산하여 라이트/프로/프리미엄 분기.
+ * `/survey`와 `/pricing` 양쪽에서 동일하게 사용해야 일관성 유지.
+ */
+export function computeRecommendedPlan(
+  depressionScore: number,
+  anxietyScore: number,
+): Plan {
+  const depPercent = Math.round((depressionScore / 27) * 100);
+  const anxPercent = Math.round((anxietyScore / 21) * 100);
+  const total = depPercent + anxPercent;
+  if (total > 140) return "premium";
+  if (total > 100) return "pro";
+  return "light";
+}

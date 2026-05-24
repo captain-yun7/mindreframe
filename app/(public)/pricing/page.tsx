@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { Plan } from "@/lib/auth/plan";
+import { computeRecommendedPlan, type Plan } from "@/lib/auth/plan";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
@@ -19,7 +19,6 @@ const plans: Array<{
   price: string;
   period: string;
   features: string[];
-  recommended: boolean;
 }> = [
   {
     key: "light",
@@ -34,7 +33,6 @@ const plans: Array<{
       "알고가기(학습) 전체",
       "나의성장방",
     ],
-    recommended: false,
   },
   {
     key: "pro",
@@ -48,7 +46,6 @@ const plans: Array<{
       "행동연습장",
       "명상하기",
     ],
-    recommended: true,
   },
   {
     key: "premium",
@@ -61,7 +58,6 @@ const plans: Array<{
       "주 4회 1:1 코칭",
       "우선 고객 지원",
     ],
-    recommended: false,
   },
 ];
 
@@ -73,17 +69,42 @@ export default async function PricingPage({
   const params = await searchParams;
   const requiredPlan = params.required && PLAN_LABEL[params.required] ? params.required : null;
 
-  // 월 구독은 2회 이상 결제자만 노출 (재구매 충성 고객 한정)
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  // 월 구독은 2회 이상 결제자만 노출 (재구매 충성 고객 한정)
   let showMonthly = false;
+  let surveyRecommended: Plan | null = null;
   if (user) {
-    const { count } = await supabase
-      .from("payments")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    showMonthly = (count ?? 0) >= 2;
+    const [paymentsRes, surveyRes] = await Promise.all([
+      supabase
+        .from("payments")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id),
+      supabase
+        .from("survey_responses")
+        .select("depression_score, anxiety_score")
+        .eq("user_id", user.id)
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    showMonthly = (paymentsRes.count ?? 0) >= 2;
+
+    if (surveyRes.data) {
+      surveyRecommended = computeRecommendedPlan(
+        surveyRes.data.depression_score ?? 0,
+        surveyRes.data.anxiety_score ?? 0,
+      );
+    }
   }
+
+  // requiredPlan(가드된 페이지 진입) > 설문 점수 > 비로그인/설문 없음 → pro 기본 추천
+  const allowedPlans: Plan[] = ["light", "pro", "premium"];
+  const effectiveRecommended: Plan =
+    requiredPlan && allowedPlans.includes(requiredPlan as Plan)
+      ? (requiredPlan as Plan)
+      : (surveyRecommended ?? "pro");
 
   return (
     <div className="min-h-screen bg-gs-surface-muted">
@@ -111,54 +132,59 @@ export default async function PricingPage({
         )}
 
         {/* 플랜 카드 */}
-        <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`bg-white rounded-[18px] p-5 border-2 shadow-gs-card transition-shadow hover:shadow-gs-card-hover ${
-                plan.recommended
-                  ? "border-gs-blue"
-                  : "border-gs-line-soft"
-              }`}
-            >
-              {plan.recommended && (
-                <span className="inline-block mb-2 bg-gs-blue-soft text-gs-blue-soft-fg text-[11px] font-bold px-3 py-1 rounded-full">
-                  추천
-                </span>
-              )}
-              <h3 className="text-lg font-[950] mb-1">{plan.name}</h3>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-3xl font-black">
-                  {plan.price}
-                </span>
-                <span className="text-sm text-gs-muted-soft">원</span>
-              </div>
-              <p className="text-[13px] text-gs-muted-light mb-4">
-                {plan.period}
-              </p>
-              <ul className="space-y-2 mb-6">
-                {plan.features.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-start gap-2 text-[13px] text-gs-text-soft"
-                  >
-                    <span className="text-gs-blue shrink-0">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={`/checkout?plan=${plan.key}`}
-                className={`block w-full py-3 rounded-[14px] text-sm font-bold text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2 ${
-                  plan.recommended
-                    ? "bg-gs-blue text-white hover:bg-gs-blue-hover"
-                    : "bg-white border border-gs-line-mid text-gs-text-soft hover:bg-gs-surface-mid"
+        <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1 pt-4">
+          {plans.map((plan) => {
+            const isRecommended = plan.key === effectiveRecommended;
+            return (
+              <div
+                key={plan.name}
+                data-testid={`plan-card-${plan.key}`}
+                data-recommended={isRecommended ? "true" : "false"}
+                className={`relative bg-white rounded-[18px] p-5 border-2 shadow-gs-card transition-all ${
+                  isRecommended
+                    ? "border-gs-blue ring-4 ring-gs-blue/20 scale-[1.03] shadow-gs-card-hover"
+                    : "border-gs-line-soft opacity-90 hover:opacity-100"
                 }`}
               >
-                선택하기
-              </Link>
-            </div>
-          ))}
+                {isRecommended && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-block bg-gs-blue text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-gs-card whitespace-nowrap">
+                    ⭐ 당신에게 추천
+                  </span>
+                )}
+                <h3 className="text-lg font-[950] mb-1">{plan.name}</h3>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-3xl font-black">
+                    {plan.price}
+                  </span>
+                  <span className="text-sm text-gs-muted-soft">원</span>
+                </div>
+                <p className="text-[13px] text-gs-muted-light mb-4">
+                  {plan.period}
+                </p>
+                <ul className="space-y-2 mb-6">
+                  {plan.features.map((f) => (
+                    <li
+                      key={f}
+                      className="flex items-start gap-2 text-[13px] text-gs-text-soft"
+                    >
+                      <span className="text-gs-blue shrink-0">✓</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href={`/checkout?plan=${plan.key}`}
+                  className={`block w-full py-3 rounded-[14px] text-sm font-bold text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2 ${
+                    isRecommended
+                      ? "bg-gs-blue text-white hover:bg-gs-blue-hover"
+                      : "bg-white border border-gs-line-mid text-gs-text-soft hover:bg-gs-surface-mid"
+                  }`}
+                >
+                  선택하기
+                </Link>
+              </div>
+            );
+          })}
         </div>
         {/* 월 구독 — 2회 이상 결제자 한정 노출 */}
         {showMonthly && (

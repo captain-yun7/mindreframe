@@ -8,7 +8,7 @@ export function SiteFooter() {
           <div>
             <p className="font-bold text-white/90 text-[15px]">가짜생각</p>
             <p className="mt-1">
-              AI 인지행동치료 기반 생각 훈련 프로그램
+              인지행동치료 기반 생각 훈련 프로그램
             </p>
           </div>
           <div className="flex gap-6">

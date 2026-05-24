@@ -107,7 +107,7 @@ export default function ChatPage() {
           <span className="text-gs-gold">정말 사실일까요?</span>
         </h1>
         <p className="text-sm opacity-90 leading-[1.6]">
-          AI가 11가지 인지왜곡 패턴 중 어떤 게 작동했는지 함께 찾고,
+          가짜생각 분석기가 11가지 인지왜곡 패턴 중 어떤 게 작동했는지 함께 찾고,
           <br />
           더 합리적인 <b>대안사고</b>를 만들어 드려요.
         </p>

@@ -84,7 +84,7 @@ export default function PrivacyPage() {
             </tr>
             <tr>
               <td className="border border-gs-line-soft p-2">OpenAI, L.L.C.</td>
-              <td className="border border-gs-line-soft p-2">AI 기반 분석(생각 입력 텍스트만 처리, 식별정보 미전달)</td>
+              <td className="border border-gs-line-soft p-2">가짜생각 분석(생각 입력 텍스트만 처리, 식별정보 미전달)</td>
             </tr>
             <tr>
               <td className="border border-gs-line-soft p-2">㈜토스페이먼츠</td>

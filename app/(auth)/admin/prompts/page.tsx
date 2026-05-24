@@ -35,7 +35,7 @@ export default async function AdminPromptsPage() {
       </div>
       <PageTitle>분석기 프롬프트 뷰어</PageTitle>
       <PageLead>
-        가짜생각 분석기가 AI에 전달하는 지시문. 현재는 읽기 전용 — 수정은 코드(`lib/cbt/prompts.ts`)에서.
+        가짜생각 분석기가 OpenAI에 전달하는 시스템 메시지. 현재는 읽기 전용 — 수정은 코드(`lib/cbt/prompts.ts`)에서.
       </PageLead>
 
       <Card className="mt-4">

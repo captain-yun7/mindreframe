@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const PLAN_LABEL: Record<string, string> = {
-  light: "라이트 AI",
+  light: "라이트",
   pro: "프로",
   premium: "프리미엄",
 };
