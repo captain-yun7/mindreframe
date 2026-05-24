@@ -24,3 +24,8 @@ CREATE INDEX IF NOT EXISTS idx_thought_user_created
 -- routine_checks distinct dates count (streak / totalDays)
 CREATE INDEX IF NOT EXISTS idx_routine_user
   ON routine_checks(user_id);
+
+-- emotion_scores sub-select (get_progress_stats의 emotionPoints)
+-- source='routine' AND recorded_at >= 14일전 필터 + 정렬
+CREATE INDEX IF NOT EXISTS idx_emotion_user_source_recorded
+  ON emotion_scores(user_id, source, recorded_at DESC);

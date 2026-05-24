@@ -39,5 +39,7 @@ export async function startNotifications(userId: string, phoneNumber: string) {
     })
     .eq("id", userId);
   if (error) return { ok: false as const, error: "휴대폰 번호 등록 실패" };
+  // F70 일관성 — 결제 후 /mypage 진입 시 알림 상태 즉시 반영
+  revalidatePath("/mypage");
   return { ok: true as const };
 }

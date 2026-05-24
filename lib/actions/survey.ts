@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 type SurveyInput = {
@@ -68,6 +69,10 @@ export async function submitSurvey(input: SurveyInput) {
     .from("users")
     .update({ onboarding_completed: true })
     .eq("id", user.id);
+
+  // F70 일관성 — pricing 추천(설문 기반)·dashboard 진입 시 stale 캐시 방지
+  revalidatePath("/pricing");
+  revalidatePath("/dashboard");
 
   return {
     ok: true as const,
