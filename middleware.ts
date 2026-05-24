@@ -65,14 +65,26 @@ export async function middleware(request: NextRequest) {
       pathname === "/" ||
       pathname.startsWith("/study");
     if (!onboardingExempt) {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("users")
         .select("onboarding_completed, nickname_set, plan")
         .eq("id", user.id)
         .single();
 
+      // F75 fallback — nickname_set 컬럼이 DB에 없는 환경(마이그레이션 미적용)에서는
+      // 운영 중단 대신 신규 onboarding 가드만 일시 비활성. SQL 적용되면 자동 정상 동작.
+      // 다른 PostgrestError는 일단 통과시키되 로그 — 기존 사용자 차단 막기 위함.
+      const columnMissing =
+        profileError &&
+        (profileError.code === "42703" ||
+          /column .*nickname_set.* does not exist/i.test(profileError.message));
+      if (profileError) {
+        console.error("[middleware] profile fetch error:", profileError);
+      }
+
       // F75 — 닉네임 미설정자는 먼저 /onboarding/nickname으로
-      if (profile && !profile.nickname_set) {
+      // 컬럼 없음(fallback) 시에는 기존 사용자로 간주 → 닉네임 가드 스킵
+      if (!columnMissing && profile && !profile.nickname_set) {
         const nickUrl = new URL("/onboarding/nickname", request.url);
         return NextResponse.redirect(nickUrl);
       }

@@ -9,11 +9,21 @@ export default async function NicknameOnboardingPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("users")
     .select("nickname, nickname_set, onboarding_completed")
     .eq("id", user.id)
     .single();
+
+  // F75 fallback — 마이그레이션 미적용(nickname_set 컬럼 없음) 환경에서는 가드 자체를 비활성.
+  // 사용자가 이 페이지를 직접 입력해 진입한 경우에도 의미 있는 안내로 redirect.
+  const columnMissing =
+    profileError &&
+    (profileError.code === "42703" ||
+      /column .*nickname_set.* does not exist/i.test(profileError.message));
+  if (columnMissing) {
+    redirect("/dashboard");
+  }
 
   // 이미 설정 완료 — 후속 단계로 보냄
   if (profile?.nickname_set) {
