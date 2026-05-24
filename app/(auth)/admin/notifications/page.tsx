@@ -54,9 +54,15 @@ export default async function AdminNotificationsPage({
 
   return (
     <PageLayout>
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
         <Link href="/admin" className="text-sm text-gs-blue">
           ← 대시보드
+        </Link>
+        <Link
+          href="/admin/notifications/messages"
+          className="px-3 py-1.5 rounded-[10px] bg-gs-blue text-white text-sm font-bold"
+        >
+          100일 메시지 콘텐츠 편집 →
         </Link>
       </div>
       <PageTitle>알림 발송 이력</PageTitle>

@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getNotificationByDay } from "@/lib/notification-messages";
+import {
+  NOTIFICATION_MESSAGES,
+  getNotificationByDay as fallbackGetByDay,
+} from "@/lib/notification-messages";
 import { sendAlimtalk } from "@/lib/notifications/solapi";
 
 /**
  * 카카오 알림톡 발송 cron.
  * Vercel Cron이 매시 정각에 호출하면 — 그 시각에 발송하기로 한 유저들 추려서 발송.
+ *
+ * F86: 일차별 본문은 notification_messages 테이블에서 fetch
+ *      (마이그레이션 미적용 시 lib/notification-messages.ts fallback)
  *
  * 트리거 조건 (모두 만족):
  *   - users.phone_number IS NOT NULL
@@ -24,6 +30,33 @@ interface UserRow {
   phone_number: string | null;
   notification_hour: number;
   notifications_started_at: string | null;
+}
+
+/**
+ * 100일치 메시지를 한 번에 fetch해서 Map으로 캐싱.
+ * 마이그레이션 미적용 또는 빈 테이블이면 fallback 코드 박힘 데이터 사용.
+ */
+async function loadMessageMap(): Promise<Map<number, string>> {
+  const map = new Map<number, string>();
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("notification_messages")
+      .select("day_number, content");
+    if (!error && data && data.length > 0) {
+      for (const row of data) {
+        if (typeof row.day_number === "number" && typeof row.content === "string") {
+          map.set(row.day_number, row.content);
+        }
+      }
+      return map;
+    }
+  } catch {
+    // 테이블 미존재 등 — fallback 사용
+  }
+  for (const m of NOTIFICATION_MESSAGES) {
+    map.set(m.day, m.content);
+  }
+  return map;
 }
 
 export async function GET(request: Request) {
@@ -58,6 +91,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // 100개 메시지 일괄 fetch + 캐싱 (N+1 회피)
+  const messageMap = await loadMessageMap();
+
   let sent = 0;
   let failed = 0;
   let skipped = 0;
@@ -79,8 +115,8 @@ export async function GET(request: Request) {
       continue;
     }
 
-    const msg = getNotificationByDay(elapsedDays);
-    if (!msg) {
+    const content = messageMap.get(elapsedDays) ?? fallbackGetByDay(elapsedDays)?.content ?? null;
+    if (!content) {
       skipped++;
       continue;
     }
@@ -103,7 +139,7 @@ export async function GET(request: Request) {
       templateId,
       variables: {
         "#{day}": String(elapsedDays),
-        "#{content}": msg.content,
+        "#{content}": content,
       },
     });
 
