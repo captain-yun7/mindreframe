@@ -5,6 +5,8 @@ import { AnalysisCardList, type AnalysisItem } from "./analysis-card-list";
 import { parseExerciseNote } from "@/lib/exercise-payload";
 import { EmotionChart } from "./emotion-chart";
 
+export const dynamic = "force-dynamic";
+
 const fixedBadges = [
   { icon: "🌱", title: "첫 시작", desc: "첫 가짜생각 분석 완료" },
   { icon: "🔥", title: "3일 연속", desc: "3일 연속 루틴 완료" },

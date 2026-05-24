@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { todayKst, isoWeekKst, calcStreak } from "@/lib/dates";
@@ -86,6 +87,8 @@ export async function saveEmotionScore(score: number, source: "routine" | "trash
 
   if (error) return { ok: false as const, error: error.message };
   if (source === "routine") await autoCheckRoutine(supabase, user.id, "mood");
+  revalidatePath("/dashboard");
+  revalidatePath("/progress");
   return { ok: true as const };
 }
 
@@ -106,6 +109,8 @@ export async function saveGratitudeEntry(content: string) {
 
   if (error) return { ok: false as const, error: error.message };
   await autoCheckRoutine(supabase, user.id, "gratitude");
+  revalidatePath("/dashboard");
+  revalidatePath("/progress");
   return { ok: true as const, id: data.id };
 }
 
@@ -126,5 +131,7 @@ export async function toggleRoutineCheck(itemKey: string, checked: boolean) {
     if (error) return { ok: false as const, error: error.message };
   }
 
+  revalidatePath("/dashboard");
+  revalidatePath("/progress");
   return { ok: true as const };
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { autoCheckRoutine } from "./dashboard";
 import {
@@ -59,6 +60,8 @@ export async function sendChatMessage({ sessionId, content }: SendInput) {
       return { ok: false as const, error: safetyInsert.error.message };
     }
     await autoCheckRoutine(supabase, user.id, "analysis");
+    revalidatePath("/progress");
+    revalidatePath("/dashboard");
     return {
       ok: true as const,
       sessionId: activeId,
@@ -131,6 +134,9 @@ export async function sendChatMessage({ sessionId, content }: SendInput) {
     .insert({ session_id: activeId, role: "assistant", content: assistantText });
 
   await autoCheckRoutine(supabase, user.id, "analysis");
+  revalidatePath("/progress");
+  revalidatePath("/dashboard");
+  revalidatePath("/chat");
 
   return {
     ok: true as const,
@@ -166,6 +172,8 @@ export async function saveChatAnalysis({
     distortion_types: distortionTypes ?? [],
   });
   if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/progress");
+  revalidatePath("/chat");
   return { ok: true as const };
 }
 
@@ -253,6 +261,9 @@ export async function summarizeAndSaveSession(sessionId: string) {
     .from("chat_sessions")
     .update({ status: "summarized" })
     .eq("id", sessionId);
+
+  revalidatePath("/progress");
+  revalidatePath("/chat");
 
   return {
     ok: true as const,

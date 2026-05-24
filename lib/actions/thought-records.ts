@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { autoCheckRoutine } from "./dashboard";
 
@@ -31,6 +32,9 @@ export async function addThoughtRecord(input: ThoughtInput) {
 
   if (error) return { ok: false as const, error: error.message };
   await autoCheckRoutine(supabase, user.id, "trash");
+  revalidatePath("/progress");
+  revalidatePath("/dashboard");
+  revalidatePath("/trash");
   return { ok: true as const, id: data.id };
 }
 

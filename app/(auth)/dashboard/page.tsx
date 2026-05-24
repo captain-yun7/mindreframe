@@ -1,6 +1,8 @@
 import { loadTodayDashboard } from "@/lib/actions/dashboard";
 import { DashboardClient, type DashboardInitial } from "./dashboard-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const r = await loadTodayDashboard();
 

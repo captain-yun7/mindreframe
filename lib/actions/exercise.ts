@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { autoCheckRoutine } from "./dashboard";
 import type { ExercisePayload } from "@/lib/exercise-payload";
@@ -28,5 +29,7 @@ export async function logExercise({
   });
   if (error) return { ok: false as const, error: error.message };
   await autoCheckRoutine(supabase, user.id, "courage");
+  revalidatePath("/progress");
+  revalidatePath("/dashboard");
   return { ok: true as const };
 }

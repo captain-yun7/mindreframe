@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { autoCheckRoutine } from "./dashboard";
 
@@ -25,5 +26,7 @@ export async function logMeditation({
   });
   if (error) return { ok: false as const, error: error.message };
   await autoCheckRoutine(supabase, user.id, "focus3");
+  revalidatePath("/progress");
+  revalidatePath("/dashboard");
   return { ok: true as const };
 }
