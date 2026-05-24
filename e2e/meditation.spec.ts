@@ -19,7 +19,7 @@ test.describe("/meditation 명상하기", () => {
     if (user) await deleteTestUser(user.id);
   });
 
-  test("재생 → 정지 시 meditation_logs 생성", async ({ page }) => {
+  test("재생 → 정지 시 meditation_logs 생성 + /progress 즉시 반영(F70)", async ({ page }) => {
     await loginAs(page, user);
     await page.goto("/meditation");
     await expect(page.getByText("지금 어디에 초점을 맞추고 싶나요?")).toBeVisible();
@@ -44,5 +44,11 @@ test.describe("/meditation 명상하기", () => {
     expect(data!.track_slug).toBeTruthy();
     expect(data!.track_title).toBeTruthy();
     expect(data!.duration).toBeGreaterThan(0);
+
+    // F70 — server action의 revalidatePath로 /progress 진입 시 즉시 반영
+    await page.goto("/progress");
+    const meditations = page.getByTestId("recent-meditations");
+    await expect(meditations).toBeVisible();
+    await expect(meditations).toContainText(data!.track_title!);
   });
 });
