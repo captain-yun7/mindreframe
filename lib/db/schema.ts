@@ -240,19 +240,26 @@ export const gratitudeEntries = pgTable("gratitude_entries", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-// ─── study_contents ───
-export const studyContents = pgTable("study_contents", {
+// ─── study_articles (F81 — 알고가기 콘텐츠) ───
+// 폐기: studyContents (사용처 없음, 20260526_study_articles.sql에서 DROP)
+export const studyArticles = pgTable("study_articles", {
   id: uuid("id").primaryKey().defaultRandom(),
   slug: text("slug").unique().notNull(),
+  category: text("category").notNull(), // 'core' | 'distortion' | 'body' | 'avoidance' | 'rumination'
   title: text("title").notNull(),
-  category: text("category").notNull(),
-  dayNumber: integer("day_number").notNull(),
-  content: text("content").notNull(),
-  sortOrder: integer("sort_order").default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  sub: text("sub"),
+  bodyHtml: text("body_html").notNull(),
+  orderIndex: integer("order_index").notNull().default(0),
+  videoId: text("video_id"),
+  requiredPlan: text("required_plan"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid("updated_by").references(() => users.id),
 });
 
 // ─── study_progress ───
+// study_content_id FK는 5/2 logs_nullable_fk + 5/26 study_articles 마이그레이션에서 제거.
+// content_slug text 컬럼만 사용 (FK 없음).
 export const studyProgress = pgTable(
   "study_progress",
   {
@@ -260,9 +267,8 @@ export const studyProgress = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id),
-    studyContentId: uuid("study_content_id")
-      .notNull()
-      .references(() => studyContents.id),
+    studyContentId: uuid("study_content_id"),
+    contentSlug: text("content_slug"),
     completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [
@@ -272,6 +278,36 @@ export const studyProgress = pgTable(
     ),
   ],
 );
+
+// ─── notification_videos (F81 — 100일 알림용 3분 영상) ───
+export const notificationVideos = pgTable("notification_videos", {
+  dayNumber: integer("day_number").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  videoId: text("video_id"),
+  durationSeconds: integer("duration_seconds"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid("updated_by").references(() => users.id),
+});
+
+// ─── notification_messages (F86 — 100일 알림 메시지 콘텐츠) ───
+export const notificationMessages = pgTable("notification_messages", {
+  dayNumber: integer("day_number").primaryKey(),
+  title: text("title"),
+  content: text("content").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid("updated_by").references(() => users.id),
+});
+
+// ─── site_settings (F89 — 사이트 전역 설정) ───
+export const siteSettings = pgTable("site_settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid("updated_by").references(() => users.id),
+});
 
 // ─── exercises ───
 export const exercises = pgTable("exercises", {
@@ -297,26 +333,35 @@ export const exerciseLogs = pgTable("exercise_logs", {
   completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow(),
 });
 
-// ─── meditation_tracks ───
-export const meditationTracks = pgTable("meditation_tracks", {
+// ─── meditations (F83 — 명상 콘텐츠) ───
+// 폐기: meditationTracks (사용처 없음, 20260526_meditations.sql에서 DROP)
+export const meditations = pgTable("meditations", {
   id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").unique().notNull(),
+  category: text("category").notNull(), // 'person' | 'nature' | 'music'
   title: text("title").notNull(),
-  category: text("category").notNull(),
-  audioUrl: text("audio_url").notNull(),
-  duration: integer("duration").notNull(),
-  sortOrder: integer("sort_order").default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  description: text("description"),
+  durationSeconds: integer("duration_seconds").notNull().default(180),
+  audioUrl: text("audio_url"),
+  videoId: text("video_id"),
+  orderIndex: integer("order_index").notNull().default(0),
+  requiredPlan: text("required_plan"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid("updated_by").references(() => users.id),
 });
 
 // ─── meditation_logs ───
+// trackId FK는 5/2 logs_nullable_fk + 5/26 meditations 마이그레이션에서 제거.
+// track_slug text 컬럼으로 추적.
 export const meditationLogs = pgTable("meditation_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id),
-  trackId: uuid("track_id")
-    .notNull()
-    .references(() => meditationTracks.id),
+  trackId: uuid("track_id"),
+  trackSlug: text("track_slug"),
+  trackTitle: text("track_title"),
   duration: integer("duration").notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow(),
 });

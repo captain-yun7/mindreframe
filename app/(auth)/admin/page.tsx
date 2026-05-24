@@ -76,9 +76,13 @@ export default async function AdminDashboardPage() {
             { href: "/admin/users", label: "사용자 관리", desc: "검색·플랜·알림 상태 + 직접 수정" },
             { href: "/admin/payments", label: "결제 이력", desc: "전체 결제 + 상태 필터" },
             { href: "/admin/notifications", label: "알림 발송 이력", desc: "성공·실패·재시도" },
+            { href: "/admin/notifications/messages", label: "알림 메시지", desc: "100일치 본문 편집" },
             { href: "/admin/stats", label: "통계", desc: "가입·분석·플랜·인지왜곡 분포" },
             { href: "/admin/coach", label: "코치 채팅", desc: "활성 세션 답변" },
             { href: "/admin/prompts", label: "분석기 프롬프트", desc: "분석기 지시문 뷰어" },
+            { href: "/admin/study", label: "알고가기 콘텐츠", desc: "글 + 100일 영상 CRUD" },
+            { href: "/admin/meditations", label: "명상 콘텐츠", desc: "음성/영상 트랙 CRUD" },
+            { href: "/admin/settings", label: "사이트 설정", desc: "약관·방침·푸터 편집" },
           ].map((m) => (
             <Link
               key={m.href}
