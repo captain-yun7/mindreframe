@@ -20,6 +20,7 @@ interface UserDetail {
   provider: string | null;
   created_at: string;
   deleted_at: string | null;
+  telegram_chat_id: string | null;
 }
 
 export default async function AdminUserDetailPage({
@@ -30,14 +31,25 @@ export default async function AdminUserDetailPage({
   const { id } = await params;
   const { supabase, user: adminUser } = await requireAdmin();
 
-  // deleted_at 컬럼 미적용 환경 fallback — 컬럼 없으면 한 번 재쿼리
+  // deleted_at / telegram_chat_id 컬럼 미적용 환경 fallback — 단계적 재쿼리
   const baseCols =
     "id, email, nickname, plan, plan_expires_at, role, phone_number, notification_hour, notifications_started_at, onboarding_completed, provider, created_at";
   let userRes = await supabase
     .from("users")
-    .select(`${baseCols}, deleted_at`)
+    .select(`${baseCols}, deleted_at, telegram_chat_id`)
     .eq("id", id)
     .maybeSingle();
+  if (
+    userRes.error &&
+    (userRes.error.code === "42703" ||
+      /telegram_chat_id/.test(userRes.error.message))
+  ) {
+    userRes = await supabase
+      .from("users")
+      .select(`${baseCols}, deleted_at`)
+      .eq("id", id)
+      .maybeSingle();
+  }
   if (
     userRes.error &&
     (userRes.error.code === "42703" || /deleted_at/.test(userRes.error.message))
@@ -161,6 +173,7 @@ export default async function AdminUserDetailPage({
             currentNotificationHour={user.notification_hour}
             notificationsActive={!!user.notifications_started_at}
             isDeleted={!!user.deleted_at}
+            currentTelegramChatId={user.telegram_chat_id ?? null}
           />
         </div>
       </Card>

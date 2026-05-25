@@ -163,9 +163,96 @@ export async function sendCoachMessage(sessionId: string, content: string) {
     .single();
   if (error || !data) return { ok: false as const, error: "메시지 전송에 실패했어요" };
 
+  // E-2: 코치에게 텔레그램 알림 (best-effort, fire-and-forget)
+  notifyCoachOfUserMessage(sessionId, r.user.id, trimmed).catch((e) => {
+    console.error("[sendCoachMessage] telegram notify failed:", e);
+  });
+
   revalidatePath("/coach");
   revalidatePath(`/admin/coach/${sessionId}`);
   return { ok: true as const, message: data as CoachMessage };
+}
+
+/**
+ * 사용자 발화 시 매칭된 코치(혹은 단일 운영자)에게 텔레그램 알림 발송.
+ *
+ * - 이미 코치 응답이 있었던 세션이면 알림 skip (스팸 방지: first_coach_reply_at)
+ * - 코치 telegram_chat_id 부재 시 TELEGRAM_DEFAULT_CHAT_ID로 fallback
+ * - TELEGRAM_BOT_TOKEN 부재 시 wrapper가 즉시 skip
+ * - 컬럼(coach_id / first_coach_reply_at) 부재 시 단일 운영자 fallback으로 동작
+ */
+async function notifyCoachOfUserMessage(
+  sessionId: string,
+  userId: string,
+  preview: string,
+) {
+  const { supabaseAdmin } = await import("@/lib/supabase-admin");
+  const { sendTelegramMessage } = await import("@/lib/notifications/telegram");
+
+  let session: {
+    coach_id: string | null;
+    first_coach_reply_at: string | null;
+  } | null = null;
+  {
+    const res = await supabaseAdmin
+      .from("coach_chat_sessions")
+      .select("coach_id, first_coach_reply_at")
+      .eq("id", sessionId)
+      .single();
+    if (res.error) {
+      const msg = res.error.message ?? "";
+      if (res.error.code === "42703" || /coach_id|first_coach_reply_at/.test(msg)) {
+        // E-1 마이그 미적용 환경 — 단일 운영자 fallback으로만 발송
+        session = { coach_id: null, first_coach_reply_at: null };
+      } else {
+        return;
+      }
+    } else {
+      session = res.data as {
+        coach_id: string | null;
+        first_coach_reply_at: string | null;
+      };
+    }
+  }
+  if (!session) return;
+  if (session.first_coach_reply_at) return; // 스팸 방지
+
+  // 사용자 닉네임 + 코치 chat_id 조회
+  const userPromise = supabaseAdmin
+    .from("users")
+    .select("nickname")
+    .eq("id", userId)
+    .single();
+  const coachPromise = session.coach_id
+    ? supabaseAdmin
+        .from("users")
+        .select("telegram_chat_id")
+        .eq("id", session.coach_id)
+        .single()
+    : Promise.resolve({ data: null, error: null });
+
+  const [userRes, coachRes] = await Promise.all([userPromise, coachPromise]);
+  const nickname =
+    (userRes.data as { nickname?: string } | null)?.nickname ?? "사용자";
+  const coachChatId =
+    (coachRes.data as { telegram_chat_id?: string | null } | null)
+      ?.telegram_chat_id ?? null;
+
+  const sitePrefix =
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://mindreframe.net";
+  const link = `${sitePrefix}/admin/coach/${sessionId}`;
+  const safePreview =
+    preview.length > 80 ? preview.slice(0, 80) + "…" : preview;
+  const text = [
+    `*새 문의 도착*`,
+    `${nickname}님이 코치 채팅을 시작했어요.`,
+    ``,
+    safePreview,
+    ``,
+    `[답변하기](${link})`,
+  ].join("\n");
+
+  await sendTelegramMessage({ text, chatId: coachChatId });
 }
 
 // ─── 상담사 전용 ───

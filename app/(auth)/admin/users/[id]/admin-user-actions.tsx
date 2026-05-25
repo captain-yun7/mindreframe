@@ -8,6 +8,7 @@ import {
   adminUpdateUserRole,
   adminUpdateUserNotification,
   adminUpdateUserNickname,
+  adminUpdateUserTelegramChatId,
 } from "@/lib/actions/admin-users";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
   currentNotificationHour: number;
   notificationsActive: boolean;
   isDeleted?: boolean;
+  currentTelegramChatId?: string | null;
 }
 
 const PLANS: Plan[] = ["free", "light", "pro", "premium"];
@@ -31,6 +33,7 @@ export function AdminUserActions({
   currentNotificationHour,
   notificationsActive,
   isDeleted,
+  currentTelegramChatId,
 }: Props) {
   const [nickname, setNickname] = useState<string>(currentNickname);
   const [plan, setPlan] = useState<Plan>(currentPlan as Plan);
@@ -40,6 +43,9 @@ export function AdminUserActions({
   );
   const [hour, setHour] = useState<number>(currentNotificationHour);
   const [active, setActive] = useState<boolean>(notificationsActive);
+  const [telegramChatId, setTelegramChatId] = useState<string>(
+    currentTelegramChatId ?? "",
+  );
   const [pending, startTransition] = useTransition();
   const toast = useToast();
 
@@ -72,7 +78,21 @@ export function AdminUserActions({
     });
   };
 
+  const handleTelegram = () => {
+    startTransition(async () => {
+      const r = await adminUpdateUserTelegramChatId(
+        userId,
+        telegramChatId.trim() || null,
+      );
+      toast.show(
+        r.ok ? "텔레그램 chat_id 저장됨" : r.error,
+        r.ok ? "success" : "error",
+      );
+    });
+  };
+
   const disabled = pending || !!isDeleted;
+  const showTelegram = role === "coach" || role === "admin";
 
   return (
     <div className="space-y-3 text-sm">
@@ -185,6 +205,31 @@ export function AdminUserActions({
           알림 설정
         </button>
       </div>
+
+      {showTelegram && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="w-20 text-gs-muted">텔레그램</span>
+          <input
+            type="text"
+            value={telegramChatId}
+            onChange={(e) => setTelegramChatId(e.target.value)}
+            disabled={disabled}
+            placeholder="chat_id (숫자/-숫자)"
+            className="px-2 py-1 rounded border border-gs-line-soft w-48"
+            aria-label="텔레그램 chat_id"
+          />
+          <button
+            onClick={handleTelegram}
+            disabled={disabled}
+            className="px-3 py-1 rounded bg-gs-blue text-white text-xs font-bold disabled:opacity-50"
+          >
+            chat_id 저장
+          </button>
+          <span className="text-[10px] text-gs-muted">
+            사용자 발화 시 코치 텔레그램에 알림 전송
+          </span>
+        </div>
+      )}
     </div>
   );
 }

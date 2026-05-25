@@ -108,6 +108,58 @@ export async function adminUpdateUserNotification(
   return { ok: true as const };
 }
 
+/**
+ * E-2 — coach/admin의 텔레그램 chat_id 등록. 일반 사용자 대상에는 의미 없지만
+ * 본인 발화 시 알림을 받기 위한 코치 식별자 등록 용도.
+ *
+ * chat_id 포맷: 양수(개인) 또는 음수(그룹). 가벼운 정규식 검증.
+ */
+export async function adminUpdateUserTelegramChatId(
+  userId: string,
+  chatId: string | null,
+) {
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+
+  const trimmed = chatId?.trim() ?? "";
+  if (trimmed && !/^-?\d+$/.test(trimmed)) {
+    return {
+      ok: false as const,
+      error: "chat_id는 숫자 또는 -숫자 형식이에요",
+    };
+  }
+
+  const { error } = await supabaseAdmin
+    .from("users")
+    .update({
+      telegram_chat_id: trimmed || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+  if (error) {
+    if (
+      (error as { code?: string }).code === "42703" ||
+      /telegram_chat_id/.test(error.message)
+    ) {
+      return {
+        ok: false as const,
+        error: "마이그레이션 적용 후 사용 가능해요",
+      };
+    }
+    return { ok: false as const, error: error.message };
+  }
+
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "user.update_telegram_chat_id",
+    targetUserId: userId,
+    payload: { hasChatId: !!trimmed },
+  });
+
+  revalidatePath(`/admin/users/${userId}`);
+  return { ok: true as const };
+}
+
 export async function adminUpdateUserNickname(userId: string, nickname: string) {
   const guard = await ensureAdmin();
   if (!guard.ok) return guard;
