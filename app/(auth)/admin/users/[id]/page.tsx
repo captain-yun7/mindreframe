@@ -4,6 +4,23 @@ import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card, CardTitle } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
 import { AdminUserActions } from "./admin-user-actions";
+import { DeleteUserButton } from "./delete-user-button";
+
+interface UserDetail {
+  id: string;
+  email: string;
+  nickname: string;
+  plan: string | null;
+  plan_expires_at: string | null;
+  role: string;
+  phone_number: string | null;
+  notification_hour: number;
+  notifications_started_at: string | null;
+  onboarding_completed: boolean | null;
+  provider: string | null;
+  created_at: string;
+  deleted_at: string | null;
+}
 
 export default async function AdminUserDetailPage({
   params,
@@ -11,15 +28,23 @@ export default async function AdminUserDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase } = await requireAdmin();
+  const { supabase, user: adminUser } = await requireAdmin();
 
-  const { data: user } = await supabase
+  // deleted_at 컬럼 미적용 환경 fallback — 컬럼 없으면 한 번 재쿼리
+  const baseCols =
+    "id, email, nickname, plan, plan_expires_at, role, phone_number, notification_hour, notifications_started_at, onboarding_completed, provider, created_at";
+  let userRes = await supabase
     .from("users")
-    .select(
-      "id, email, nickname, plan, plan_expires_at, role, phone_number, notification_hour, notifications_started_at, onboarding_completed, provider, created_at",
-    )
+    .select(`${baseCols}, deleted_at`)
     .eq("id", id)
-    .single();
+    .maybeSingle();
+  if (
+    userRes.error &&
+    (userRes.error.code === "42703" || /deleted_at/.test(userRes.error.message))
+  ) {
+    userRes = await supabase.from("users").select(baseCols).eq("id", id).maybeSingle();
+  }
+  const user = userRes.data as UserDetail | null;
   if (!user) notFound();
 
   const [
@@ -76,6 +101,14 @@ export default async function AdminUserDetailPage({
       <PageTitle>{user.nickname}</PageTitle>
       <div className="text-xs text-gs-muted mb-4">{user.email}</div>
 
+      {user.deleted_at && (
+        <div className="mb-4 p-4 rounded-[14px] bg-gs-danger/10 border border-gs-danger/30 text-sm">
+          이 사용자는{" "}
+          <b>{new Date(user.deleted_at).toLocaleString("ko-KR")}</b>에 삭제되었습니다.
+          모든 관리 액션은 비활성화됩니다.
+        </div>
+      )}
+
       <Card>
         <CardTitle>프로필</CardTitle>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm max-sm:grid-cols-1">
@@ -124,8 +157,10 @@ export default async function AdminUserDetailPage({
             userId={user.id}
             currentPlan={user.plan ?? "free"}
             currentRole={user.role}
+            currentNickname={user.nickname}
             currentNotificationHour={user.notification_hour}
             notificationsActive={!!user.notifications_started_at}
+            isDeleted={!!user.deleted_at}
           />
         </div>
       </Card>
@@ -194,6 +229,20 @@ export default async function AdminUserDetailPage({
           </ul>
         )}
       </Card>
+
+      {!user.deleted_at && user.role !== "admin" && user.id !== adminUser.id && (
+        <Card className="mt-4 border-gs-danger/30">
+          <CardTitle>위험 영역</CardTitle>
+          <p className="mt-2 text-sm text-gs-muted">
+            소프트 삭제 — auth 세션은 즉시 무효화되고, public.users 행은 deleted_at만
+            마킹됩니다. 통계·결제 이력은 보존됩니다. 관리자 본인 또는 다른 관리자는
+            삭제할 수 없습니다 (먼저 권한을 user로 강등하세요).
+          </p>
+          <div className="mt-3">
+            <DeleteUserButton userId={user.id} nickname={user.nickname} />
+          </div>
+        </Card>
+      )}
 
       <Card className="mt-4">
         <CardTitle>코치 채팅 세션 (최근 10)</CardTitle>
