@@ -33,7 +33,7 @@ export default async function CheckoutSuccessPage({
 
   if (!result.ok) return renderError(result.error);
 
-  const spec = getPlanSpec(result.plan);
+  const spec = await getPlanSpec(result.plan);
   const expires = result.expiresAt ? new Date(result.expiresAt) : null;
   const expiresText = expires
     ? `${expires.getFullYear()}.${String(expires.getMonth() + 1).padStart(2, "0")}.${String(expires.getDate()).padStart(2, "0")}`

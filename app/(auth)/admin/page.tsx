@@ -74,7 +74,9 @@ export default async function AdminDashboardPage() {
         <div className="mt-4 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
           {[
             { href: "/admin/users", label: "사용자 관리", desc: "검색·플랜·알림 상태 + 직접 수정" },
-            { href: "/admin/payments", label: "결제 이력", desc: "전체 결제 + 상태 필터" },
+            { href: "/admin/payments", label: "결제 이력", desc: "전체 결제 + 상태 필터 + 환불" },
+            { href: "/admin/plans", label: "플랜·가격", desc: "가격·feature·추천 편집" },
+            { href: "/admin/coupons", label: "쿠폰 관리", desc: "코드 발행·비활성화·사용 이력" },
             { href: "/admin/notifications", label: "알림 발송 이력", desc: "성공·실패·재시도" },
             { href: "/admin/notifications/messages", label: "알림 메시지", desc: "100일치 본문 편집" },
             { href: "/admin/stats", label: "통계", desc: "가입·분석·플랜·인지왜곡 분포" },

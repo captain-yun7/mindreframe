@@ -11,7 +11,7 @@ type CreateOrderResult =
   | { ok: false; error: string };
 
 export async function createOrder(plan: PaidPlan): Promise<CreateOrderResult> {
-  const spec = getPlanSpec(plan);
+  const spec = await getPlanSpec(plan);
   if (!spec) return { ok: false, error: "잘못된 플랜입니다" };
 
   const supabase = await createSupabaseServerClient();
@@ -65,7 +65,7 @@ export async function confirmOrder(input: {
 
   if (lookupError || !payment) return { ok: false, error: "주문을 찾을 수 없습니다" };
   if (payment.status === "paid") {
-    const spec = getPlanSpec(payment.plan);
+    const spec = await getPlanSpec(payment.plan);
     if (!spec) return { ok: false, error: "잘못된 플랜입니다" };
     const { data: u } = await supabaseAdmin
       .from("users")
@@ -76,8 +76,8 @@ export async function confirmOrder(input: {
   }
   if (payment.amount !== input.amount) return { ok: false, error: "결제 금액이 일치하지 않습니다" };
 
-  const spec = getPlanSpec(payment.plan);
-  if (!spec) return { ok: false, error: "잘못된 플랜입니다" };
+  const spec2 = await getPlanSpec(payment.plan);
+  if (!spec2) return { ok: false, error: "잘못된 플랜입니다" };
 
   const result = await confirmTossPayment({
     paymentKey: input.paymentKey,
@@ -95,7 +95,7 @@ export async function confirmOrder(input: {
 
   const paidAt = result.payment.approvedAt ?? new Date().toISOString();
   const expiresAt = new Date(
-    Date.parse(paidAt) + spec.durationDays * 24 * 60 * 60 * 1000,
+    Date.parse(paidAt) + spec2.durationDays * 24 * 60 * 60 * 1000,
   ).toISOString();
 
   const { error: updatePaymentError } = await supabaseAdmin
@@ -110,12 +110,12 @@ export async function confirmOrder(input: {
 
   const { error: updateUserError } = await supabaseAdmin
     .from("users")
-    .update({ plan: spec.slug, plan_expires_at: expiresAt })
+    .update({ plan: spec2.slug, plan_expires_at: expiresAt })
     .eq("id", payment.user_id);
   if (updateUserError) return { ok: false, error: updateUserError.message };
 
   revalidatePath("/mypage");
   revalidatePath("/dashboard");
 
-  return { ok: true, plan: spec.slug, expiresAt };
+  return { ok: true, plan: spec2.slug, expiresAt };
 }

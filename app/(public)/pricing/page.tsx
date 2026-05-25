@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { computeRecommendedPlan, type Plan } from "@/lib/auth/plan";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { CouponRedeemForm } from "./coupon-redeem-form";
 
 export const metadata: Metadata = {
   title: "요금제",
@@ -13,13 +14,16 @@ const PLAN_LABEL: Record<string, string> = {
   premium: "프리미엄",
 };
 
-const plans: Array<{
+interface PlanCard {
   key: Plan;
   name: string;
   price: string;
   period: string;
   features: string[];
-}> = [
+  recommended: boolean;
+}
+
+const FALLBACK_PLANS: PlanCard[] = [
   {
     key: "light",
     name: "라이트",
@@ -33,6 +37,7 @@ const plans: Array<{
       "알고가기(학습) 전체",
       "나의성장방",
     ],
+    recommended: false,
   },
   {
     key: "pro",
@@ -46,6 +51,7 @@ const plans: Array<{
       "행동연습장",
       "명상하기",
     ],
+    recommended: true,
   },
   {
     key: "premium",
@@ -58,8 +64,19 @@ const plans: Array<{
       "주 4회 1:1 코칭",
       "우선 고객 지원",
     ],
+    recommended: false,
   },
 ];
+
+interface PlanRow {
+  slug: string;
+  name: string;
+  amount: number;
+  duration_days: number;
+  recommended: boolean;
+  features: unknown;
+  sort_order: number;
+}
 
 export default async function PricingPage({
   searchParams,
@@ -71,6 +88,33 @@ export default async function PricingPage({
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  // F88 — DB plans fetch (마이그 미적용 시 정적 fallback)
+  const plansRes = await supabase
+    .from("plans")
+    .select("slug, name, amount, duration_days, recommended, features, sort_order")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  let plans: PlanCard[];
+  if (
+    plansRes.error ||
+    !plansRes.data ||
+    plansRes.data.length === 0
+  ) {
+    plans = FALLBACK_PLANS;
+  } else {
+    plans = (plansRes.data as PlanRow[])
+      .filter((p) => p.slug === "light" || p.slug === "pro" || p.slug === "premium")
+      .map((p) => ({
+        key: p.slug as Plan,
+        name: p.name,
+        price: p.amount.toLocaleString("ko-KR"),
+        period: `${p.duration_days}일`,
+        features: Array.isArray(p.features) ? (p.features as string[]) : [],
+        recommended: p.recommended,
+      }));
+  }
 
   // 월 구독은 2회 이상 결제자만 노출 (재구매 충성 고객 한정)
   let showMonthly = false;
@@ -99,12 +143,13 @@ export default async function PricingPage({
     }
   }
 
-  // requiredPlan(가드된 페이지 진입) > 설문 점수 > 비로그인/설문 없음 → pro 기본 추천
+  // requiredPlan(가드된 페이지 진입) > 설문 점수 > DB recommended > 'pro' 기본
   const allowedPlans: Plan[] = ["light", "pro", "premium"];
+  const dbRecommended = plans.find((p) => p.recommended)?.key ?? null;
   const effectiveRecommended: Plan =
     requiredPlan && allowedPlans.includes(requiredPlan as Plan)
       ? (requiredPlan as Plan)
-      : (surveyRecommended ?? "pro");
+      : (surveyRecommended ?? dbRecommended ?? "pro");
 
   return (
     <div className="min-h-screen bg-gs-surface-muted">
@@ -207,7 +252,18 @@ export default async function PricingPage({
           </div>
         )}
 
+        {/* 쿠폰 코드 입력 — 로그인 사용자만 */}
+        {user && <CouponRedeemForm />}
+
+        {/* 환불 정책 요약 (J에서 추가될 예정) */}
         <p className="mt-6 text-center text-xs text-gs-muted-light leading-[1.6]">
+          7일 내 콘텐츠 미사용 시 전액 환불 / 사용 후엔 일할 계산.{" "}
+          <Link href="/terms" className="text-gs-blue font-bold hover:text-gs-blue-hover">
+            자세히
+          </Link>
+        </p>
+
+        <p className="mt-4 text-center text-xs text-gs-muted-light leading-[1.6]">
           결제 관련 문의가 있으시면 언제든 연락주세요.
           <br />
           <Link href="/" className="text-gs-blue font-bold hover:text-gs-blue-hover">

@@ -16,7 +16,7 @@ export default async function CheckoutPage({
   searchParams: Promise<{ plan?: string }>;
 }) {
   const { plan } = await searchParams;
-  const spec = getPlanSpec(plan);
+  const spec = await getPlanSpec(plan);
   if (!spec) redirect("/pricing");
 
   const user = await getCurrentUser();
