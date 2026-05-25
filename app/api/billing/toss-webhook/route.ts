@@ -21,6 +21,7 @@ interface TossWebhookPayload {
   data: {
     status?: string;
     orderId?: string;
+    paymentKey?: string;
     metadata?: { user_id?: string; plan?: string };
   };
 }
@@ -49,6 +50,33 @@ export async function POST(request: Request) {
     payload = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  // F91 — 토스 콘솔에서 직접 환불한 경우 DB 동기화
+  if (
+    payload.eventType === "PAYMENT_STATUS_CHANGED" &&
+    payload.data.status === "CANCELED"
+  ) {
+    const orderId = payload.data.orderId;
+    if (orderId) {
+      const { data: paymentRow } = await supabaseAdmin
+        .from("payments")
+        .select("id, user_id, status")
+        .eq("order_id", orderId)
+        .maybeSingle();
+      if (paymentRow && (paymentRow as { status?: string }).status !== "refunded") {
+        await supabaseAdmin
+          .from("payments")
+          .update({
+            status: "refunded",
+            refunded_at: new Date().toISOString(),
+            refund_reason: "토스 webhook 동기화",
+          })
+          .eq("id", (paymentRow as { id: string }).id);
+        // 사용자 plan 강등은 어드민 수동 처리에 맡김 (webhook만으로 자동 강등 시 항의 대응 어려움)
+      }
+    }
+    return NextResponse.json({ ok: true, type: "canceled_synced" });
   }
 
   if (

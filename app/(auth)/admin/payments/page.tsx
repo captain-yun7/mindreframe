@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
+import { RefundActionButton } from "./refund-action-button";
 
 const PAGE_SIZE = 50;
 
@@ -11,7 +12,9 @@ interface PaymentRow {
   amount: number;
   plan: string;
   status: string;
+  paid_at: string | null;
   created_at: string;
+  refunded_at: string | null;
   users?: { nickname: string; email: string } | null;
 }
 
@@ -26,17 +29,36 @@ export default async function AdminPaymentsPage({
 
   const { supabase } = await requireAdmin();
 
-  let query = supabase
-    .from("payments")
-    .select(
-      "id, user_id, amount, plan, status, created_at, users:user_id (nickname, email)",
-      { count: "exact" },
-    )
-    .order("created_at", { ascending: false })
-    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-  if (status) query = query.eq("status", status);
+  // refunded_at 컬럼 미적용 환경 fallback
+  const baseSelect =
+    "id, user_id, amount, plan, status, paid_at, created_at, users:user_id (nickname, email)";
 
-  const { data, count } = await query;
+  async function fetchPayments(includeRefund: boolean) {
+    let q = supabase
+      .from("payments")
+      .select(
+        includeRefund ? `${baseSelect}, refunded_at` : baseSelect,
+        { count: "exact" },
+      )
+      .order("created_at", { ascending: false })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+    if (status) q = q.eq("status", status);
+    return q;
+  }
+
+  let res = (await fetchPayments(true)) as {
+    data: unknown;
+    count: number | null;
+    error: { code?: string; message: string } | null;
+  };
+  if (
+    res.error &&
+    (res.error.code === "42703" || /refunded_at/.test(res.error.message))
+  ) {
+    res = (await fetchPayments(false)) as typeof res;
+  }
+  const data = res.data;
+  const count = res.count;
   const payments = (data ?? []) as unknown as PaymentRow[];
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
@@ -87,12 +109,13 @@ export default async function AdminPaymentsPage({
               <th className="px-3 py-2 text-right">금액</th>
               <th className="px-3 py-2">상태</th>
               <th className="px-3 py-2">결제일</th>
+              <th className="px-3 py-2 text-right">액션</th>
             </tr>
           </thead>
           <tbody>
             {payments.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-gs-muted">
+                <td colSpan={6} className="px-3 py-8 text-center text-gs-muted">
                   결제 없음
                 </td>
               </tr>
@@ -119,9 +142,23 @@ export default async function AdminPaymentsPage({
                   </td>
                   <td className="px-3 py-2">
                     <StatusBadge status={p.status} />
+                    {p.refunded_at && (
+                      <div className="text-[10px] text-gs-muted mt-0.5">
+                        {new Date(p.refunded_at).toLocaleDateString("ko-KR")}
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-xs text-gs-muted">
                     {new Date(p.created_at).toLocaleString("ko-KR")}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {p.status === "paid" && !p.refunded_at && (
+                      <RefundActionButton
+                        paymentId={p.id}
+                        amount={p.amount}
+                        within7Days={within7Days(p.paid_at ?? p.created_at)}
+                      />
+                    )}
                   </td>
                 </tr>
               ))
@@ -133,6 +170,10 @@ export default async function AdminPaymentsPage({
       {totalPages > 1 && <Pagination page={page} totalPages={totalPages} status={status} />}
     </PageLayout>
   );
+}
+
+function within7Days(date: string): boolean {
+  return (Date.now() - new Date(date).getTime()) / 86_400_000 <= 7;
 }
 
 function StatusBadge({ status }: { status: string }) {
