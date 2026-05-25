@@ -1,11 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import { Card, CardTitle, CardDescription } from "@/components/card";
-import { PageLayout, PageTitle, PageLead } from "@/components/page-layout";
 import { ChecklistItem } from "@/components/routine/checklist-item";
 import { MoodSlider } from "@/components/routine/mood-slider";
 import { RoutineSidebar } from "@/components/routine/sidebar";
+import { FadeIn } from "@/components/motion/fade-in";
+import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
+import { PageFade } from "@/components/motion/page-fade";
 import {
   saveEmotionScore,
   saveGratitudeEntry,
@@ -68,6 +72,7 @@ export interface DashboardInitial {
   today: string;
   streak: number;
   totalDays: number;
+  nickname?: string | null;
 }
 
 export function DashboardClient({ initial }: { initial: DashboardInitial }) {
@@ -123,138 +128,200 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
 
   const totalChecks = checklistItems.length;
   const doneChecks = Object.values(checks).filter(Boolean).length;
-  const completionRate =
-    totalChecks > 0 ? `${Math.round((doneChecks / totalChecks) * 100)}%` : "0%";
+  const completionPct =
+    totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0;
+  const completionRate = `${completionPct}%`;
+
+  const dayLabel = initial.totalDays > 0 ? `${initial.totalDays}일차` : "첫 날";
+  const greetName = initial.nickname ? `${initial.nickname}님, ` : "";
 
   return (
-    <PageLayout>
-      <PageTitle>오늘의 루틴</PageTitle>
-      <PageLead>오늘도 1%만 해도 충분해요.</PageLead>
-
-      <div className="mt-6 grid grid-cols-[minmax(0,1fr)_320px] gap-4 items-start max-lg:grid-cols-1">
-        <div>
-          <Card>
-            <CardTitle>1) 오늘 감정 점수</CardTitle>
-            <CardDescription>
-              0은 아주 괜찮음, 100은 매우 힘듦. 오늘 &quot;지금&quot; 기준으로 체크해요.
-            </CardDescription>
-            <MoodSlider value={moodScore} onChange={handleMoodChange} />
-          </Card>
-
-          <Card className="mt-4">
-            <CardTitle>2) 오늘 체크리스트</CardTitle>
-            <CardDescription>
-              짧고 가볍게. &quot;완벽&quot;이 아니라 &quot;완료&quot;가 목표예요.
-            </CardDescription>
-
-            <div className="mt-4 grid gap-2">
-              {checklistItems.map((item) => (
-                <ChecklistItem
-                  key={item.key}
-                  itemKey={item.key}
-                  label={item.label}
-                  description={item.description}
-                  checked={checks[item.key] || false}
-                  onCheck={
-                    item.key === "gratitude"
-                      ? () => {
-                          gratitudeRef.current?.focus();
-                          gratitudeRef.current?.scrollIntoView({
-                            behavior: "smooth",
-                          });
-                        }
-                      : item.key === "mood"
-                        ? () => {}
-                        : handleCheck
-                  }
-                  actionLabel={item.actionLabel}
-                  actionHref={item.actionHref}
-                  actionOnClick={
-                    item.key === "gratitude"
-                      ? () => {
-                          gratitudeRef.current?.focus();
-                          gratitudeRef.current?.scrollIntoView({
-                            behavior: "smooth",
-                          });
-                        }
-                      : undefined
-                  }
-                  ghost={item.ghost}
-                />
-              ))}
-            </div>
-
-            <div className="mt-4 flex gap-2 flex-wrap">
-              <a
-                href="/progress"
-                className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
-              >
-                → 나의성장방에서 보기
-              </a>
-            </div>
-          </Card>
-
-          <Card className="mt-4 scroll-mt-28" id="gratitudeCard">
-            <CardTitle>감사일기</CardTitle>
-            <CardDescription>
-              오늘의 감사 한 줄. 저장하면 성장방에 날짜별로 쌓입니다.
-            </CardDescription>
-
-            {savedGratitude && (
-              <div
-                data-testid="saved-gratitude"
-                className="mt-4 p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px] text-gs-text-soft opacity-70 whitespace-pre-line"
-              >
-                <div className="text-[11px] font-bold text-gs-muted mb-1">
-                  ✓ 오늘 저장됨
-                </div>
-                {savedGratitude}
+    <PageFade>
+      {/* ── HERO (오늘의 루틴 친근 인사) ── */}
+      <section className="bg-gs-navy-50 py-12 md:py-16">
+        <div className="mx-auto w-full max-w-[1120px] px-4">
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+            <FadeIn delay={0} y={16}>
+              <div className="text-sm font-bold tracking-[-0.01em] text-gs-navy-bright mb-3">
+                오늘의 루틴
               </div>
-            )}
+              <h1 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] text-gs-navy leading-[1.15]">
+                {greetName}오늘은 {dayLabel}예요 🌱
+              </h1>
+              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
+                작은 한 걸음이 큰 변화로 이어져요.
+                <br className="hidden md:block" />
+                오늘도 1%만 해도 충분해요.
+              </p>
 
-            <textarea
-              ref={gratitudeRef}
-              value={gratitudeText}
-              onChange={(e) => setGratitudeText(e.target.value)}
-              placeholder={
-                savedGratitude
-                  ? "추가로 더 적어볼까요?"
-                  : "예) 오늘은 내가 포기하지 않은 게 고맙다.\n예) 따뜻한 말 한마디가 고마웠다."
-              }
-              className="w-full mt-4 border border-gs-line-soft rounded-[14px] p-3 min-h-[120px] resize-y outline-none bg-white focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20"
-            />
-            <div className="mt-4 flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={async () => {
-                  const trimmed = gratitudeText.trim();
-                  if (!trimmed) return;
-                  const r = await saveGratitudeEntry(trimmed);
-                  if (!r.ok) {
-                    toast.show(r.error, "error");
-                    return;
-                  }
-                  setChecks((prev) => ({ ...prev, gratitude: true }));
-                  setSavedGratitude(trimmed);
-                  setGratitudeText("");
-                  toast.show("감사일기가 저장되었습니다", "success");
-                }}
-                className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
-              >
-                감사일기 저장
-              </button>
-            </div>
-          </Card>
+              {/* 진행률 바 */}
+              <div className="mt-6 md:mt-8 max-w-[440px]">
+                <div className="flex items-center justify-between text-sm font-bold mb-2">
+                  <span className="text-gs-text-strong">
+                    오늘 {doneChecks}/{totalChecks} 완료
+                  </span>
+                  <span className="text-gs-gold-700">{completionRate}</span>
+                </div>
+                <div className="h-2.5 w-full rounded-full bg-white overflow-hidden border border-gs-line-soft">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-gs-gold to-gs-gold-700"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${completionPct}%` }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.1} y={16} className="hidden lg:flex items-center justify-center">
+              <Image
+                src="/illustrations/dashboard-routine.svg"
+                alt=""
+                width={260}
+                height={260}
+                className="w-[220px] xl:w-[260px] h-auto"
+              />
+            </FadeIn>
+          </div>
         </div>
+      </section>
 
-        <RoutineSidebar
-          moodScore={moodScore}
-          completionRate={completionRate}
-          streak={initial.streak}
-          totalDays={initial.totalDays}
-          hint="혼합형은 '하나만 선택'이 승리예요. 오늘은 1개만 해도 OK."
-        />
-      </div>
-    </PageLayout>
+      {/* ── 본문 ── */}
+      <main className="max-w-[1120px] mx-auto px-4 pt-8 md:pt-10 pb-24">
+        <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-4 items-start max-lg:grid-cols-1">
+          <div>
+            <FadeIn>
+              <Card className="shadow-toss-card">
+                <CardTitle>1) 오늘 감정 점수</CardTitle>
+                <CardDescription>
+                  0은 아주 괜찮음, 100은 매우 힘듦. 오늘 &quot;지금&quot; 기준으로 체크해요.
+                </CardDescription>
+                <MoodSlider value={moodScore} onChange={handleMoodChange} />
+              </Card>
+            </FadeIn>
+
+            <FadeIn>
+              <Card className="mt-4 shadow-toss-card">
+                <CardTitle>2) 오늘 체크리스트</CardTitle>
+                <CardDescription>
+                  짧고 가볍게. &quot;완벽&quot;이 아니라 &quot;완료&quot;가 목표예요.
+                </CardDescription>
+
+                <StaggerList stagger={0.06} className="mt-4 grid gap-2">
+                  {checklistItems.map((item) => (
+                    <StaggerItem key={item.key}>
+                      <ChecklistItem
+                        itemKey={item.key}
+                        label={item.label}
+                        description={item.description}
+                        checked={checks[item.key] || false}
+                        onCheck={
+                          item.key === "gratitude"
+                            ? () => {
+                                gratitudeRef.current?.focus();
+                                gratitudeRef.current?.scrollIntoView({
+                                  behavior: "smooth",
+                                });
+                              }
+                            : item.key === "mood"
+                              ? () => {}
+                              : handleCheck
+                        }
+                        actionLabel={item.actionLabel}
+                        actionHref={item.actionHref}
+                        actionOnClick={
+                          item.key === "gratitude"
+                            ? () => {
+                                gratitudeRef.current?.focus();
+                                gratitudeRef.current?.scrollIntoView({
+                                  behavior: "smooth",
+                                });
+                              }
+                            : undefined
+                        }
+                        ghost={item.ghost}
+                      />
+                    </StaggerItem>
+                  ))}
+                </StaggerList>
+
+                <div className="mt-4 flex gap-2 flex-wrap">
+                  <a
+                    href="/progress"
+                    className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
+                  >
+                    → 나의성장방에서 보기
+                  </a>
+                </div>
+              </Card>
+            </FadeIn>
+
+            <FadeIn>
+              <Card className="mt-4 scroll-mt-28 shadow-toss-card" id="gratitudeCard">
+                <CardTitle>감사일기</CardTitle>
+                <CardDescription>
+                  오늘의 감사 한 줄. 저장하면 성장방에 날짜별로 쌓입니다.
+                </CardDescription>
+
+                {savedGratitude && (
+                  <div
+                    data-testid="saved-gratitude"
+                    className="mt-4 p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px] text-gs-text-soft opacity-70 whitespace-pre-line"
+                  >
+                    <div className="text-[11px] font-bold text-gs-muted mb-1">
+                      ✓ 오늘 저장됨
+                    </div>
+                    {savedGratitude}
+                  </div>
+                )}
+
+                <textarea
+                  ref={gratitudeRef}
+                  value={gratitudeText}
+                  onChange={(e) => setGratitudeText(e.target.value)}
+                  placeholder={
+                    savedGratitude
+                      ? "추가로 더 적어볼까요?"
+                      : "예) 오늘은 내가 포기하지 않은 게 고맙다.\n예) 따뜻한 말 한마디가 고마웠다."
+                  }
+                  className="w-full mt-4 border border-gs-line-soft rounded-[14px] p-3 min-h-[120px] resize-y outline-none bg-white focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20"
+                />
+                <div className="mt-4 flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const trimmed = gratitudeText.trim();
+                      if (!trimmed) return;
+                      const r = await saveGratitudeEntry(trimmed);
+                      if (!r.ok) {
+                        toast.show(r.error, "error");
+                        return;
+                      }
+                      setChecks((prev) => ({ ...prev, gratitude: true }));
+                      setSavedGratitude(trimmed);
+                      setGratitudeText("");
+                      toast.show("감사일기가 저장되었습니다", "success");
+                    }}
+                    className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
+                  >
+                    감사일기 저장
+                  </button>
+                </div>
+              </Card>
+            </FadeIn>
+          </div>
+
+          <FadeIn>
+            <RoutineSidebar
+              moodScore={moodScore}
+              completionRate={completionRate}
+              streak={initial.streak}
+              totalDays={initial.totalDays}
+              hint="혼합형은 '하나만 선택'이 승리예요. 오늘은 1개만 해도 OK."
+            />
+          </FadeIn>
+        </div>
+      </main>
+    </PageFade>
   );
 }

@@ -20,7 +20,7 @@ export function GratitudeList({ initial }: { initial: Gratitude[] }) {
 
   if (initial.length === 0) {
     return (
-      <div className="mt-4 text-center text-gs-muted text-[13px] py-6">
+      <div className="mt-4 text-center text-gs-muted-soft text-[13px] py-6">
         오늘의 루틴에서 감사일기를 저장하면 여기에 모입니다.
       </div>
     );
@@ -46,9 +46,9 @@ export function GratitudeList({ initial }: { initial: Gratitude[] }) {
         {items.map((g) => (
           <li
             key={g.id}
-            className="p-3 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px]"
+            className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
           >
-            <div className="text-gs-muted text-[11px] mb-1">{g.recorded_at}</div>
+            <div className="text-gs-muted-soft text-[11px] mb-1">{g.recorded_at}</div>
             <div>{g.content}</div>
           </li>
         ))}
@@ -59,9 +59,9 @@ export function GratitudeList({ initial }: { initial: Gratitude[] }) {
           onClick={handleLoadMore}
           disabled={pending}
           data-testid="gratitude-load-more"
-          className="mt-3 w-full py-3 rounded-[12px] border border-gs-line-soft bg-white text-sm font-bold text-gs-text-soft hover:bg-gs-surface-mid disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
+          className="mt-4 w-full py-3 rounded-full border border-gs-line-soft bg-white text-sm font-bold text-gs-text-strong hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
         >
-          {pending ? "불러오는 중..." : "더 보기"}
+          {pending ? "불러오는 중…" : "더 보기"}
         </button>
       )}
     </>

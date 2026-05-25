@@ -49,18 +49,18 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
         {items.map((a) => (
           <li
             key={a.id}
-            className="p-4 rounded-[12px] bg-gs-surface-muted border border-gs-line-soft text-[13px] space-y-1.5"
+            className="p-4 rounded-toss-card bg-white border border-gs-line-soft shadow-toss-card hover:shadow-toss-card-hover hover:-translate-y-0.5 transition-all text-[13px] space-y-1.5"
           >
             <div>
-              <span className="text-gs-muted font-bold">상황 · </span>
+              <span className="text-gs-muted-soft font-bold">상황 · </span>
               {a.situation || "—"}
             </div>
             <div>
-              <span className="text-gs-muted font-bold">자동사고 · </span>
+              <span className="text-gs-muted-soft font-bold">자동사고 · </span>
               {a.automatic_thought || "—"}
             </div>
             <div>
-              <span className="text-gs-muted font-bold">대안사고 · </span>
+              <span className="text-gs-muted-soft font-bold">대안사고 · </span>
               {a.alternative_thought || "—"}
             </div>
             {Array.isArray(a.distortion_types) && a.distortion_types.length > 0 && (
@@ -68,7 +68,7 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
                 {a.distortion_types.map((d) => (
                   <span
                     key={d}
-                    className="inline-block px-2 py-0.5 rounded-full text-[11px] bg-gs-blue-soft text-gs-blue-soft-fg"
+                    className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gs-gold-50 text-gs-gold-700 border border-gs-gold/30"
                   >
                     #{d}
                   </span>
@@ -78,7 +78,7 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
             <button
               type="button"
               onClick={() => open(a.session_id)}
-              className="mt-2 text-xs text-gs-blue underline hover:text-gs-blue-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 rounded"
+              className="mt-2 text-xs font-bold text-gs-navy-bright hover:text-gs-navy underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40 rounded"
             >
               대화 전체 보기 →
             </button>

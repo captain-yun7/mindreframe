@@ -10,7 +10,7 @@ interface Point {
 export function EmotionChart({ points }: { points: Point[] }) {
   if (!points.length) {
     return (
-      <div className="mt-4 h-[200px] bg-gs-surface-muted rounded-[14px] flex items-center justify-center text-gs-muted text-[13px]">
+      <div className="mt-4 h-[200px] bg-gs-navy-50/60 rounded-toss-card flex items-center justify-center text-gs-muted-soft text-[13px]">
         데이터가 쌓이면 감정 변화 그래프가 표시됩니다.
       </div>
     );
@@ -49,14 +49,27 @@ export function EmotionChart({ points }: { points: Point[] }) {
     .map((s, i) => `${i === 0 ? "M" : "L"} ${xAt(s.idx)} ${yAt(s.score as number)}`)
     .join(" ");
 
+  // 영역 그래프용 path (가장 마지막 점에서 X축 baseline까지 닫기)
+  const areaPath =
+    valid.length > 1
+      ? `${path} L ${xAt(valid[valid.length - 1].idx)} ${yAt(0)} L ${xAt(valid[0].idx)} ${yAt(0)} Z`
+      : "";
+
   return (
-    <div className="mt-4 bg-white border border-gs-line-soft rounded-[14px] p-2 overflow-x-auto">
+    <div className="mt-4 bg-white border border-gs-line-soft rounded-toss-card p-3 overflow-x-auto">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full h-[200px]"
         role="img"
         aria-label="최근 14일 감정 점수 추이"
       >
+        <defs>
+          <linearGradient id="emotionArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2343e9" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="#2343e9" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
         {/* 그리드 */}
         {[0, 25, 50, 75, 100].map((s) => (
           <g key={s}>
@@ -73,7 +86,7 @@ export function EmotionChart({ points }: { points: Point[] }) {
               x={PAD_X - 6}
               y={yAt(s) + 4}
               fontSize="10"
-              fill="var(--color-gs-muted, #9ca3af)"
+              fill="var(--color-gs-muted-soft, #6b7280)"
               textAnchor="end"
             >
               {s}
@@ -81,31 +94,45 @@ export function EmotionChart({ points }: { points: Point[] }) {
           </g>
         ))}
 
-        {/* 라인 */}
+        {/* 영역 (gs-navy-bright 그라데이션) */}
+        {valid.length > 1 && (
+          <path d={areaPath} fill="url(#emotionArea)" />
+        )}
+
+        {/* 라인 (gs-navy-bright) */}
         {valid.length > 1 && (
           <path
             d={path}
             fill="none"
-            stroke="var(--color-gs-blue, #2563eb)"
-            strokeWidth="2"
+            stroke="#2343e9"
+            strokeWidth="2.5"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
         )}
 
-        {/* 점 */}
+        {/* 점 — gs-gold 보조 강조 */}
         {valid.map((s) => (
-          <circle
-            key={s.date}
-            cx={xAt(s.idx)}
-            cy={yAt(s.score as number)}
-            r="4"
-            fill="var(--color-gs-blue, #2563eb)"
-          >
-            <title>
-              {s.label} · {s.score}점
-            </title>
-          </circle>
+          <g key={s.date}>
+            <circle
+              cx={xAt(s.idx)}
+              cy={yAt(s.score as number)}
+              r="5"
+              fill="white"
+              stroke="#2343e9"
+              strokeWidth="2"
+            />
+            <circle
+              cx={xAt(s.idx)}
+              cy={yAt(s.score as number)}
+              r="2"
+              fill="#facc6b"
+            >
+              <title>
+                {s.label} · {s.score}점
+              </title>
+            </circle>
+          </g>
         ))}
 
         {/* X축 라벨 (3 step) */}
@@ -116,7 +143,7 @@ export function EmotionChart({ points }: { points: Point[] }) {
               x={xAt(i)}
               y={H - 6}
               fontSize="10"
-              fill="var(--color-gs-muted, #9ca3af)"
+              fill="var(--color-gs-muted-soft, #6b7280)"
               textAnchor="middle"
             >
               {s.label}
