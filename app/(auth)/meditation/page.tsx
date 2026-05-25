@@ -1,5 +1,6 @@
 import { PageLayout } from "@/components/page-layout";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { MeditationOnboardingModal } from "@/components/meditation-onboarding-modal";
 import { MeditationPlayer, type Track } from "./meditation-player";
 
 // 마이그레이션 미적용 시 fallback (기존 코드 박힘 12개)
@@ -163,9 +164,24 @@ export default async function MeditationPage() {
     }));
   }
 
+  // F76 — 가입일 14일 이내 사용자에게 명상 온보딩 모달 노출
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let daysSinceJoin: number | null = null;
+  if (user?.created_at) {
+    const joinTime = new Date(user.created_at).getTime();
+    if (!Number.isNaN(joinTime)) {
+      const nowMs = new Date().getTime();
+      const diffMs = nowMs - joinTime;
+      daysSinceJoin = Math.max(1, Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1);
+    }
+  }
+
   return (
     <PageLayout>
       <MeditationPlayer tracks={tracks} />
+      <MeditationOnboardingModal daysSinceJoin={daysSinceJoin} />
     </PageLayout>
   );
 }
