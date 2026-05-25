@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 온보딩 가드 — 닉네임 미설정자는 /onboarding/nickname, 설문 미완료자는 /survey로 강제
-  // 통과 경로: /onboarding 본인, /survey 본인, /login, /signup, /pricing, /auth/*, /api/*, 공개 페이지(/, /study)
+  // 통과 경로: /onboarding 본인, /survey 본인, /login, /signup, /pricing, /auth/*, /api/*, /admin, 공개 페이지(/, /study)
   if (user) {
     const onboardingExempt =
       pathname.startsWith("/onboarding") ||
@@ -62,24 +62,40 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith("/pricing") ||
       pathname.startsWith("/auth") ||
       pathname.startsWith("/api") ||
+      pathname.startsWith("/admin") ||
       pathname === "/" ||
       pathname.startsWith("/study");
     if (!onboardingExempt) {
       const { data: profile, error: profileError } = await supabase
         .from("users")
-        .select("onboarding_completed, nickname_set, plan")
+        .select("onboarding_completed, nickname_set, plan, role, deleted_at")
         .eq("id", user.id)
         .single();
 
-      // F75 fallback — nickname_set 컬럼이 DB에 없는 환경(마이그레이션 미적용)에서는
-      // 운영 중단 대신 신규 onboarding 가드만 일시 비활성. SQL 적용되면 자동 정상 동작.
+      // F75 fallback — nickname_set / deleted_at 컬럼이 DB에 없는 환경(마이그레이션 미적용)에서는
+      // 운영 중단 대신 신규 가드만 일시 비활성. SQL 적용되면 자동 정상 동작.
       // 다른 PostgrestError는 일단 통과시키되 로그 — 기존 사용자 차단 막기 위함.
       const columnMissing =
         profileError &&
         (profileError.code === "42703" ||
-          /column .*nickname_set.* does not exist/i.test(profileError.message));
+          /column .* does not exist/i.test(profileError.message));
       if (profileError) {
         console.error("[middleware] profile fetch error:", profileError);
+      }
+
+      // F71 — 소프트 삭제된 사용자는 즉시 로그아웃 후 /login으로
+      const deletedAt = (profile as { deleted_at?: string | null } | null)?.deleted_at;
+      if (!columnMissing && deletedAt) {
+        await supabase.auth.signOut();
+        const loginUrl = new URL("/login", request.url);
+        return NextResponse.redirect(loginUrl);
+      }
+
+      // ADMIN_BYPASS — admin role은 onboarding/nickname/plan 가드 모두 면제.
+      // 운영자가 본인 계정으로 모든 페이지를 점검할 수 있도록 함.
+      const userRole = (profile as { role?: string } | null)?.role;
+      if (userRole === "admin") {
+        return response;
       }
 
       // F75 — 닉네임 미설정자는 먼저 /onboarding/nickname으로
