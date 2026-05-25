@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PageLayout, PageTitle } from "@/components/page-layout";
-import { requireAdmin } from "@/lib/auth/admin";
+import { requireCoachOrAdmin } from "@/lib/auth/admin";
 import { listExerciseLogsForCoach } from "@/lib/actions/coach-exercise-view";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,9 @@ export default async function AdminUserExerciseLogsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  // requireAdmin은 페이지 권한 가드 — 코치 라우트는 분석 보고서 결정상 admin/users 경로 통합
-  await requireAdmin();
+  // F82 — coach role도 동의자 행동연습장을 열람해야 하므로 coach/admin 둘 다 허용.
+  // server action `listExerciseLogsForCoach`도 동일 가드 사용.
+  await requireCoachOrAdmin();
 
   const r = await listExerciseLogsForCoach(id, 50);
 
