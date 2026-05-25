@@ -29,38 +29,6 @@ async function requireUser() {
   return { ok: true as const, supabase, user };
 }
 
-export async function getMyCoachSessions() {
-  const r = await requireUser();
-  if (!r.ok) return { ok: false as const, error: r.error };
-
-  // coach_id/ended_by 컬럼 부재 fallback
-  const res = await r.supabase
-    .from("coach_chat_sessions")
-    .select("id, status, started_at, ended_at, coach_id, ended_by")
-    .eq("user_id", r.user.id)
-    .order("started_at", { ascending: false })
-    .limit(20);
-  if (
-    res.error &&
-    (res.error.code === "42703" || /coach_id|ended_by/.test(res.error.message))
-  ) {
-    const r2 = await r.supabase
-      .from("coach_chat_sessions")
-      .select("id, status, started_at, ended_at")
-      .eq("user_id", r.user.id)
-      .order("started_at", { ascending: false })
-      .limit(20);
-    const sessions = ((r2.data ?? []) as Array<{
-      id: string;
-      status: "active" | "ended";
-      started_at: string;
-      ended_at: string | null;
-    }>).map((s) => ({ ...s, coach_id: null, ended_by: null }));
-    return { ok: true as const, sessions: sessions as CoachSessionSummary[] };
-  }
-  return { ok: true as const, sessions: (res.data ?? []) as CoachSessionSummary[] };
-}
-
 type AnySupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 async function pickDefaultCoachId(sb: AnySupabase): Promise<string | null> {
@@ -174,18 +142,6 @@ export async function endCoachSession(sessionId: string) {
   revalidatePath("/admin/coach");
   revalidatePath(`/admin/coach/${sessionId}`);
   return { ok: true as const };
-}
-
-export async function getCoachMessages(sessionId: string) {
-  const r = await requireUser();
-  if (!r.ok) return { ok: false as const, error: r.error };
-  const { data, error } = await r.supabase
-    .from("coach_chat_messages")
-    .select("id, sender_role, content, created_at, session_id")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
-  if (error) return { ok: false as const, error: "메시지를 불러오지 못했어요" };
-  return { ok: true as const, messages: (data ?? []) as CoachMessage[] };
 }
 
 /** 유저용 메시지 전송. 상담사 전용은 sendCoachReply 사용. INSERT 결과 row 반환. */
