@@ -7,10 +7,9 @@ import {
   type CoachMessage,
   type CoachSessionSummary,
   startCoachSession,
-  endCoachSession,
   sendCoachMessage,
-  getCoachMessages,
 } from "@/lib/actions/coach-chat";
+import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
 
 interface Props {
   activeSession?: CoachSessionSummary;
@@ -26,21 +25,15 @@ export function CoachChatClient({
   pastSessions,
 }: Props) {
   const [session, setSession] = useState<CoachSessionSummary | undefined>(activeSession);
-  const [messages, setMessages] = useState<CoachMessage[]>(initialMessages);
+  const sessionIdsForRealtime = session && session.status === "active" ? [session.id] : [];
+  const { messages, setMessages } = useCoachMessagesRealtime(
+    initialMessages,
+    sessionIdsForRealtime,
+  );
   const [input, setInput] = useState("");
   const [pending, startTransition] = useTransition();
   const toast = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // 활성 세션 동안 10초마다 폴링으로 새 메시지 가져오기
-  useEffect(() => {
-    if (!session || session.status !== "active") return;
-    const timer = setInterval(async () => {
-      const r = await getCoachMessages(session.id);
-      if (r.ok) setMessages(r.messages);
-    }, 10_000);
-    return () => clearInterval(timer);
-  }, [session]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -68,8 +61,9 @@ export function CoachChatClient({
   function handleSend() {
     if (!session || !input.trim()) return;
     const content = input.trim();
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const optimistic: CoachMessage = {
-      id: `tmp-${Date.now()}`,
+      id: tempId,
       sender_role: "user",
       content,
       created_at: new Date().toISOString(),
@@ -81,28 +75,16 @@ export function CoachChatClient({
       const r = await sendCoachMessage(session.id, content);
       if (!r.ok) {
         toast.show(r.error, "error");
-        setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setInput(content);
         return;
       }
-      // 최신 메시지 다시 fetch
-      const fresh = await getCoachMessages(session.id);
-      if (fresh.ok) setMessages(fresh.messages);
-    });
-  }
-
-  function handleEnd() {
-    if (!session) return;
-    if (!confirm("이 대화를 종료할까요? 종료하면 새 세션은 주간 카운트에 포함돼요.")) return;
-    startTransition(async () => {
-      const r = await endCoachSession(session.id);
-      if (!r.ok) {
-        toast.show(r.error, "error");
-        return;
-      }
-      setSession(undefined);
-      setMessages([]);
-      toast.show("대화를 종료했어요", "success");
+      // 서버 응답으로 즉시 tempId → 실 row 치환 (Realtime echo는 dedup에서 skip)
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...r.message, session_id: session.id } : m,
+        ),
+      );
     });
   }
 
@@ -151,16 +133,8 @@ export function CoachChatClient({
 
   return (
     <Card className="mt-4 p-0 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gs-line-soft flex justify-between items-center bg-gs-surface-muted">
+      <div className="px-4 py-3 border-b border-gs-line-soft bg-gs-surface-muted">
         <div className="text-sm font-bold">상담사와 대화 중</div>
-        <button
-          type="button"
-          onClick={handleEnd}
-          disabled={pending}
-          className="text-xs text-gs-muted hover:text-gs-text"
-        >
-          대화 종료
-        </button>
       </div>
 
       <div

@@ -6,9 +6,9 @@ import { useToast } from "@/components/ui/toast";
 import {
   type CoachMessage,
   endCoachSession,
-  getCoachMessages,
   sendCoachReply,
 } from "@/lib/actions/coach-chat";
+import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
 
 interface Props {
   sessionId: string;
@@ -21,21 +21,16 @@ export function CoachReplyClient({
   initialMessages,
   sessionStatus: initialStatus,
 }: Props) {
-  const [messages, setMessages] = useState<CoachMessage[]>(initialMessages);
   const [status, setStatus] = useState(initialStatus);
+  const sessionIdsForRealtime = status === "active" ? [sessionId] : [];
+  const { messages, setMessages } = useCoachMessagesRealtime(
+    initialMessages,
+    sessionIdsForRealtime,
+  );
   const [input, setInput] = useState("");
   const [pending, startTransition] = useTransition();
   const toast = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (status !== "active") return;
-    const timer = setInterval(async () => {
-      const r = await getCoachMessages(sessionId);
-      if (r.ok) setMessages(r.messages);
-    }, 10_000);
-    return () => clearInterval(timer);
-  }, [sessionId, status]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -44,16 +39,29 @@ export function CoachReplyClient({
   function handleSend() {
     if (!input.trim()) return;
     const content = input.trim();
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const optimistic: CoachMessage = {
+      id: tempId,
+      sender_role: "coach",
+      content,
+      created_at: new Date().toISOString(),
+      session_id: sessionId,
+    };
+    setMessages((prev) => [...prev, optimistic]);
     setInput("");
     startTransition(async () => {
       const r = await sendCoachReply(sessionId, content);
       if (!r.ok) {
         toast.show(r.error, "error");
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setInput(content);
         return;
       }
-      const fresh = await getCoachMessages(sessionId);
-      if (fresh.ok) setMessages(fresh.messages);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...r.message, session_id: sessionId } : m,
+        ),
+      );
     });
   }
 
