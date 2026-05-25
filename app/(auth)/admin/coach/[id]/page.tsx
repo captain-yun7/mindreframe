@@ -20,7 +20,7 @@ export default async function CoachAdminSessionPage({
     .select("role")
     .eq("id", user.id)
     .single();
-  if (u?.role !== "coach") redirect("/admin/coach");
+  if (u?.role !== "coach" && u?.role !== "admin") redirect("/admin/coach");
 
   // 세션 + 유저 정보
   const { data: session } = await supabase

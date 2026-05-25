@@ -58,6 +58,8 @@ export function CoachChatClient({
         status: "active",
         started_at: new Date().toISOString(),
         ended_at: null,
+        coach_id: null,
+        ended_by: null,
       });
       setMessages([]);
     });
@@ -71,6 +73,7 @@ export function CoachChatClient({
       sender_role: "user",
       content,
       created_at: new Date().toISOString(),
+      session_id: session.id,
     };
     setMessages((prev) => [...prev, optimistic]);
     setInput("");
