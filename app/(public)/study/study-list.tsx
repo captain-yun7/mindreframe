@@ -40,7 +40,7 @@ export function StudyList({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="검색 (예: 초점, 불안, 왜곡, 회피, 완벽주의)"
-          className="w-full px-4 py-3 rounded-full border border-gs-line-soft bg-white text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
+          className="w-full px-5 py-3.5 rounded-toss-button border border-gs-line-soft bg-white text-[14px] shadow-toss-card focus:border-gs-navy-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40 transition-colors"
           aria-label="알고가기 검색"
         />
         {term && (
@@ -52,7 +52,7 @@ export function StudyList({
 
       <section className="mb-10">
         <header className="mb-4">
-          <h2 className="text-xl font-[950] tracking-[-0.02em]">필수</h2>
+          <h2 className="text-2xl font-extrabold tracking-[-0.03em]">필수</h2>
           <p className="text-[13px] text-gs-muted mt-1">먼저 이것만 보면 됩니다</p>
         </header>
         {filteredCore.length === 0 ? (
@@ -70,13 +70,13 @@ export function StudyList({
 
       <section>
         <header className="mb-4">
-          <h2 className="text-xl font-[950] tracking-[-0.02em]">더 많이 알고가기</h2>
+          <h2 className="text-2xl font-extrabold tracking-[-0.03em]">더 많이 알고가기</h2>
         </header>
         <div className="space-y-3">
           {filteredGroups.map((g) => (
             <details
               key={g.key}
-              className="bg-white rounded-[14px] border border-gs-line-soft shadow-gs-card open:shadow-gs-card-hover"
+              className="bg-white rounded-toss-card border border-gs-line-soft shadow-toss-card open:shadow-toss-card-hover transition-shadow"
               open={term ? g.items.length > 0 : false}
             >
               <summary className="cursor-pointer px-5 py-4 flex items-center justify-between font-bold text-[15px] [&::-webkit-details-marker]:hidden">
@@ -120,9 +120,9 @@ function StudyCard({ item }: { item: StudyItem }) {
     <Link
       href={`/study/${item.slug}`}
       data-testid={`study-card-${item.slug}`}
-      className="block bg-white rounded-[18px] p-5 shadow-gs-card border border-gs-line-soft hover:shadow-gs-card-hover transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
+      className="block bg-white rounded-toss-card p-5 shadow-toss-card border border-gs-line-soft hover:-translate-y-1 hover:shadow-toss-card-hover transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
     >
-      <h3 className="text-[15px] font-[950] tracking-[-0.02em] leading-snug">
+      <h3 className="text-base font-extrabold tracking-[-0.02em] leading-snug">
         {item.title}
       </h3>
       <p className="mt-2 text-[13px] text-gs-muted">{item.sub}</p>
@@ -135,7 +135,7 @@ function StudyMini({ item }: { item: StudyItem }) {
     <Link
       href={`/study/${item.slug}`}
       data-testid={`study-mini-${item.slug}`}
-      className="block rounded-[12px] px-4 py-3 bg-gs-surface-mid hover:bg-gs-surface-muted border border-transparent hover:border-gs-line-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
+      className="block rounded-toss-button px-4 py-3 bg-gs-navy-50/60 hover:bg-gs-navy-50 border border-transparent hover:border-gs-line-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
     >
       <h4 className="text-[14px] font-bold leading-snug">{item.title}</h4>
       <p className="mt-1 text-[12px] text-gs-muted">{item.sub}</p>

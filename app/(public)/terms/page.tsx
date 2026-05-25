@@ -20,9 +20,11 @@ export default async function TermsPage() {
   const effectiveDate = settings.effective_date || "2026-05-01";
 
   return (
-    <div className="flex-1 bg-gs-bg px-4 py-12">
-      <article className="max-w-[820px] mx-auto bg-white rounded-[18px] shadow-gs-card p-8 md:p-12 prose prose-sm md:prose-base max-w-none">
-        <h1 className="text-2xl md:text-3xl font-black mb-2">이용약관</h1>
+    <div className="flex-1 bg-gs-navy-50/40 px-4 py-12 md:py-16">
+      <article className="max-w-[820px] mx-auto bg-white rounded-toss-card shadow-toss-card p-8 md:p-12 prose prose-sm md:prose-base max-w-none">
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] mb-2 text-gs-text-strong">
+          이용약관
+        </h1>
         <p className="text-gs-muted-soft text-sm">시행일: {effectiveDate}</p>
         <div dangerouslySetInnerHTML={{ __html: body }} />
       </article>

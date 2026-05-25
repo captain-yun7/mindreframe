@@ -110,32 +110,36 @@ export default async function StudyDetailPage({
   const { item, groupTitle, prev, next } = ctx;
 
   return (
-    <div className="flex-1 bg-gs-bg px-4 py-8">
-      <article className="max-w-[760px] mx-auto bg-white rounded-[18px] shadow-gs-card border border-gs-line-soft p-7 md:p-10">
+    <div className="flex-1 bg-gs-navy-50/40 px-4 py-10 md:py-14">
+      <article className="max-w-[800px] mx-auto bg-white rounded-toss-card shadow-toss-card border border-gs-line-soft p-7 md:p-12">
         <Link
           href="/study"
-          className="inline-flex items-center text-sm text-gs-muted hover:text-gs-text-strong mb-4"
+          className="inline-flex items-center text-sm text-gs-muted hover:text-gs-navy-bright mb-4 transition-colors"
         >
           ← 알고가기
         </Link>
 
-        <span className="inline-block mb-3 px-3 py-1 rounded-full bg-gs-blue-soft text-gs-blue-soft-fg text-xs font-bold">
+        <span className="inline-block mb-4 px-3 py-1.5 rounded-full bg-gs-navy-50 text-gs-navy-bright text-xs font-bold">
           {groupTitle}
         </span>
 
-        <h1 className="text-2xl md:text-3xl font-black leading-[1.4] mb-2">{item.title}</h1>
-        <p className="text-base text-gs-text-soft mb-6">{item.sub}</p>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] leading-[1.2] mb-3 text-gs-text-strong">
+          {item.title}
+        </h1>
+        <p className="text-base md:text-lg text-gs-muted-soft mb-7 leading-relaxed">
+          {item.sub}
+        </p>
 
         <div
-          className="study-body text-[15px] leading-[1.85] text-gs-text-strong"
+          className="study-body text-[15px] md:text-[16px] leading-[1.85] text-gs-text-strong"
           dangerouslySetInnerHTML={{ __html: sanitizeContentHtml(item.body) }}
         />
 
-        <nav className="mt-10 pt-6 border-t border-gs-line-soft flex items-center justify-between gap-3">
+        <nav className="mt-12 pt-6 border-t border-gs-line-soft flex items-center justify-between gap-3">
           {prev ? (
             <Link
               href={`/study/${prev.slug}`}
-              className="flex-1 min-w-0 rounded-[12px] px-4 py-3 bg-gs-surface-mid hover:bg-gs-surface-muted border border-gs-line-soft"
+              className="flex-1 min-w-0 rounded-toss-button px-4 py-3 bg-gs-navy-50/60 hover:bg-gs-navy-50 border border-gs-line-soft hover:-translate-y-0.5 hover:shadow-toss-card transition-all"
             >
               <div className="text-[11px] text-gs-muted">← 이전</div>
               <div className="text-sm font-bold truncate">{prev.title}</div>
@@ -146,7 +150,7 @@ export default async function StudyDetailPage({
           {next ? (
             <Link
               href={`/study/${next.slug}`}
-              className="flex-1 min-w-0 rounded-[12px] px-4 py-3 bg-gs-surface-mid hover:bg-gs-surface-muted border border-gs-line-soft text-right"
+              className="flex-1 min-w-0 rounded-toss-button px-4 py-3 bg-gs-navy-50/60 hover:bg-gs-navy-50 border border-gs-line-soft text-right hover:-translate-y-0.5 hover:shadow-toss-card transition-all"
             >
               <div className="text-[11px] text-gs-muted">다음 →</div>
               <div className="text-sm font-bold truncate">{next.title}</div>

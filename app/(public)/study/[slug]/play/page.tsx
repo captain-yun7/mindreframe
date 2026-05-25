@@ -84,15 +84,15 @@ export default async function StudyPlayPage({
   const videoUrl = await getVideoUrl(article.video_url);
 
   return (
-    <div className="flex-1 bg-gs-bg px-4 py-8">
-      <div className="max-w-[760px] mx-auto">
+    <div className="flex-1 bg-gs-navy-50/40 px-4 py-10 md:py-14">
+      <div className="max-w-[800px] mx-auto">
         <Link
           href={`/study/${slug}`}
-          className="inline-flex items-center text-sm text-gs-muted hover:text-gs-text-strong mb-4"
+          className="inline-flex items-center text-sm text-gs-muted hover:text-gs-navy-bright mb-5 transition-colors"
         >
           ← 본문으로
         </Link>
-        <h1 className="text-2xl md:text-3xl font-black leading-[1.4] mb-4">
+        <h1 className="text-2xl md:text-4xl font-extrabold tracking-[-0.03em] leading-[1.2] mb-5 text-gs-text-strong">
           {article.title}
         </h1>
 
@@ -101,7 +101,7 @@ export default async function StudyPlayPage({
         ) : (
           <div
             data-testid="video-placeholder"
-            className="w-full aspect-video bg-gs-surface-mid rounded-[12px] flex flex-col items-center justify-center text-gs-muted"
+            className="w-full aspect-video bg-white rounded-toss-card flex flex-col items-center justify-center text-gs-muted shadow-toss-card border border-gs-line-soft"
           >
             <p className="text-base font-bold">영상 준비 중입니다</p>
             <p className="text-xs mt-1">콘텐츠 업로드 후 다시 방문해주세요</p>

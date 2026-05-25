@@ -98,17 +98,17 @@ export default async function StudyTodayPlayPage({
   const videoUrl = await getVideoUrl(videoRow?.video_url ?? null);
 
   return (
-    <div className="flex-1 bg-gs-bg px-4 py-8">
-      <div className="max-w-[760px] mx-auto">
+    <div className="flex-1 bg-gs-navy-50/40 px-4 py-10 md:py-14">
+      <div className="max-w-[800px] mx-auto">
         <Link
           href="/study"
-          className="inline-flex items-center text-sm text-gs-muted hover:text-gs-text-strong mb-4"
+          className="inline-flex items-center text-sm text-gs-muted hover:text-gs-navy-bright mb-5 transition-colors"
         >
           ← 알고가기
         </Link>
-        <div className="mb-4">
-          <p className="text-xs text-gs-muted">{dayNumber}일차</p>
-          <h1 className="text-2xl md:text-3xl font-black leading-[1.4] mt-1">
+        <div className="mb-5">
+          <p className="text-sm font-bold text-gs-navy-bright">{dayNumber}일차</p>
+          <h1 className="text-2xl md:text-4xl font-extrabold tracking-[-0.03em] leading-[1.2] mt-1 text-gs-text-strong">
             {videoRow?.title ?? `${dayNumber}일차 영상`}
           </h1>
         </div>
@@ -118,7 +118,7 @@ export default async function StudyTodayPlayPage({
         ) : (
           <div
             data-testid="video-placeholder-today"
-            className="w-full aspect-video bg-gs-surface-mid rounded-[12px] flex flex-col items-center justify-center text-gs-muted"
+            className="w-full aspect-video bg-white rounded-toss-card flex flex-col items-center justify-center text-gs-muted shadow-toss-card border border-gs-line-soft"
           >
             <p className="text-base font-bold">영상 준비 중입니다</p>
             <p className="text-xs mt-1">
