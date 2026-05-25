@@ -21,6 +21,7 @@ interface UserDetail {
   created_at: string;
   deleted_at: string | null;
   telegram_chat_id: string | null;
+  allow_coach_view_exercise: boolean | null;
 }
 
 export default async function AdminUserDetailPage({
@@ -31,14 +32,27 @@ export default async function AdminUserDetailPage({
   const { id } = await params;
   const { supabase, user: adminUser } = await requireAdmin();
 
-  // deleted_at / telegram_chat_id 컬럼 미적용 환경 fallback — 단계적 재쿼리
+  // deleted_at / telegram_chat_id / allow_coach_view_exercise 컬럼 미적용 환경 fallback
   const baseCols =
     "id, email, nickname, plan, plan_expires_at, role, phone_number, notification_hour, notifications_started_at, onboarding_completed, provider, created_at";
   let userRes = await supabase
     .from("users")
-    .select(`${baseCols}, deleted_at, telegram_chat_id`)
+    .select(
+      `${baseCols}, deleted_at, telegram_chat_id, allow_coach_view_exercise`,
+    )
     .eq("id", id)
     .maybeSingle();
+  if (
+    userRes.error &&
+    (userRes.error.code === "42703" ||
+      /allow_coach_view_exercise/.test(userRes.error.message))
+  ) {
+    userRes = await supabase
+      .from("users")
+      .select(`${baseCols}, deleted_at, telegram_chat_id`)
+      .eq("id", id)
+      .maybeSingle();
+  }
   if (
     userRes.error &&
     (userRes.error.code === "42703" ||
@@ -182,6 +196,27 @@ export default async function AdminUserDetailPage({
         <CardTitle>활동 요약</CardTitle>
         <div className="mt-3 text-sm">
           분석기 사용 <b>{analysesCount}</b>회
+        </div>
+      </Card>
+
+      <Card className="mt-4">
+        <CardTitle>행동연습장</CardTitle>
+        <p className="mt-2 text-xs text-gs-muted leading-[1.6]">
+          사용자가 마이페이지에서 열람을 허용한 경우에만 기록을 볼 수 있어요.
+        </p>
+        <div className="mt-3">
+          {user.allow_coach_view_exercise ? (
+            <Link
+              href={`/admin/users/${user.id}/exercise-logs`}
+              className="inline-flex items-center px-4 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold"
+            >
+              행동연습장 기록 보기
+            </Link>
+          ) : (
+            <p className="text-sm text-gs-muted">
+              사용자가 열람을 허용하지 않았어요
+            </p>
+          )}
         </div>
       </Card>
 

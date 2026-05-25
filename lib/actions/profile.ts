@@ -52,3 +52,34 @@ export async function setNicknameOnce(nickname: string) {
   revalidatePath("/onboarding/nickname");
   return { ok: true as const };
 }
+
+/**
+ * F82 — 행동연습장 코치 열람 동의 토글.
+ * 사용자가 마이페이지에서 ON/OFF. OFF 기본값, ON 일 때만 코치가 RLS 통과.
+ */
+export async function updateCoachViewConsent(allow: boolean) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
+
+  const { error } = await supabase
+    .from("users")
+    .update({
+      allow_coach_view_exercise: allow,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id);
+
+  if (error) {
+    const code = (error as { code?: string }).code;
+    if (code === "42703" || /allow_coach_view_exercise/.test(error.message)) {
+      return {
+        ok: false as const,
+        error: "마이그레이션 적용 후 사용 가능해요",
+      };
+    }
+    return { ok: false as const, error: error.message };
+  }
+  revalidatePath("/mypage");
+  return { ok: true as const };
+}

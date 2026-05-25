@@ -4,6 +4,7 @@ import { Card, CardTitle } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { LogoutButton } from "./logout-button";
 import { NotificationSettings } from "./notification-settings";
+import { CoachViewConsentToggle } from "./coach-view-consent-toggle";
 
 export default async function MyPage() {
   const supabase = await createSupabaseServerClient();
@@ -16,6 +17,7 @@ export default async function MyPage() {
     phoneNumber: string | null;
     notificationHour: number;
     notificationsStartedAt: string | null;
+    allowCoachViewExercise: boolean;
   } = {
     nickname: "사용자",
     plan: "free",
@@ -23,22 +25,51 @@ export default async function MyPage() {
     phoneNumber: null,
     notificationHour: 9,
     notificationsStartedAt: null,
+    allowCoachViewExercise: false,
   };
 
   if (user) {
-    const { data } = await supabase
-      .from("users")
-      .select("nickname, email, plan, phone_number, notification_hour, notifications_started_at")
-      .eq("id", user.id)
-      .single();
+    // allow_coach_view_exercise 컬럼 미적용 환경 fallback
+    let data: Record<string, unknown> | null = null;
+    {
+      const baseCols =
+        "nickname, email, plan, phone_number, notification_hour, notifications_started_at";
+      const res = await supabase
+        .from("users")
+        .select(`${baseCols}, allow_coach_view_exercise`)
+        .eq("id", user.id)
+        .single();
+      if (
+        res.error &&
+        ((res.error as { code?: string }).code === "42703" ||
+          /allow_coach_view_exercise/.test(res.error.message))
+      ) {
+        const r2 = await supabase
+          .from("users")
+          .select(baseCols)
+          .eq("id", user.id)
+          .single();
+        data = (r2.data as Record<string, unknown> | null) ?? null;
+      } else {
+        data = (res.data as Record<string, unknown> | null) ?? null;
+      }
+    }
     if (data) {
       profile = {
-        nickname: data.nickname || user.user_metadata?.full_name || "사용자",
-        email: data.email?.endsWith("@oauth.local") ? "(이메일 미제공)" : data.email,
-        plan: data.plan ?? "free",
-        phoneNumber: data.phone_number ?? null,
-        notificationHour: data.notification_hour ?? 9,
-        notificationsStartedAt: data.notifications_started_at ?? null,
+        nickname:
+          (data.nickname as string) ||
+          user.user_metadata?.full_name ||
+          "사용자",
+        email: (data.email as string)?.endsWith("@oauth.local")
+          ? "(이메일 미제공)"
+          : (data.email as string),
+        plan: (data.plan as string) ?? "free",
+        phoneNumber: (data.phone_number as string | null) ?? null,
+        notificationHour: (data.notification_hour as number) ?? 9,
+        notificationsStartedAt:
+          (data.notifications_started_at as string | null) ?? null,
+        allowCoachViewExercise:
+          (data.allow_coach_view_exercise as boolean | undefined) ?? false,
       };
     } else {
       profile = {
@@ -52,6 +83,7 @@ export default async function MyPage() {
         phoneNumber: null,
         notificationHour: 9,
         notificationsStartedAt: null,
+        allowCoachViewExercise: false,
       };
     }
   }
@@ -111,6 +143,17 @@ export default async function MyPage() {
             phoneRegistered={!!profile.phoneNumber}
             notificationsActive={!!profile.notificationsStartedAt}
           />
+        </div>
+      </Card>
+
+      <Card className="mt-4">
+        <CardTitle>상담사 열람 동의</CardTitle>
+        <p className="text-xs text-gs-muted mt-1 leading-[1.6]">
+          1:1 코칭 중인 상담사가 내 행동연습장 기록을 참고할 수 있도록 허용합니다.
+          언제든 다시 해제할 수 있어요.
+        </p>
+        <div className="mt-3">
+          <CoachViewConsentToggle initial={profile.allowCoachViewExercise} />
         </div>
       </Card>
 
