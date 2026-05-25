@@ -282,6 +282,15 @@ export async function adminDeleteUser(userId: string): Promise<
     })
     .eq("id", userId);
   if (softErr) {
+    // deleted_at 컬럼 미적용 환경 안내 (42703 = undefined_column)
+    const code = (softErr as { code?: string }).code;
+    if (code === "42703" || /deleted_at/i.test(softErr.message)) {
+      return {
+        ok: false,
+        error:
+          "Sprint D 마이그레이션(20260527_admin_users_crud.sql)이 아직 적용되지 않았습니다. Supabase SQL Editor에서 먼저 적용해주세요.",
+      };
+    }
     return { ok: false, error: softErr.message };
   }
 

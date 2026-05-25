@@ -8,8 +8,16 @@ import type { Plan } from "@/lib/auth/plan";
 
 const PLANS: Plan[] = ["free", "light", "pro", "premium"];
 
+// crypto.getRandomValues 기반 임시 비번 생성 (Math.random 대비 충분한 엔트로피).
+// 8자 base36 + "Mr"/"!1" 패턴 = 최소 12자, 영문 대/소문자 + 숫자 + 특수문자 포함.
 function generateTempPassword(): string {
-  const rand = Math.random().toString(36).slice(2, 10);
+  const ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  let rand = "";
+  for (let i = 0; i < bytes.length; i++) {
+    rand += ALPHABET[bytes[i] % ALPHABET.length];
+  }
   return `Mr${rand}!1`;
 }
 
