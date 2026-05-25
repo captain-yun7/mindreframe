@@ -8,27 +8,19 @@ import {
   isPlanGateEnabled,
   planAtLeast,
 } from "@/lib/auth/plan";
-import type {
-  CoachMessage,
-  CoachSessionSummary,
-} from "@/lib/actions/coach-chat";
-import { CoachChatClient } from "./coach-chat-client";
+import { getMyCoachThread } from "@/lib/actions/coach-chat";
+import { CoachThreadClient } from "./coach-thread-client";
 
 export default async function CoachPage() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // plan/count/sessions 병렬 로드 (server action 우회 → getUser 중복 호출 제거)
-  const [userRowRes, usedRes, sessionsRes] = await Promise.all([
+  // plan / 주간 사용량 / 전체 스레드 병렬 로드
+  const [userRowRes, usedRes, threadRes] = await Promise.all([
     supabase.from("users").select("plan").eq("id", user.id).single(),
     supabase.rpc("count_coach_sessions_this_week", { p_user_id: user.id }),
-    supabase
-      .from("coach_chat_sessions")
-      .select("id, status, started_at, ended_at")
-      .eq("user_id", user.id)
-      .order("started_at", { ascending: false })
-      .limit(20),
+    getMyCoachThread(),
   ]);
 
   const plan = normalizePlan(userRowRes.data?.plan);
@@ -56,19 +48,9 @@ export default async function CoachPage() {
 
   const limit = getCoachWeeklyLimit(plan);
   const used = (usedRes.data as number | null) ?? 0;
-  const sessions = (sessionsRes.data ?? []) as CoachSessionSummary[];
-  const activeSession = sessions.find((s) => s.status === "active") ?? null;
-
-  // 활성 세션이 있으면 메시지도 로드
-  let initialMessages: CoachMessage[] = [];
-  if (activeSession) {
-    const { data: msgs } = await supabase
-      .from("coach_chat_messages")
-      .select("id, sender_role, content, created_at")
-      .eq("session_id", activeSession.id)
-      .order("created_at", { ascending: true });
-    initialMessages = (msgs ?? []) as CoachMessage[];
-  }
+  const thread = threadRes.ok
+    ? threadRes
+    : { sessions: [], messages: [], activeSession: null };
 
   return (
     <PageLayout>
@@ -88,11 +70,11 @@ export default async function CoachPage() {
         </div>
       </Card>
 
-      <CoachChatClient
-        activeSession={activeSession ?? undefined}
-        initialMessages={initialMessages}
+      <CoachThreadClient
+        sessions={thread.sessions}
+        initialMessages={thread.messages}
+        activeSession={thread.activeSession}
         canStartNew={used < limit}
-        pastSessions={sessions.filter((s) => s.status === "ended").slice(0, 5)}
       />
     </PageLayout>
   );

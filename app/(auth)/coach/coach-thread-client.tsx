@@ -6,27 +6,27 @@ import { useToast } from "@/components/ui/toast";
 import {
   type CoachMessage,
   type CoachSessionSummary,
-  endCoachSession,
-  sendCoachReply,
+  startCoachSession,
+  sendCoachMessage,
 } from "@/lib/actions/coach-chat";
 import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
 
 interface Props {
-  sessionId: string;
   sessions: CoachSessionSummary[];
   initialMessages: CoachMessage[];
   activeSession: CoachSessionSummary | null;
+  canStartNew: boolean;
 }
 
-export function CoachReplyClient({
-  sessionId,
-  sessions,
+export function CoachThreadClient({
+  sessions: initialSessions,
   initialMessages,
   activeSession: initActive,
+  canStartNew,
 }: Props) {
-  const [activeSession, setActiveSession] =
-    useState<CoachSessionSummary | null>(initActive);
+  const [sessions, setSessions] = useState<CoachSessionSummary[]>(initialSessions);
+  const [activeSession, setActiveSession] = useState<CoachSessionSummary | null>(initActive);
   const sessionIdsForRealtime = activeSession ? [activeSession.id] : [];
   const { messages, setMessages } = useCoachMessagesRealtime(
     initialMessages,
@@ -41,19 +41,37 @@ export function CoachReplyClient({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
-  // 진입한 [id]가 현재 활성 세션인 경우에만 종료 버튼 + 입력창 노출
-  const canEnd = activeSession?.id === sessionId;
-  const targetSessionId = activeSession?.id ?? sessionId;
-
   const rendered = renderWithSeparators(sessions, messages);
 
+  function handleStart() {
+    startTransition(async () => {
+      const r = await startCoachSession();
+      if (!r.ok) {
+        toast.show(r.error, "error");
+        return;
+      }
+      const newSession: CoachSessionSummary = {
+        id: r.sessionId,
+        status: "active",
+        started_at: new Date().toISOString(),
+        ended_at: null,
+        coach_id: null,
+        ended_by: null,
+      };
+      setSessions((prev) =>
+        prev.find((s) => s.id === r.sessionId) ? prev : [...prev, newSession],
+      );
+      setActiveSession(newSession);
+    });
+  }
+
   function handleSend() {
-    if (!input.trim() || !activeSession) return;
+    if (!activeSession || !input.trim()) return;
     const content = input.trim();
     const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const optimistic: CoachMessage = {
       id: tempId,
-      sender_role: "coach",
+      sender_role: "user",
       content,
       created_at: new Date().toISOString(),
       session_id: activeSession.id,
@@ -61,7 +79,7 @@ export function CoachReplyClient({
     setMessages((prev) => [...prev, optimistic]);
     setInput("");
     startTransition(async () => {
-      const r = await sendCoachReply(activeSession.id, content);
+      const r = await sendCoachMessage(activeSession.id, content);
       if (!r.ok) {
         toast.show(r.error, "error");
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -70,43 +88,16 @@ export function CoachReplyClient({
       }
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === tempId
-            ? { ...r.message, session_id: activeSession.id }
-            : m,
+          m.id === tempId ? { ...r.message, session_id: activeSession.id } : m,
         ),
       );
     });
   }
 
-  function handleEnd() {
-    if (!confirm("이 대화를 종료할까요?")) return;
-    startTransition(async () => {
-      const r = await endCoachSession(targetSessionId);
-      if (!r.ok) {
-        toast.show(r.error, "error");
-        return;
-      }
-      setActiveSession(null);
-      toast.show("대화를 종료했어요", "success");
-    });
-  }
-
   return (
-    <Card className="p-0 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gs-line-soft flex justify-between items-center bg-gs-surface-muted">
-        <div className="text-sm font-bold">
-          {activeSession ? "대화 진행 중" : "대화 기록"}
-        </div>
-        {canEnd && (
-          <button
-            type="button"
-            onClick={handleEnd}
-            disabled={pending}
-            className="text-xs text-gs-muted hover:text-gs-text"
-          >
-            대화 종료
-          </button>
-        )}
+    <Card className="mt-4 p-0 overflow-hidden">
+      <div className="px-4 py-3 border-b border-gs-line-soft bg-gs-surface-muted text-sm font-bold">
+        {activeSession ? "상담사와 대화 중" : "지난 대화"}
       </div>
 
       <div
@@ -115,7 +106,9 @@ export function CoachReplyClient({
       >
         {rendered.length === 0 ? (
           <div className="text-center text-gs-muted text-sm py-12">
-            아직 메시지가 없어요.
+            {activeSession
+              ? "상담사에게 첫 메시지를 보내보세요. 보통 평일 24시간 이내 답변드려요."
+              : "아직 대화 기록이 없어요."}
           </div>
         ) : (
           rendered.map((item, idx) =>
@@ -129,20 +122,19 @@ export function CoachReplyClient({
             ) : (
               <div
                 key={item.m.id}
-                className={`flex ${item.m.sender_role === "coach" ? "justify-end" : "justify-start"}`}
+                className={`flex ${item.m.sender_role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
                   className={`max-w-[80%] px-3 py-2 rounded-[14px] text-sm whitespace-pre-wrap ${
-                    item.m.sender_role === "coach"
+                    item.m.sender_role === "user"
                       ? "bg-gs-blue text-white"
                       : "bg-gs-surface-muted border border-gs-line-soft"
                   }`}
                 >
                   {item.m.content}
                   <div
-                    className={`text-[10px] mt-1 ${item.m.sender_role === "coach" ? "text-white/70" : "text-gs-muted"}`}
+                    className={`text-[10px] mt-1 ${item.m.sender_role === "user" ? "text-white/70" : "text-gs-muted"}`}
                   >
-                    {item.m.sender_role === "user" ? "사용자 · " : "상담사 · "}
                     {new Date(item.m.created_at).toLocaleString("ko-KR", {
                       month: "2-digit",
                       day: "2-digit",
@@ -157,7 +149,7 @@ export function CoachReplyClient({
         )}
       </div>
 
-      {activeSession && (
+      {activeSession ? (
         <div className="border-t border-gs-line-soft p-3 flex gap-2">
           <input
             type="text"
@@ -169,7 +161,7 @@ export function CoachReplyClient({
                 handleSend();
               }
             }}
-            placeholder="답변을 입력하세요..."
+            placeholder="메시지를 입력하세요..."
             disabled={pending}
             className="flex-1 px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
           />
@@ -179,8 +171,25 @@ export function CoachReplyClient({
             disabled={pending || !input.trim()}
             className="px-4 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold disabled:opacity-50"
           >
-            답변 전송
+            전송
           </button>
+        </div>
+      ) : (
+        <div className="border-t border-gs-line-soft p-3 flex justify-center">
+          {canStartNew ? (
+            <button
+              type="button"
+              onClick={handleStart}
+              disabled={pending}
+              className="px-6 py-3 rounded-full bg-gs-gold text-gs-navy font-bold disabled:opacity-50"
+            >
+              {pending ? "준비 중..." : "코치와 새 대화 시작"}
+            </button>
+          ) : (
+            <p className="text-sm text-gs-muted">
+              이번 주 채팅 한도를 모두 사용했어요. 다음 주에 다시 시작할 수 있어요.
+            </p>
+          )}
         </div>
       )}
     </Card>
