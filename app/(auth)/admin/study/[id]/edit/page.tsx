@@ -12,7 +12,7 @@ interface ArticleRow {
   sub: string | null;
   body_html: string;
   order_index: number;
-  video_id: string | null;
+  video_url: string | null;
   required_plan: string | null;
 }
 
@@ -26,7 +26,7 @@ export default async function AdminStudyEditPage({
 
   const { data } = await supabase
     .from("study_articles")
-    .select("id, slug, category, title, sub, body_html, order_index, video_id, required_plan")
+    .select("id, slug, category, title, sub, body_html, order_index, video_url, required_plan")
     .eq("id", id)
     .single();
 
@@ -50,7 +50,7 @@ export default async function AdminStudyEditPage({
             sub: row.sub ?? "",
             bodyHtml: row.body_html,
             orderIndex: row.order_index,
-            videoId: row.video_id ?? "",
+            videoUrl: row.video_url ?? "",
             requiredPlan: (row.required_plan as "" | "pro") ?? "",
           }}
         />

@@ -11,7 +11,7 @@ const admin = createClient(
 /**
  * 영상 게이트 테스트용 study_article seed.
  * required_plan='pro'로 설정 — free는 차단, pro 이상 통과.
- * video_id는 null이라 VideoPlayer 대신 placeholder가 노출됨 (외부 의존 회피).
+ * video_url은 null이라 VideoPlayer 대신 placeholder가 노출됨 (외부 의존 회피).
  */
 async function seedArticle(opts: {
   slug: string;
@@ -23,13 +23,13 @@ async function seedArticle(opts: {
     title: `e2e ${opts.slug}`,
     body_html: "<p>e2e test body</p>",
     order_index: 0,
-    video_id: null,
+    video_url: null,
     required_plan: opts.requiredPlan,
   });
   if (error) {
     if (
       (error as { code?: string }).code === "42703" ||
-      /required_plan|video_id/.test(error.message)
+      /required_plan|video_url/.test(error.message)
     ) {
       return { ok: false, reason: "study_articles 컬럼 부재 (마이그 미적용)" };
     }

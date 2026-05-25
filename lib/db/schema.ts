@@ -250,7 +250,8 @@ export const studyArticles = pgTable("study_articles", {
   sub: text("sub"),
   bodyHtml: text("body_html").notNull(),
   orderIndex: integer("order_index").notNull().default(0),
-  videoId: text("video_id"),
+  videoId: text("video_id"), // deprecated (Cloudflare Stream) — F78 hotfix 이후 미사용, 컬럼은 rollback 안전성 위해 유지
+  videoUrl: text("video_url"), // R2 객체 키 (예: video/study-core-1.mp4)
   requiredPlan: text("required_plan"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -284,7 +285,8 @@ export const notificationVideos = pgTable("notification_videos", {
   dayNumber: integer("day_number").primaryKey(),
   title: text("title").notNull(),
   description: text("description"),
-  videoId: text("video_id"),
+  videoId: text("video_id"), // deprecated — F78 hotfix 이전 Cloudflare Stream UID
+  videoUrl: text("video_url"), // R2 객체 키 (예: video/notify-day-1.mp4)
   durationSeconds: integer("duration_seconds"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

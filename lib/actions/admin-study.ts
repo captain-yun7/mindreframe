@@ -27,9 +27,12 @@ export interface StudyArticleInput {
   sub?: string | null;
   bodyHtml: string;
   orderIndex: number;
-  videoId?: string | null;
+  videoUrl?: string | null;
   requiredPlan?: "pro" | null;
 }
+
+// R2 객체 키: 영문/숫자/하이픈/언더스코어/슬래시/점. 공백·한글 비허용 (presigned URL 안정성)
+const R2_KEY_REGEX = /^[a-zA-Z0-9._\-/]+\.(mp4|webm|mov|m4v)$/;
 
 function validate(input: StudyArticleInput): string | null {
   if (!input.slug || !/^[a-z0-9-]+$/.test(input.slug)) return "slug는 영문 소문자/숫자/하이픈만";
@@ -39,8 +42,11 @@ function validate(input: StudyArticleInput): string | null {
   if (input.sub && input.sub.length > 300) return "sub는 300자 이내";
   if (!input.bodyHtml || input.bodyHtml.length < 10) return "본문은 최소 10자";
   if (input.bodyHtml.length > 200_000) return "본문은 최대 200,000자";
-  if (input.videoId && !/^[a-z0-9]{32}$/i.test(input.videoId)) {
-    return "video_id는 Cloudflare Stream 32자 hex";
+  if (input.videoUrl) {
+    if (input.videoUrl.length > 512) return "video_url은 512자 이내";
+    if (!R2_KEY_REGEX.test(input.videoUrl)) {
+      return "video_url은 R2 객체 키 (예: video/study-core-1.mp4)";
+    }
   }
   return null;
 }
@@ -60,7 +66,7 @@ export async function adminCreateStudyArticle(input: StudyArticleInput) {
       sub: input.sub ?? null,
       body_html: input.bodyHtml,
       order_index: input.orderIndex,
-      video_id: input.videoId ?? null,
+      video_url: input.videoUrl ?? null,
       required_plan: input.requiredPlan ?? null,
       updated_by: guard.userId,
     })
@@ -95,7 +101,7 @@ export async function adminUpdateStudyArticle(id: string, input: StudyArticleInp
       sub: input.sub ?? null,
       body_html: input.bodyHtml,
       order_index: input.orderIndex,
-      video_id: input.videoId ?? null,
+      video_url: input.videoUrl ?? null,
       required_plan: input.requiredPlan ?? null,
       updated_by: guard.userId,
     })
@@ -136,7 +142,7 @@ export interface NotificationVideoInput {
   dayNumber: number;
   title: string;
   description?: string | null;
-  videoId?: string | null;
+  videoUrl?: string | null;
   durationSeconds?: number | null;
 }
 
@@ -149,8 +155,16 @@ export async function adminUpsertNotificationVideo(input: NotificationVideoInput
   if (!input.title || input.title.length > 200) {
     return { ok: false as const, error: "title은 1~200자" };
   }
-  if (input.videoId && !/^[a-z0-9]{32}$/i.test(input.videoId)) {
-    return { ok: false as const, error: "video_id는 Cloudflare Stream 32자 hex" };
+  if (input.videoUrl) {
+    if (input.videoUrl.length > 512) {
+      return { ok: false as const, error: "video_url은 512자 이내" };
+    }
+    if (!R2_KEY_REGEX.test(input.videoUrl)) {
+      return {
+        ok: false as const,
+        error: "video_url은 R2 객체 키 (예: video/notify-day-1.mp4)",
+      };
+    }
   }
   if (
     input.durationSeconds != null &&
@@ -165,7 +179,7 @@ export async function adminUpsertNotificationVideo(input: NotificationVideoInput
     day_number: input.dayNumber,
     title: input.title,
     description: input.description ?? null,
-    video_id: input.videoId ?? null,
+    video_url: input.videoUrl ?? null,
     duration_seconds: input.durationSeconds ?? null,
     updated_by: guard.userId,
   });

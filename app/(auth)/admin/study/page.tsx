@@ -20,7 +20,7 @@ interface ArticleRow {
   category: string;
   title: string;
   order_index: number;
-  video_id: string | null;
+  video_url: string | null;
   required_plan: string | null;
   updated_at: string;
 }
@@ -40,7 +40,7 @@ export default async function AdminStudyPage({
   let query = supabase
     .from("study_articles")
     .select(
-      "id, slug, category, title, order_index, video_id, required_plan, updated_at",
+      "id, slug, category, title, order_index, video_url, required_plan, updated_at",
       { count: "exact" },
     )
     .order("category", { ascending: true })
@@ -154,7 +154,7 @@ export default async function AdminStudyPage({
                     </Link>
                   </td>
                   <td className="px-3 py-2 text-xs font-mono">{r.slug}</td>
-                  <td className="px-3 py-2 text-xs">{r.video_id ? "🎬" : "-"}</td>
+                  <td className="px-3 py-2 text-xs">{r.video_url ? "🎬" : "-"}</td>
                   <td className="px-3 py-2 text-xs text-gs-muted">
                     {new Date(r.updated_at).toLocaleDateString("ko-KR")}
                   </td>

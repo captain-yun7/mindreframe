@@ -21,7 +21,7 @@ interface Props {
     sub: string;
     bodyHtml: string;
     orderIndex: number;
-    videoId: string;
+    videoUrl: string;
     requiredPlan: "" | "pro";
   };
 }
@@ -38,7 +38,7 @@ export function StudyForm({ mode, initial }: Props) {
   const [sub, setSub] = useState(initial?.sub ?? "");
   const [bodyHtml, setBodyHtml] = useState(initial?.bodyHtml ?? "");
   const [orderIndex, setOrderIndex] = useState<number>(initial?.orderIndex ?? 1);
-  const [videoId, setVideoId] = useState(initial?.videoId ?? "");
+  const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? "");
   const [requiredPlan, setRequiredPlan] = useState<"" | "pro">(
     initial?.requiredPlan ?? "",
   );
@@ -51,7 +51,7 @@ export function StudyForm({ mode, initial }: Props) {
       sub: sub.trim() || null,
       bodyHtml,
       orderIndex,
-      videoId: videoId.trim() || null,
+      videoUrl: videoUrl.trim() || null,
       requiredPlan: requiredPlan || null,
     };
     startTransition(async () => {
@@ -141,14 +141,17 @@ export function StudyForm({ mode, initial }: Props) {
             className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm"
           />
         </Field>
-        <Field label="Cloudflare Stream UID (선택)">
+        <Field label="R2 영상 객체 키 (선택)">
           <input
-            value={videoId}
-            onChange={(e) => setVideoId(e.target.value)}
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
             disabled={pending}
-            placeholder="예: 5d5bc37ffcf54c9b9e0d5b9b75fcf7c8"
+            placeholder="예: video/study-core-1.mp4"
             className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm font-mono"
           />
+          <span className="block text-[11px] text-gs-muted mt-1">
+            R2 버킷 <code>video/</code> prefix에 720p mp4 업로드 후 객체 키만 입력
+          </span>
         </Field>
         <Field label="유료 게이트">
           <select

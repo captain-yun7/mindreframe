@@ -1,81 +1,28 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-type HlsCtor = {
-  new (): {
-    loadSource(url: string): void;
-    attachMedia(el: HTMLVideoElement): void;
-    destroy(): void;
-  };
-  isSupported(): boolean;
-};
-
 /**
- * Cloudflare Stream HLS 플레이어.
- * - Safari (iOS/macOS) — native HLS 지원
- * - 기타 브라우저 — hls.js 동적 import 시도, 실패 시 native src fallback
+ * R2 직접 호스팅 단일 mp4 플레이어.
+ * - presigned URL 30분 만료 → 페이지 로드 시 매번 새로 발급
+ * - HLS 아님. 720p 단일 mp4 권장 (모바일 대역폭)
+ * - preload="metadata" — 자동 다운로드 줄이고 길이/포스터만 미리 로드
  */
 export function VideoPlayer({
-  hlsUrl,
+  videoUrl,
   posterUrl,
   autoplay,
 }: {
-  hlsUrl: string;
-  posterUrl: string;
+  videoUrl: string;
+  posterUrl?: string;
   autoplay: boolean;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = hlsUrl;
-      return;
-    }
-
-    let destroyed = false;
-    let hlsInstance: { destroy: () => void } | null = null;
-
-    (async () => {
-      try {
-        // hls.js는 선택적 의존성 — 미설치 시 native fallback
-        const mod = await import(
-          /* @vite-ignore */ /* webpackIgnore: true */ "hls.js" as string
-        ).catch(() => null);
-        if (!mod || destroyed) {
-          video.src = hlsUrl;
-          return;
-        }
-        const Hls = (mod as { default: HlsCtor }).default;
-        if (Hls.isSupported()) {
-          const hls = new Hls();
-          hls.loadSource(hlsUrl);
-          hls.attachMedia(video);
-          hlsInstance = hls;
-        } else {
-          video.src = hlsUrl;
-        }
-      } catch {
-        if (!destroyed) video.src = hlsUrl;
-      }
-    })();
-
-    return () => {
-      destroyed = true;
-      if (hlsInstance) hlsInstance.destroy();
-    };
-  }, [hlsUrl]);
-
   return (
     <video
-      ref={videoRef}
+      src={videoUrl}
       controls
       poster={posterUrl}
       autoPlay={autoplay}
       playsInline
+      preload="metadata"
       className="w-full aspect-video bg-black rounded-[12px]"
     />
   );

@@ -1,14 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getStreamPlayback } from "@/lib/video/cloudflare-stream";
+import { getVideoUrl } from "@/lib/video/r2-video";
 import { normalizePlan, planAtLeast, type Plan } from "@/lib/auth/plan";
 import { VideoPlayer } from "./video-player";
 
 interface ArticleRow {
   slug: string;
   title: string;
-  video_id: string | null;
+  video_url: string | null;
   required_plan: string | null;
 }
 
@@ -30,13 +30,13 @@ export default async function StudyPlayPage({
   {
     const res = await supabase
       .from("study_articles")
-      .select("slug, title, video_id, required_plan")
+      .select("slug, title, video_url, required_plan")
       .eq("slug", slug)
       .maybeSingle();
     if (
       res.error &&
       (res.error.code === "42703" ||
-        /video_id|required_plan/.test(res.error.message))
+        /video_url|required_plan/.test(res.error.message))
     ) {
       // 컬럼 미적용 환경 — fallback: slug/title만
       const r2 = await supabase
@@ -48,7 +48,7 @@ export default async function StudyPlayPage({
         article = {
           slug: (r2.data as { slug: string }).slug,
           title: (r2.data as { title: string }).title,
-          video_id: null,
+          video_url: null,
           required_plan: null,
         };
       }
@@ -81,7 +81,7 @@ export default async function StudyPlayPage({
     }
   }
 
-  const playback = await getStreamPlayback(article.video_id);
+  const videoUrl = await getVideoUrl(article.video_url);
 
   return (
     <div className="flex-1 bg-gs-bg px-4 py-8">
@@ -96,12 +96,8 @@ export default async function StudyPlayPage({
           {article.title}
         </h1>
 
-        {playback ? (
-          <VideoPlayer
-            hlsUrl={playback.hlsUrl}
-            posterUrl={playback.posterUrl}
-            autoplay={autoplay}
-          />
+        {videoUrl ? (
+          <VideoPlayer videoUrl={videoUrl} autoplay={autoplay} />
         ) : (
           <div
             data-testid="video-placeholder"

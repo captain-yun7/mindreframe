@@ -8,7 +8,7 @@ export interface VideoRow {
   day_number: number;
   title: string;
   description: string | null;
-  video_id: string | null;
+  video_url: string | null;
   duration_seconds: number | null;
 }
 
@@ -31,7 +31,7 @@ export function VideosTable({ rows: initial }: { rows: VideoRow[] }) {
         dayNumber: row.day_number,
         title: row.title,
         description: row.description,
-        videoId: row.video_id,
+        videoUrl: row.video_url,
         durationSeconds: row.duration_seconds,
       });
       toast.show(
@@ -48,7 +48,7 @@ export function VideosTable({ rows: initial }: { rows: VideoRow[] }) {
           <tr className="text-left text-xs text-gs-muted">
             <th className="px-3 py-2 w-12">일차</th>
             <th className="px-3 py-2">제목</th>
-            <th className="px-3 py-2">Cloudflare Stream UID</th>
+            <th className="px-3 py-2">R2 객체 키</th>
             <th className="px-3 py-2 w-24">길이(초)</th>
             <th className="px-3 py-2 w-20"></th>
           </tr>
@@ -67,10 +67,12 @@ export function VideosTable({ rows: initial }: { rows: VideoRow[] }) {
               </td>
               <td className="px-3 py-2">
                 <input
-                  value={row.video_id ?? ""}
-                  onChange={(e) => update(idx, { video_id: e.target.value || null })}
+                  value={row.video_url ?? ""}
+                  onChange={(e) =>
+                    update(idx, { video_url: e.target.value || null })
+                  }
                   disabled={pending}
-                  placeholder="32자 hex"
+                  placeholder="video/notify-day-1.mp4"
                   className="w-full px-2 py-1 rounded border border-gs-line-soft text-xs font-mono"
                 />
               </td>

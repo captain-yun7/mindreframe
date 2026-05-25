@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getStreamPlayback } from "@/lib/video/cloudflare-stream";
+import { getVideoUrl } from "@/lib/video/r2-video";
 import { VideoPlayer } from "@/app/(public)/study/[slug]/play/video-player";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ function computeDayNumber(startedAt: string): number {
  * F78 — 100일 알림톡 정적 fallback URL.
  *   카카오 알림톡 동적 URL 검수 통과 전까지 사용.
  *   사용자 인증 후 notifications_started_at 기반으로 day_number 계산 →
- *   notification_videos 테이블에서 해당 day의 video_id로 재생.
+ *   notification_videos 테이블에서 해당 day의 video_url(R2 객체 키) → presigned URL 재생.
  */
 export default async function StudyTodayPlayPage({
   searchParams,
@@ -65,16 +65,37 @@ export default async function StudyTodayPlayPage({
 
   const dayNumber = computeDayNumber(startedRaw);
 
-  const { data: video } = await supabase
-    .from("notification_videos")
-    .select("title, video_id, duration_seconds")
-    .eq("day_number", dayNumber)
-    .maybeSingle();
+  // 마이그 미적용 환경 fallback — video_url 컬럼 부재 시 video_id 기준 select 재시도
+  let videoRow:
+    | { title?: string; video_url?: string | null; duration_seconds?: number | null }
+    | null = null;
+  {
+    const res = await supabase
+      .from("notification_videos")
+      .select("title, video_url, duration_seconds")
+      .eq("day_number", dayNumber)
+      .maybeSingle();
+    if (
+      res.error &&
+      (res.error.code === "42703" || /video_url/.test(res.error.message))
+    ) {
+      const r2 = await supabase
+        .from("notification_videos")
+        .select("title, duration_seconds")
+        .eq("day_number", dayNumber)
+        .maybeSingle();
+      if (r2.data) {
+        videoRow = r2.data as {
+          title?: string;
+          duration_seconds?: number | null;
+        };
+      }
+    } else if (!res.error) {
+      videoRow = res.data as typeof videoRow;
+    }
+  }
 
-  const videoRow = video as
-    | { title?: string; video_id?: string | null; duration_seconds?: number | null }
-    | null;
-  const playback = await getStreamPlayback(videoRow?.video_id ?? null);
+  const videoUrl = await getVideoUrl(videoRow?.video_url ?? null);
 
   return (
     <div className="flex-1 bg-gs-bg px-4 py-8">
@@ -92,12 +113,8 @@ export default async function StudyTodayPlayPage({
           </h1>
         </div>
 
-        {playback ? (
-          <VideoPlayer
-            hlsUrl={playback.hlsUrl}
-            posterUrl={playback.posterUrl}
-            autoplay={autoplay}
-          />
+        {videoUrl ? (
+          <VideoPlayer videoUrl={videoUrl} autoplay={autoplay} />
         ) : (
           <div
             data-testid="video-placeholder-today"
