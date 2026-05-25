@@ -17,38 +17,58 @@ export function RoutineSidebar({
 }: SidebarProps) {
   return (
     <aside
-      className="rounded-toss-card p-5 bg-white shadow-toss-card border border-gs-line-soft"
+      className="rounded-toss-card p-6 bg-white shadow-toss-card border border-gs-line-soft"
       aria-label="오른쪽 요약"
     >
-      <h3 className="m-0 text-sm font-bold tracking-[-0.02em] text-gs-text-strong">
+      {/* 오늘 요약 — 토스 dashboard 톤 깔끔한 KPI 카드 */}
+      <h3 className="m-0 text-[13px] font-bold tracking-[-0.02em] text-gs-muted uppercase">
         오늘 요약
       </h3>
 
-      <SidebarBox label="오늘 감정 점수" value={moodScore !== null ? String(moodScore) : "-"} />
-      <SidebarBox label="오늘 완료율" value={completionRate} />
+      <div className="mt-3 flex flex-col gap-1.5">
+        <SidebarBox label="감정 점수" value={moodScore !== null ? String(moodScore) : "-"} />
+        <SidebarBox label="완료율" value={completionRate} />
+      </div>
 
-      <h3 className="mt-5 m-0 text-sm font-bold tracking-[-0.02em] text-gs-text-strong">
+      <h3 className="mt-6 m-0 text-[13px] font-bold tracking-[-0.02em] text-gs-muted uppercase">
         나의 흐름
       </h3>
 
-      {/* 스트릭 pill — gs-gold 토스 톤 */}
-      <div className="mt-3 flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-gs-gold-50 border border-gs-gold/40">
-        <span className="text-xs font-bold text-gs-gold-700">🔥 연속 스트릭</span>
-        <span className="text-base font-extrabold text-gs-gold-700">{streak}일</span>
+      {/* 스트릭/누적 — 큰 숫자 + 미니멀 pill */}
+      <div className="mt-3 rounded-toss-button bg-gs-gold-50 border border-gs-gold/30 px-4 py-3.5 flex items-center justify-between gap-3">
+        <span className="flex items-center gap-1.5 text-[13px] font-bold text-gs-gold-700 tracking-[-0.02em]">
+          <span aria-hidden>🔥</span>
+          연속 스트릭
+        </span>
+        <span className="text-xl font-extrabold text-gs-gold-700 tabular-nums">
+          {streak}
+          <span className="text-xs font-bold ml-0.5">일</span>
+        </span>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-gs-navy-50 border border-gs-navy-bright/15">
-        <span className="text-xs font-bold text-gs-navy-bright">📅 누적 기록</span>
-        <span className="text-base font-extrabold text-gs-navy-bright">{totalDays}일</span>
+      <div className="mt-2 rounded-toss-button bg-gs-navy-50 border border-gs-navy-bright/15 px-4 py-3.5 flex items-center justify-between gap-3">
+        <span className="flex items-center gap-1.5 text-[13px] font-bold text-gs-navy-bright tracking-[-0.02em]">
+          <span aria-hidden>📅</span>
+          누적 기록
+        </span>
+        <span className="text-xl font-extrabold text-gs-navy-bright tabular-nums">
+          {totalDays}
+          <span className="text-xs font-bold ml-0.5">일</span>
+        </span>
       </div>
 
-      <p className="mt-4 text-gs-muted-soft text-xs font-medium leading-relaxed">{hint}</p>
+      <p className="mt-5 text-gs-muted-soft text-xs font-medium leading-relaxed tracking-[-0.01em]">
+        {hint}
+      </p>
 
-      <div className="mt-4">
+      <div className="mt-5">
         <Link
           href="/progress"
-          className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-toss-button bg-gs-navy-bright text-white text-sm font-bold transition-all hover:-translate-y-0.5 hover:shadow-toss-card-hover"
+          className="group inline-flex items-center justify-center w-full px-4 py-3 rounded-toss-button bg-gs-navy-900 text-white text-sm font-bold tracking-[-0.02em] transition-all hover:bg-gs-navy-800 hover:-translate-y-0.5 hover:shadow-toss-card-hover"
         >
-          나의 성장방 보기 →
+          나의 성장방 보기
+          <span className="ml-1 transition-transform group-hover:translate-x-0.5" aria-hidden>
+            →
+          </span>
         </Link>
       </div>
     </aside>
@@ -57,9 +77,11 @@ export function RoutineSidebar({
 
 function SidebarBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="mt-2 rounded-toss-button bg-gs-navy-50/70 py-2.5 px-3 flex items-center justify-between gap-2">
-      <span className="text-gs-muted-soft text-xs font-medium">{label}</span>
-      <span className="text-sm font-extrabold text-gs-text-strong">{value}</span>
+    <div className="rounded-toss-button bg-gs-surface-muted border border-gs-line-soft py-3 px-4 flex items-center justify-between gap-2">
+      <span className="text-gs-muted-soft text-xs font-medium tracking-[-0.01em]">{label}</span>
+      <span className="text-base font-extrabold text-gs-text-strong tabular-nums tracking-[-0.02em]">
+        {value}
+      </span>
     </div>
   );
 }

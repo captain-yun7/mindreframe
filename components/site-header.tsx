@@ -25,6 +25,7 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,6 +55,14 @@ export function SiteHeader() {
     setMenuOpen(false);
   }, [pathname]);
 
+  // 스크롤 시 헤더 그림자 — 토스 톤 sticky 표시
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 4);
+    handler();
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
   // 외부 클릭 시 메뉴 자동 닫힘
   useEffect(() => {
     if (!menuOpen) return;
@@ -81,23 +90,59 @@ export function SiteHeader() {
     "";
 
   return (
-    <header className="sticky top-0 z-50 h-16 bg-white/95 backdrop-blur-[18px] border-b border-gs-line-soft">
-      <div className="max-w-[1100px] mx-auto h-16 px-4 flex items-center justify-between">
-        {/* 로고 */}
-        <Link href="/" className="flex items-center h-16">
-          <Image
-            src="/logo.png"
-            alt="가짜생각 로고"
-            width={160}
-            height={80}
-            className="h-[80px] w-auto"
-            priority
-          />
-        </Link>
+    <header
+      className={`sticky top-0 z-50 h-16 bg-white/95 backdrop-blur-[18px] border-b transition-shadow duration-200 ${
+        scrolled
+          ? "border-gs-line-soft shadow-[0_2px_12px_rgba(15,23,42,0.06)]"
+          : "border-gs-line-soft/60"
+      }`}
+    >
+      <div className="max-w-[1180px] mx-auto h-16 px-4 lg:px-6 flex items-center justify-between gap-4">
+        {/* 좌측: 로고 + 데스크탑 메뉴 */}
+        <div className="flex items-center gap-8 min-w-0">
+          <Link href="/" className="flex items-center h-16 shrink-0">
+            <Image
+              src="/logo.png"
+              alt="가짜생각 로고"
+              width={160}
+              height={80}
+              className="h-[64px] w-auto"
+              priority
+            />
+          </Link>
+
+          {/* 데스크탑 네비게이션 — 토스 톤 미니멀 */}
+          <nav className="flex items-center gap-1 text-[14px] max-lg:hidden">
+            {navItems.map((item) => {
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`relative px-3 py-2 rounded-lg tracking-[-0.02em] whitespace-nowrap transition-colors duration-200 ${
+                    active
+                      ? "text-gs-navy-900 font-bold"
+                      : "text-gs-muted font-medium hover:text-gs-navy-900"
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  {active ? (
+                    <motion.span
+                      layoutId="nav-underline"
+                      className="pointer-events-none absolute left-3 right-3 -bottom-px h-[2px] bg-gs-gold rounded-full"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      aria-hidden
+                    />
+                  ) : null}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         {/* 햄버거 (모바일) — Framer Motion 3선 → X 변환 */}
         <button
-          className="hidden max-lg:flex w-10 h-10 items-center justify-center bg-transparent border-none cursor-pointer relative"
+          className="hidden max-lg:flex w-10 h-10 items-center justify-center bg-transparent border-none cursor-pointer relative shrink-0"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="메뉴"
           aria-expanded={menuOpen}
@@ -124,56 +169,31 @@ export function SiteHeader() {
           </span>
         </button>
 
-        {/* 데스크탑 네비게이션 */}
-        <nav className="flex items-center gap-1 text-[13px] max-lg:hidden">
-          {navItems.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  relative text-gs-text-strong font-medium px-3 py-2 rounded-lg tracking-[-0.04em] whitespace-nowrap
-                  transition-colors duration-200
-                  hover:text-gs-gold
-                  ${active ? "text-gs-gold" : ""}
-                `}
-              >
-                <span>{item.label}</span>
-                <span
-                  className={`pointer-events-none absolute left-3 right-3 -bottom-0.5 h-0.5 bg-gs-gold rounded-full origin-left transition-transform duration-300 ${
-                    active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-                  }`}
-                  aria-hidden
-                />
-              </Link>
-            );
-          })}
-
-          {isAdmin && (
+        {/* 우측: 관리자/사용자 영역 */}
+        <div className="flex items-center gap-2 max-lg:hidden shrink-0">
+          {isAdmin ? (
             <Link
               href="/admin"
-              className={`
-                text-gs-gold-700 font-bold px-3 py-2 rounded-lg tracking-[-0.04em] whitespace-nowrap
-                transition-colors duration-200
-                hover:bg-gs-gold-50
-                ${pathname.startsWith("/admin") ? "bg-gs-gold-50" : ""}
-              `}
+              className={`text-[13px] font-bold tracking-[-0.02em] px-3 py-1.5 rounded-full transition-colors duration-200 ${
+                pathname.startsWith("/admin")
+                  ? "bg-gs-gold-50 text-gs-gold-700 border border-gs-gold/40"
+                  : "text-gs-gold-700 border border-transparent hover:bg-gs-gold-50"
+              }`}
             >
               관리자
             </Link>
-          )}
+          ) : null}
 
           {isLoggedIn ? (
             <>
-              <span className="font-bold text-gs-text-strong ml-2 whitespace-nowrap">
-                {userName}
-                <span className="font-normal text-gs-muted-soft ml-px">님</span>
+              <span className="flex items-center gap-px text-[13px] tracking-[-0.02em] text-gs-text-strong px-2 py-1.5 whitespace-nowrap">
+                <span className="font-bold">{userName}</span>
+                <span className="text-gs-muted-soft">님</span>
               </span>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="ml-2 border border-gs-danger-border bg-gs-danger-bg text-gs-danger px-3 py-2 rounded-full text-[13px] font-bold cursor-pointer hover:bg-gs-danger-border transition-colors duration-200 whitespace-nowrap"
+                className="text-[13px] font-medium tracking-[-0.02em] text-gs-muted-soft px-3 py-1.5 rounded-full hover:bg-gs-surface-mid hover:text-gs-text-strong transition-colors duration-200 whitespace-nowrap"
               >
                 로그아웃
               </button>
@@ -181,44 +201,78 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/login"
-              className="ml-2 border border-gs-line-mid bg-transparent px-3 py-2 rounded-full text-[13px] font-bold cursor-pointer hover:bg-gs-surface-mid transition-colors duration-200 whitespace-nowrap"
+              className="text-[13px] font-bold tracking-[-0.02em] bg-gs-navy-900 text-white px-4 py-2 rounded-full hover:bg-gs-navy-800 transition-colors duration-200 whitespace-nowrap"
             >
               로그인
             </Link>
           )}
-        </nav>
+        </div>
       </div>
 
-      {/* 모바일 메뉴 — AnimatePresence fade-down + stagger */}
+      {/* 모바일 메뉴 — 토스 톤 풀폭 슬라이드 패널 */}
       <AnimatePresence>
         {menuOpen ? (
-          <motion.div
-            ref={navRef}
-            className="hidden max-lg:block absolute top-16 right-3 w-[220px] z-50"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <motion.nav
-              className="bg-white rounded-2xl shadow-toss-card-hover border border-gs-line-soft p-3 flex flex-col gap-0.5"
-              initial="hidden"
-              animate="visible"
-              variants={{
-                visible: {
-                  transition: {
-                    staggerChildren: 0.03,
-                    delayChildren: 0.05,
-                  },
-                },
-                hidden: {},
-              }}
+          <>
+            {/* 배경 dim */}
+            <motion.div
+              className="hidden max-lg:block fixed inset-0 top-16 z-40 bg-gs-navy-900/20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMenuOpen(false)}
+              aria-hidden
+            />
+            <motion.div
+              ref={navRef}
+              className="hidden max-lg:block fixed top-16 left-0 right-0 z-50 bg-white border-b border-gs-line-soft shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
-              {navItems.map((item) => {
-                const active = pathname === item.href;
-                return (
+              <motion.nav
+                className="max-w-[1180px] mx-auto px-4 py-4 flex flex-col gap-0.5"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.025,
+                      delayChildren: 0.04,
+                    },
+                  },
+                  hidden: {},
+                }}
+              >
+                {navItems.map((item) => {
+                  const active = pathname === item.href;
+                  return (
+                    <motion.div
+                      key={item.href}
+                      variants={{
+                        hidden: { opacity: 0, x: -8 },
+                        visible: { opacity: 1, x: 0 },
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Link
+                        href={item.href}
+                        className={`block px-3 py-3 rounded-xl tracking-[-0.02em] text-[15px] transition-colors duration-150 ${
+                          active
+                            ? "bg-gs-gold-50 text-gs-navy-900 font-bold"
+                            : "text-gs-text-strong font-medium hover:bg-gs-surface-mid"
+                        }`}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+
+                {isAdmin ? (
                   <motion.div
-                    key={item.href}
                     variants={{
                       hidden: { opacity: 0, x: -8 },
                       visible: { opacity: 1, x: 0 },
@@ -226,72 +280,54 @@ export function SiteHeader() {
                     transition={{ duration: 0.2 }}
                   >
                     <Link
-                      href={item.href}
-                      className={`block text-gs-text-strong font-medium px-3 py-2.5 rounded-lg tracking-[-0.04em] text-sm transition-colors duration-150 hover:bg-gs-navy-50 hover:text-gs-gold ${
-                        active ? "bg-gs-navy-50 text-gs-gold" : ""
+                      href="/admin"
+                      className={`block px-3 py-3 rounded-xl tracking-[-0.02em] text-[15px] font-bold transition-colors duration-150 ${
+                        pathname.startsWith("/admin")
+                          ? "bg-gs-gold-50 text-gs-gold-700"
+                          : "text-gs-gold-700 hover:bg-gs-gold-50"
                       }`}
                       onClick={() => setMenuOpen(false)}
                     >
-                      {item.label}
+                      관리자
                     </Link>
                   </motion.div>
-                );
-              })}
+                ) : null}
 
-              {isAdmin ? (
                 <motion.div
+                  className="mt-2 pt-3 border-t border-gs-line-soft"
                   variants={{
                     hidden: { opacity: 0, x: -8 },
                     visible: { opacity: 1, x: 0 },
                   }}
                   transition={{ duration: 0.2 }}
                 >
-                  <Link
-                    href="/admin"
-                    className={`block text-gs-gold-700 font-bold px-3 py-2.5 rounded-lg tracking-[-0.04em] text-sm hover:bg-gs-gold-50 transition-colors duration-150 ${
-                      pathname.startsWith("/admin") ? "bg-gs-gold-50" : ""
-                    }`}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    관리자
-                  </Link>
-                </motion.div>
-              ) : null}
-
-              <motion.div
-                className="mt-1.5 pt-2 border-t border-gs-line-soft"
-                variants={{
-                  hidden: { opacity: 0, x: -8 },
-                  visible: { opacity: 1, x: 0 },
-                }}
-                transition={{ duration: 0.2 }}
-              >
-                {isLoggedIn ? (
-                  <div className="flex flex-col gap-1.5 px-1">
-                    <span className="font-bold text-gs-text-strong text-sm px-2">
-                      {userName}
-                      <span className="font-normal text-gs-muted-soft ml-px">님</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="border border-gs-danger-border bg-gs-danger-bg text-gs-danger px-3 py-2 rounded-lg text-[13px] font-bold cursor-pointer hover:bg-gs-danger-border transition-colors duration-150"
+                  {isLoggedIn ? (
+                    <div className="flex items-center justify-between px-3 gap-3">
+                      <span className="text-[15px] tracking-[-0.02em] text-gs-text-strong">
+                        <span className="font-bold">{userName}</span>
+                        <span className="text-gs-muted-soft ml-px">님</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="text-[13px] font-medium tracking-[-0.02em] text-gs-muted-soft px-3 py-1.5 rounded-full hover:bg-gs-surface-mid hover:text-gs-text-strong transition-colors duration-150"
+                      >
+                        로그아웃
+                      </button>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="block bg-gs-navy-900 text-white px-4 py-3 rounded-xl text-[15px] font-bold tracking-[-0.02em] text-center hover:bg-gs-navy-800 transition-colors duration-150"
+                      onClick={() => setMenuOpen(false)}
                     >
-                      로그아웃
-                    </button>
-                  </div>
-                ) : (
-                  <Link
-                    href="/login"
-                    className="block border border-gs-line-mid bg-transparent px-3 py-2 rounded-lg text-[13px] font-bold text-center hover:bg-gs-surface-mid transition-colors duration-150"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    로그인
-                  </Link>
-                )}
-              </motion.div>
-            </motion.nav>
-          </motion.div>
+                      로그인
+                    </Link>
+                  )}
+                </motion.div>
+              </motion.nav>
+            </motion.div>
+          </>
         ) : null}
       </AnimatePresence>
     </header>
