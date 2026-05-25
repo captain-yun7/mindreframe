@@ -91,22 +91,22 @@ export function SiteHeader() {
 
   return (
     <header
-      className={`sticky top-0 z-50 h-16 bg-white/95 backdrop-blur-[18px] border-b transition-shadow duration-200 ${
+      className={`sticky top-0 z-50 h-20 bg-white/95 backdrop-blur-[18px] border-b transition-shadow duration-200 ${
         scrolled
           ? "border-gs-line-soft shadow-[0_2px_12px_rgba(15,23,42,0.06)]"
           : "border-gs-line-soft/60"
       }`}
     >
-      <div className="max-w-[1180px] mx-auto h-16 px-4 lg:px-6 flex items-center justify-between gap-4">
+      <div className="max-w-[1180px] mx-auto h-20 px-4 lg:px-6 flex items-center justify-between gap-4">
         {/* 좌측: 로고 + 데스크탑 메뉴 */}
         <div className="flex items-center gap-8 min-w-0">
-          <Link href="/" className="flex items-center h-16 shrink-0">
+          <Link href="/" className="flex items-center h-20 shrink-0">
             <Image
               src="/logo.png"
               alt="가짜생각 로고"
-              width={160}
-              height={80}
-              className="h-[64px] w-auto"
+              width={200}
+              height={100}
+              className="h-[80px] w-auto"
               priority
             />
           </Link>
