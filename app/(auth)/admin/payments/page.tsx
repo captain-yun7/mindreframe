@@ -80,7 +80,7 @@ export default async function AdminPaymentsPage({
         <div className="flex gap-2">
           {[
             { v: "", label: "전체" },
-            { v: "completed", label: "완료" },
+            { v: "paid", label: "완료" },
             { v: "pending", label: "대기" },
             { v: "failed", label: "실패" },
             { v: "refunded", label: "환불" },
@@ -178,7 +178,7 @@ function within7Days(date: string): boolean {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    completed: "bg-gs-success-bg text-gs-success",
+    paid: "bg-gs-success-bg text-gs-success",
     pending: "bg-gs-warning-bg text-gs-warning",
     failed: "bg-gs-danger-bg text-gs-danger",
     refunded: "bg-gs-line-soft text-gs-muted",
