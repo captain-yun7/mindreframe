@@ -11,6 +11,7 @@ import {
 } from "@/lib/actions/coach-chat";
 import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
+import { RealtimeStatusDot } from "@/components/realtime-status-dot";
 
 interface Props {
   sessionId: string;
@@ -28,7 +29,7 @@ export function CoachReplyClient({
   const [activeSession, setActiveSession] =
     useState<CoachSessionSummary | null>(initActive);
   const sessionIdsForRealtime = activeSession ? [activeSession.id] : [];
-  const { messages, setMessages } = useCoachMessagesRealtime(
+  const { messages, setMessages, status } = useCoachMessagesRealtime(
     initialMessages,
     sessionIdsForRealtime,
   );
@@ -94,8 +95,9 @@ export function CoachReplyClient({
   return (
     <Card className="p-0 overflow-hidden">
       <div className="px-4 py-3 border-b border-gs-line-soft flex justify-between items-center bg-gs-surface-muted">
-        <div className="text-sm font-bold">
-          {activeSession ? "대화 진행 중" : "대화 기록"}
+        <div className="text-sm font-bold flex items-center gap-2">
+          <span>{activeSession ? "대화 진행 중" : "대화 기록"}</span>
+          {activeSession && <RealtimeStatusDot status={status} />}
         </div>
         {canEnd && (
           <button
@@ -108,6 +110,18 @@ export function CoachReplyClient({
           </button>
         )}
       </div>
+      {activeSession && status === "disconnected" && (
+        <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-900 flex items-center justify-between">
+          <span>실시간 연결이 끊어졌어요. 새 메시지가 안 보일 수 있어요.</span>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="font-bold underline"
+          >
+            새로고침
+          </button>
+        </div>
+      )}
 
       <div
         ref={scrollRef}

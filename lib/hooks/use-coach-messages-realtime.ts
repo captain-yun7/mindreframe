@@ -5,6 +5,19 @@ import { supabase } from "@/lib/supabase";
 import type { CoachMessage } from "@/lib/actions/coach-chat";
 
 /**
+ * Realtime 채널 연결 상태.
+ *  - idle: 구독 시작 전 (activeSession 없음)
+ *  - connecting: subscribe 호출 직후, 첫 status 콜백 전
+ *  - connected: 'SUBSCRIBED'
+ *  - disconnected: 'CHANNEL_ERROR' / 'TIMED_OUT' / 'CLOSED'
+ */
+export type RealtimeStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "disconnected";
+
+/**
  * Realtime INSERT 구독 + 옵티미스틱 dedup hook.
  *
  * dedup 규칙:
@@ -13,12 +26,16 @@ import type { CoachMessage } from "@/lib/actions/coach-chat";
  *  3) 그 외는 append
  *
  * 활성 세션만 구독한다 — 종료된 세션은 새 메시지가 생기지 않음.
+ *
+ * status: 연결 상태(UI 인디케이터용). 끊김 감지 시 자동 재구독은 Supabase 라이브러리
+ * 내장 재시도에 위임하고, 우리는 UX 안내(상단 점)와 새로고침 권유만 제공.
  */
 export function useCoachMessagesRealtime(
   initial: CoachMessage[],
   sessionIds: string[],
 ) {
   const [messages, setMessages] = useState<CoachMessage[]>(initial);
+  const [status, setStatus] = useState<RealtimeStatus>("idle");
 
   // initial이 부모에서 prop 갱신될 때만 동기화 (string key로 안정성 확보)
   const initialKey = JSON.stringify(initial.map((m) => m.id));
@@ -58,8 +75,12 @@ export function useCoachMessagesRealtime(
   const sessionsKey = sessionIds.join("|");
 
   useEffect(() => {
-    if (sessionIds.length === 0) return;
+    if (sessionIds.length === 0) {
+      setStatus("idle");
+      return;
+    }
 
+    setStatus("connecting");
     const channel = supabase.channel(`coach-${sessionsKey}`);
 
     for (const sid of sessionIds) {
@@ -79,7 +100,17 @@ export function useCoachMessagesRealtime(
       );
     }
 
-    channel.subscribe();
+    // status 콜백 — Supabase 라이브러리가 SUBSCRIBED/CHANNEL_ERROR/TIMED_OUT/CLOSED 전달
+    channel.subscribe((s) => {
+      if (s === "SUBSCRIBED") setStatus("connected");
+      else if (
+        s === "CHANNEL_ERROR" ||
+        s === "TIMED_OUT" ||
+        s === "CLOSED"
+      ) {
+        setStatus("disconnected");
+      }
+    });
     return () => {
       void supabase.removeChannel(channel);
     };
@@ -87,5 +118,5 @@ export function useCoachMessagesRealtime(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionsKey, append]);
 
-  return { messages, setMessages, append };
+  return { messages, setMessages, append, status };
 }
