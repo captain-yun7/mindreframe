@@ -45,7 +45,7 @@ export default async function CoachAdminPage() {
               <Link
                 href={`/admin/coach/${s.id}`}
                 className={
-                  "block p-4 rounded-[14px] bg-white border hover:shadow-gs-card-hover transition-shadow " +
+                  "block p-4 rounded-toss-card bg-white border hover:shadow-toss-card-hover transition-shadow " +
                   (s.coach_warning === "red"
                     ? "border-l-4 border-l-gs-danger border-gs-line-soft"
                     : "border-gs-line-soft")

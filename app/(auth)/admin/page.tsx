@@ -61,15 +61,17 @@ export default async function AdminDashboardPage() {
         {kpis.map((k) => (
           <div
             key={k.label}
-            className="bg-white rounded-[14px] p-4 border border-gs-line-soft shadow-gs-card"
+            className="bg-white rounded-toss-card p-4 border border-gs-line-soft shadow-toss-card"
           >
             <div className="text-xs text-gs-muted font-[750]">{k.label}</div>
-            <div className="text-2xl font-[950] mt-1">{k.value}</div>
+            <div className="text-2xl font-extrabold tracking-[-0.02em] mt-1 text-gs-navy">
+              {k.value}
+            </div>
           </div>
         ))}
       </div>
 
-      <Card className="mt-6">
+      <Card className="mt-6 shadow-toss-card">
         <CardTitle>관리 메뉴</CardTitle>
         <div className="mt-4 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
           {[
@@ -89,7 +91,7 @@ export default async function AdminDashboardPage() {
             <Link
               key={m.href}
               href={m.href}
-              className="p-4 rounded-[14px] bg-gs-surface-muted border border-gs-line-soft hover:shadow-gs-card-hover transition-shadow"
+              className="p-4 rounded-toss-card bg-gs-surface-muted border border-gs-line-soft hover:bg-white hover:shadow-toss-card-hover transition-all"
             >
               <div className="text-sm font-bold">{m.label}</div>
               <div className="text-xs text-gs-muted mt-1">{m.desc}</div>
