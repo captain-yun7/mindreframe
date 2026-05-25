@@ -91,6 +91,7 @@ export function StudyForm({ mode, initial }: Props) {
             onChange={(e) => setSlug(e.target.value)}
             placeholder="예: core-1"
             disabled={pending}
+            data-testid="study-form-slug"
             className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm font-mono"
           />
         </Field>
@@ -115,6 +116,7 @@ export function StudyForm({ mode, initial }: Props) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           disabled={pending}
+          data-testid="study-form-title"
           className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm"
         />
       </Field>
@@ -124,6 +126,7 @@ export function StudyForm({ mode, initial }: Props) {
           value={sub}
           onChange={(e) => setSub(e.target.value)}
           disabled={pending}
+          data-testid="study-form-sub"
           className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm"
         />
       </Field>
@@ -181,6 +184,7 @@ export function StudyForm({ mode, initial }: Props) {
           onChange={(e) => setBodyHtml(e.target.value)}
           disabled={pending}
           rows={24}
+          data-testid="study-form-body"
           className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm font-mono"
           placeholder="<p>본문 HTML</p>"
         />
@@ -197,6 +201,7 @@ export function StudyForm({ mode, initial }: Props) {
             type="button"
             onClick={handleDelete}
             disabled={pending}
+            data-testid="study-form-delete"
             className="px-4 py-2 rounded-[10px] bg-gs-danger-bg text-gs-danger text-sm font-bold border border-gs-danger-border"
           >
             삭제
@@ -208,6 +213,7 @@ export function StudyForm({ mode, initial }: Props) {
           type="button"
           onClick={handleSubmit}
           disabled={pending}
+          data-testid="study-form-submit"
           className="px-6 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold disabled:opacity-50"
         >
           {pending ? "저장 중..." : mode === "create" ? "등록" : "저장"}

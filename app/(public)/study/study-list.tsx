@@ -119,6 +119,7 @@ function StudyCard({ item }: { item: StudyItem }) {
   return (
     <Link
       href={`/study/${item.slug}`}
+      data-testid={`study-card-${item.slug}`}
       className="block bg-white rounded-[18px] p-5 shadow-gs-card border border-gs-line-soft hover:shadow-gs-card-hover transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
     >
       <h3 className="text-[15px] font-[950] tracking-[-0.02em] leading-snug">
@@ -133,6 +134,7 @@ function StudyMini({ item }: { item: StudyItem }) {
   return (
     <Link
       href={`/study/${item.slug}`}
+      data-testid={`study-mini-${item.slug}`}
       className="block rounded-[12px] px-4 py-3 bg-gs-surface-mid hover:bg-gs-surface-muted border border-transparent hover:border-gs-line-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
     >
       <h4 className="text-[14px] font-bold leading-snug">{item.title}</h4>
