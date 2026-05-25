@@ -79,13 +79,25 @@ export async function GET(request: Request) {
   const currentHour = kstNow.getUTCHours();
   const today = kstNow.toISOString().slice(0, 10);
 
-  // 발송 대상 조회 — 이 시각에 보내기로 한 유저들
-  const { data: users, error } = await supabaseAdmin
-    .from("users")
-    .select("id, phone_number, notification_hour, notifications_started_at")
-    .eq("notification_hour", currentHour)
-    .not("phone_number", "is", null)
-    .not("notifications_started_at", "is", null);
+  // 발송 대상 조회 — 이 시각에 보내기로 한 유저들 (소프트 삭제 사용자 제외)
+  const buildUserQuery = (withDeletedFilter: boolean) => {
+    let qb = supabaseAdmin
+      .from("users")
+      .select("id, phone_number, notification_hour, notifications_started_at")
+      .eq("notification_hour", currentHour)
+      .not("phone_number", "is", null)
+      .not("notifications_started_at", "is", null);
+    if (withDeletedFilter) qb = qb.is("deleted_at", null);
+    return qb;
+  };
+
+  let { data: users, error } = await buildUserQuery(true);
+  // deleted_at 컬럼 미적용 환경 fallback — 필터 제거 후 재쿼리
+  if (error && (error.code === "42703" || /deleted_at/.test(error.message))) {
+    const r2 = await buildUserQuery(false);
+    users = r2.data;
+    error = r2.error;
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

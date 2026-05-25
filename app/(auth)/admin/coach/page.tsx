@@ -16,11 +16,12 @@ export default async function CoachAdminPage() {
     .eq("id", user.id)
     .single();
 
-  if (u?.role !== "coach") {
+  // 코치 또는 관리자만 접근 가능 (관리자는 모니터링)
+  if (u?.role !== "coach" && u?.role !== "admin") {
     return (
       <PageLayout>
         <PageTitle>접근 권한 없음</PageTitle>
-        <PageLead>상담사 권한이 필요해요.</PageLead>
+        <PageLead>상담사 또는 관리자 권한이 필요해요.</PageLead>
       </PageLayout>
     );
   }
@@ -43,11 +44,25 @@ export default async function CoachAdminPage() {
             <li key={s.id}>
               <Link
                 href={`/admin/coach/${s.id}`}
-                className="block p-4 rounded-[14px] bg-white border border-gs-line-soft hover:shadow-gs-card-hover transition-shadow"
+                className={
+                  "block p-4 rounded-[14px] bg-white border hover:shadow-gs-card-hover transition-shadow " +
+                  (s.coach_warning === "red"
+                    ? "border-l-4 border-l-gs-danger border-gs-line-soft"
+                    : "border-gs-line-soft")
+                }
               >
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-2">
+                      {s.coach_warning === "red" && (
+                        <span
+                          aria-label="플랜 미달"
+                          title="이번 주 코칭 0회"
+                          className="text-gs-danger"
+                        >
+                          ⚠️
+                        </span>
+                      )}
                       <span className="font-bold text-sm">{s.nickname}</span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-gs-blue-light text-gs-blue font-bold uppercase">
                         {s.plan}

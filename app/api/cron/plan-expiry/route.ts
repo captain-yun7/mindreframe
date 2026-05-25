@@ -18,12 +18,22 @@ export async function GET(request: Request) {
   }
 
   const now = new Date().toISOString();
-  const { data, error } = await supabaseAdmin
-    .from("users")
-    .update({ plan: "free", updated_at: now })
-    .lt("plan_expires_at", now)
-    .neq("plan", "free")
-    .select("id");
+  const buildExpiryQuery = (withDeletedFilter: boolean) => {
+    let qb = supabaseAdmin
+      .from("users")
+      .update({ plan: "free", updated_at: now })
+      .lt("plan_expires_at", now)
+      .neq("plan", "free");
+    if (withDeletedFilter) qb = qb.is("deleted_at", null);
+    return qb.select("id");
+  };
+
+  let { data, error } = await buildExpiryQuery(true);
+  if (error && (error.code === "42703" || /deleted_at/.test(error.message))) {
+    const r2 = await buildExpiryQuery(false);
+    data = r2.data;
+    error = r2.error;
+  }
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

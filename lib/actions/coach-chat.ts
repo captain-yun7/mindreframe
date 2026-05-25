@@ -149,6 +149,23 @@ async function requireCoach() {
   return { ok: true as const, supabase: r.supabase, user: r.user };
 }
 
+/**
+ * 모니터링 권한 (coach 또는 admin). 답변(sendCoachReply)은 여전히 coach 전용.
+ */
+async function requireCoachOrAdmin() {
+  const r = await requireUser();
+  if (!r.ok) return { ok: false as const, error: r.error };
+  const { data: u } = await r.supabase
+    .from("users")
+    .select("role")
+    .eq("id", r.user.id)
+    .single();
+  if (u?.role !== "coach" && u?.role !== "admin") {
+    return { ok: false as const, error: "상담사 또는 관리자 권한이 필요해요" };
+  }
+  return { ok: true as const, supabase: r.supabase, user: r.user };
+}
+
 export type CoachActiveSession = {
   id: string;
   user_id: string;
@@ -157,22 +174,90 @@ export type CoachActiveSession = {
   started_at: string;
   last_message_at: string | null;
   last_message_preview: string | null;
+  coach_warning: "red" | null;
 };
 
-/** 상담사 어드민 대시보드용 — 활성 세션 목록 + 최근 메시지 미리보기 + 회원 플랜. */
+/** 상담사·관리자 어드민 대시보드용 — 활성 세션 목록 + 최근 메시지 미리보기 + 회원 플랜 + F87 빨간 경고. */
 export async function listActiveSessionsForCoach() {
-  const c = await requireCoach();
+  const c = await requireCoachOrAdmin();
   if (!c.ok) return { ok: false as const, error: c.error };
 
-  const { data: sessions } = await c.supabase
-    .from("coach_chat_sessions")
-    .select("id, user_id, started_at, users:user_id (nickname, plan)")
-    .eq("status", "active")
-    .order("started_at", { ascending: false });
+  // 삭제된 사용자의 세션은 제외 (best-effort — deleted_at 컬럼 미적용 환경 fallback)
+  let sessionsRaw: Array<{
+    id: string;
+    user_id: string;
+    started_at: string;
+    users: { nickname?: string; plan?: string; deleted_at?: string | null } | null;
+  }> | null = null;
+  {
+    const res = await c.supabase
+      .from("coach_chat_sessions")
+      .select(
+        "id, user_id, started_at, users:user_id (nickname, plan, deleted_at)",
+      )
+      .eq("status", "active")
+      .order("started_at", { ascending: false });
+    if (
+      res.error &&
+      (res.error.code === "42703" || /deleted_at/.test(res.error.message))
+    ) {
+      const r2 = await c.supabase
+        .from("coach_chat_sessions")
+        .select("id, user_id, started_at, users:user_id (nickname, plan)")
+        .eq("status", "active")
+        .order("started_at", { ascending: false });
+      sessionsRaw =
+        (r2.data as Array<{
+          id: string;
+          user_id: string;
+          started_at: string;
+          users: { nickname?: string; plan?: string } | null;
+        }> | null) ?? null;
+    } else {
+      sessionsRaw =
+        (res.data as Array<{
+          id: string;
+          user_id: string;
+          started_at: string;
+          users: {
+            nickname?: string;
+            plan?: string;
+            deleted_at?: string | null;
+          } | null;
+        }> | null) ?? null;
+    }
+  }
 
-  if (!sessions) return { ok: true as const, sessions: [] as CoachActiveSession[] };
+  const sessions = (sessionsRaw ?? []).filter((s) => {
+    const u = s.users as { deleted_at?: string | null } | null;
+    return !u?.deleted_at;
+  });
 
-  // 각 세션의 마지막 메시지 미리보기
+  if (sessions.length === 0) {
+    return { ok: true as const, sessions: [] as CoachActiveSession[] };
+  }
+
+  // F87 빨간 경고 — 활성 세션 사용자들의 이번 주 코치 사용량
+  const {
+    getCoachWarningLevel,
+    daysSinceWeekStartKst,
+    mondayStartIsoKst,
+  } = await import("@/lib/admin/coach-warning");
+  const monday = mondayStartIsoKst();
+  const daysIntoWeek = daysSinceWeekStartKst();
+  const userIds = Array.from(new Set(sessions.map((s) => s.user_id)));
+  const weeklyMap = new Map<string, number>();
+  if (userIds.length > 0) {
+    const { data: weekly } = await c.supabase
+      .from("coach_chat_sessions")
+      .select("user_id")
+      .in("user_id", userIds)
+      .gte("started_at", monday);
+    for (const w of (weekly ?? []) as { user_id: string }[]) {
+      weeklyMap.set(w.user_id, (weeklyMap.get(w.user_id) ?? 0) + 1);
+    }
+  }
+
   const results: CoachActiveSession[] = await Promise.all(
     sessions.map(async (s) => {
       const { data: last } = await c.supabase
@@ -183,14 +268,17 @@ export async function listActiveSessionsForCoach() {
         .limit(1)
         .maybeSingle();
       const u = s.users as { nickname?: string; plan?: string } | null;
+      const plan = u?.plan ?? "free";
+      const sessionsThisWeek = weeklyMap.get(s.user_id) ?? 0;
       return {
         id: s.id,
         user_id: s.user_id,
         nickname: u?.nickname ?? "사용자",
-        plan: u?.plan ?? "free",
+        plan,
         started_at: s.started_at,
         last_message_at: last?.created_at ?? null,
         last_message_preview: last?.content ? last.content.slice(0, 60) : null,
+        coach_warning: getCoachWarningLevel(plan, daysIntoWeek, sessionsThisWeek),
       };
     }),
   );
@@ -240,12 +328,30 @@ async function notifyUserOfCoachReply(sessionId: string) {
     .single();
   if (!session) return;
 
-  const { data: u } = await supabaseAdmin
-    .from("users")
-    .select("phone_number")
-    .eq("id", session.user_id)
-    .single();
-  const phone = u?.phone_number;
+  // deleted_at 컬럼 fallback — 컬럼 미적용 환경에선 단순 select
+  let phone: string | null = null;
+  {
+    const res = await supabaseAdmin
+      .from("users")
+      .select("phone_number, deleted_at")
+      .eq("id", session.user_id)
+      .single();
+    if (
+      res.error &&
+      (res.error.code === "42703" || /deleted_at/.test(res.error.message))
+    ) {
+      const r2 = await supabaseAdmin
+        .from("users")
+        .select("phone_number")
+        .eq("id", session.user_id)
+        .single();
+      phone = (r2.data as { phone_number?: string | null } | null)?.phone_number ?? null;
+    } else {
+      const data = res.data as { phone_number?: string | null; deleted_at?: string | null } | null;
+      if (data?.deleted_at) return; // 삭제된 사용자에겐 알림 안 보냄
+      phone = data?.phone_number ?? null;
+    }
+  }
   if (!phone) return;
 
   await sendAlimtalk({
