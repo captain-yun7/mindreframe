@@ -1,7 +1,75 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { findStudyContext, STUDY_ALL } from "@/lib/study-content";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { findStudyContext, STUDY_ALL } from "@/lib/study-content"; // fallback
+
+const CATEGORY_GROUP_TITLE: Record<string, string> = {
+  core: "필수",
+  distortion: "인지왜곡(통일 명칭)",
+  body: "불안과 몸",
+  avoidance: "회피와 행동",
+  rumination: "반추는 소의 되새김질",
+};
+
+const CATEGORY_ORDER = ["core", "distortion", "body", "avoidance", "rumination"];
+
+interface ArticleCtx {
+  item: { slug: string; title: string; sub: string; body: string };
+  groupTitle: string;
+  prev: { slug: string; title: string } | null;
+  next: { slug: string; title: string } | null;
+}
+
+async function fetchArticleCtx(slug: string): Promise<ArticleCtx | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("study_articles")
+    .select("slug, category, title, sub, body_html, order_index")
+    .order("order_index", { ascending: true });
+
+  if (error || !data || data.length === 0) {
+    // fallback — 코드 박힘 데이터
+    const ctx = findStudyContext(slug);
+    if (!ctx) return null;
+    return {
+      item: ctx.item,
+      groupTitle: ctx.groupTitle,
+      prev: ctx.prev ? { slug: ctx.prev.slug, title: ctx.prev.title } : null,
+      next: ctx.next ? { slug: ctx.next.slug, title: ctx.next.title } : null,
+    };
+  }
+
+  // 카테고리 순서로 정렬: core → distortion → body → avoidance → rumination
+  const sorted = [...data].sort((a, b) => {
+    const ca = CATEGORY_ORDER.indexOf(a.category as string);
+    const cb = CATEGORY_ORDER.indexOf(b.category as string);
+    if (ca !== cb) return ca - cb;
+    return (a.order_index as number) - (b.order_index as number);
+  });
+
+  const idx = sorted.findIndex((a) => a.slug === slug);
+  if (idx < 0) return null;
+  const cur = sorted[idx];
+  const prev = idx > 0 ? sorted[idx - 1] : null;
+  const next = idx < sorted.length - 1 ? sorted[idx + 1] : null;
+
+  return {
+    item: {
+      slug: cur.slug as string,
+      title: cur.title as string,
+      sub: (cur.sub as string | null) ?? "",
+      body: cur.body_html as string,
+    },
+    groupTitle: CATEGORY_GROUP_TITLE[cur.category as string] ?? "기타",
+    prev: prev ? { slug: prev.slug as string, title: prev.title as string } : null,
+    next: next ? { slug: next.slug as string, title: next.title as string } : null,
+  };
+}
+
+// generateStaticParams는 fallback 데이터로 — 빌드 시점에 DB 접근이 불안정할 수 있음.
+// 신규 글은 dynamicParams로 동적 생성.
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   return STUDY_ALL.map((a) => ({ slug: a.slug }));
@@ -13,9 +81,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const ctx = findStudyContext(slug);
+  const ctx = await fetchArticleCtx(slug);
   return { title: ctx ? ctx.item.title : "알고가기" };
 }
+
+export const revalidate = 300;
 
 export default async function StudyDetailPage({
   params,
@@ -23,7 +93,7 @@ export default async function StudyDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const ctx = findStudyContext(slug);
+  const ctx = await fetchArticleCtx(slug);
   if (!ctx) notFound();
   const { item, groupTitle, prev, next } = ctx;
 
