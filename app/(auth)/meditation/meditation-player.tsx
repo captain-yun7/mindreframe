@@ -42,6 +42,7 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
 
   async function recordCompletion(track: Track) {
     const elapsed = playStartRef.current
+      // eslint-disable-next-line react-hooks/purity -- 이벤트 핸들러 안에서만 호출됨
       ? Math.round((Date.now() - playStartRef.current) / 1000)
       : track.durationSeconds;
     playStartRef.current = null;
@@ -68,6 +69,7 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
     if (audioRef.current) {
       audioRef.current.src = track.audioUrl;
       audioRef.current.play().catch(() => {});
+      // eslint-disable-next-line react-hooks/purity -- 이벤트 핸들러 안에서만 호출됨
       playStartRef.current = Date.now();
       setPlaying(track.audioUrl);
     }
