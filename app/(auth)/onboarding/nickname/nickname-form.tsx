@@ -47,14 +47,14 @@ export function NicknameSetupForm({ suggested }: { suggested: string }) {
         disabled={pending}
         maxLength={30}
         data-testid="nickname-input"
-        className="w-full py-4 px-4 rounded-[14px] border-2 border-white/30 bg-white/10 text-base text-white outline-none focus:border-gs-gold focus:ring-4 focus:ring-gs-gold/40 placeholder:text-white/50 disabled:opacity-60"
+        className="w-full py-4 px-5 rounded-toss-button border-2 border-white/30 bg-white/10 text-base text-white outline-none focus:border-gs-gold focus:ring-4 focus:ring-gs-gold/40 placeholder:text-white/50 disabled:opacity-60 transition-colors"
       />
       <button
         type="button"
         onClick={handleSubmit}
         disabled={pending}
         data-testid="nickname-submit"
-        className="py-4 rounded-full text-base font-bold bg-gs-gold text-gs-text-strong cursor-pointer shadow-[0_10px_30px_rgba(250,204,107,0.4)] hover:brightness-105 disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gs-gold/50"
+        className="py-4 rounded-toss-button text-base font-bold bg-gs-gold text-gs-text-strong cursor-pointer shadow-[0_10px_30px_rgba(250,204,107,0.4)] hover:-translate-y-0.5 hover:brightness-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gs-gold/50"
       >
         {pending ? "저장 중..." : "이 닉네임으로 시작하기"}
       </button>

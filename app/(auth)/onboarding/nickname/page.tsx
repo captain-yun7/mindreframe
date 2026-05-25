@@ -35,13 +35,16 @@ export default async function NicknameOnboardingPage() {
     profile?.nickname && profile.nickname !== emailPrefix ? profile.nickname : "";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[linear-gradient(135deg,var(--color-gs-navy)_0%,var(--color-gs-navy-mid)_45%,var(--color-gs-navy-bright)_100%)] text-white px-6">
-      <div className="max-w-[460px] w-full text-center">
-        <h1 className="text-2xl font-extrabold leading-[1.4] mb-3">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gs-navy via-gs-navy-mid to-gs-navy-bright text-white px-6 py-12">
+      <div className="max-w-[480px] w-full text-center">
+        <div className="text-sm font-bold tracking-[-0.01em] text-gs-gold mb-3">
+          ✨ 시작하기 전에
+        </div>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] leading-[1.2] mb-4">
           어떻게 불러드릴까요?
         </h1>
-        <p className="text-sm text-[#e5e7ff] mb-8 leading-[1.7]">
-          닉네임은 한 번 정하면 <b>바꿀 수 없어요</b>.
+        <p className="text-base text-white/80 mb-8 leading-[1.7]">
+          닉네임은 한 번 정하면 <b className="text-gs-gold">바꿀 수 없어요</b>.
           <br />
           신중히 골라주세요.
         </p>

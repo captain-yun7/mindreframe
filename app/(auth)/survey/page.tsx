@@ -115,7 +115,7 @@ export default function SurveyPage() {
                   setPhase("depression");
                 }
               }}
-              className="p-4 bg-white border border-gs-line-soft rounded-2xl text-base font-medium text-left cursor-pointer hover:border-gs-blue hover:bg-gs-blue-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
+              className="p-4 bg-white border border-gs-line-soft rounded-toss-card text-base font-medium text-left cursor-pointer hover:border-gs-navy-bright hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
             >
               {c}
             </button>
@@ -151,7 +151,7 @@ export default function SurveyPage() {
                   setPhase("anxiety");
                 }
               }}
-              className="p-4 bg-white border border-gs-line-soft rounded-2xl text-[15px] font-medium text-left cursor-pointer hover:border-gs-blue hover:bg-gs-blue-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
+              className="p-4 bg-white border border-gs-line-soft rounded-toss-card text-[15px] font-medium text-left cursor-pointer hover:border-gs-navy-bright hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
             >
               {c}
             </button>
@@ -190,7 +190,7 @@ export default function SurveyPage() {
                   setPhase("result");
                 }
               }}
-              className="p-4 bg-white border border-gs-line-soft rounded-2xl text-[15px] font-medium text-left cursor-pointer hover:border-gs-blue hover:bg-gs-blue-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
+              className="p-4 bg-white border border-gs-line-soft rounded-toss-card text-[15px] font-medium text-left cursor-pointer hover:border-gs-navy-bright hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
             >
               {c}
             </button>
@@ -213,16 +213,16 @@ export default function SurveyPage() {
       </h1>
 
       {/* 우울 */}
-      <div className="bg-white border border-gs-line-soft rounded-[18px] p-5 mb-4 shadow-gs-card">
+      <div className="bg-white border border-gs-line-soft rounded-toss-card p-5 mb-4 shadow-toss-card">
         <div className="text-xs font-bold text-gs-muted-soft mb-2">우울 부담 지표</div>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-black">{depPercent}</span>
+          <span className="text-4xl font-extrabold tracking-[-0.03em]">{depPercent}</span>
           <span className="text-sm text-gs-text-soft">/ 100</span>
         </div>
         <div className="mt-4">
           <div className="w-full h-2 rounded-full bg-gs-line-soft overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#a5b4fc] to-gs-blue transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-r from-[#a5b4fc] to-gs-navy-bright transition-all duration-300"
               style={{ width: `${depPercent}%` }}
             />
           </div>
@@ -233,10 +233,10 @@ export default function SurveyPage() {
       </div>
 
       {/* 불안 */}
-      <div className="bg-white border border-gs-line-soft rounded-[18px] p-5 mb-6 shadow-gs-card">
+      <div className="bg-white border border-gs-line-soft rounded-toss-card p-5 mb-6 shadow-toss-card">
         <div className="text-xs font-bold text-gs-muted-soft mb-2">불안 부담 지표</div>
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-black">{anxPercent}</span>
+          <span className="text-4xl font-extrabold tracking-[-0.03em]">{anxPercent}</span>
           <span className="text-sm text-gs-text-soft">/ 100</span>
         </div>
         <div className="mt-4">
@@ -266,16 +266,18 @@ export default function SurveyPage() {
         return (
           <div
             data-testid="recommended-plan"
-            className="mb-6 p-5 rounded-[18px] bg-gs-blue text-white shadow-gs-card-hover"
+            className="mb-6 p-6 rounded-toss-card bg-gs-navy-bright text-white shadow-toss-card-hover"
           >
             <div className="text-[11px] font-bold opacity-80 mb-1">📌 당신에게 추천</div>
-            <div className="text-xl font-black mb-1">{recommended.label} 플랜</div>
+            <div className="text-xl font-extrabold tracking-[-0.02em] mb-1">
+              {recommended.label} 플랜
+            </div>
             <p className="text-sm opacity-90 leading-[1.6] mb-4">{recommended.reason}</p>
             <button
               type="button"
               disabled={isPending}
               onClick={() => handleStart("/pricing")}
-              className="px-4 py-2 rounded-full bg-white text-gs-blue text-sm font-bold disabled:opacity-60"
+              className="px-5 py-2.5 rounded-toss-button bg-white text-gs-navy-bright text-sm font-bold hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-60"
             >
               플랜 자세히 보기 →
             </button>
@@ -293,7 +295,7 @@ export default function SurveyPage() {
         type="button"
         disabled={isPending}
         onClick={() => handleStart("/dashboard")}
-        className="w-full py-4 rounded-[14px] bg-gs-blue text-white text-base font-bold cursor-pointer hover:bg-gs-blue-hover transition-colors disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
+        className="w-full py-4 rounded-toss-button bg-gs-navy-bright text-white text-base font-bold cursor-pointer shadow-toss-card hover:-translate-y-0.5 hover:shadow-toss-card-hover transition-all disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40 focus-visible:ring-offset-2"
       >
         {isPending ? "저장 중..." : "프로그램 시작하기"}
       </button>
@@ -302,7 +304,7 @@ export default function SurveyPage() {
         type="button"
         disabled={isPending}
         onClick={() => handleStart("/pricing")}
-        className="w-full mt-2 py-3.5 rounded-[14px] border border-gs-line-mid bg-white text-gs-text-soft text-sm font-semibold cursor-pointer hover:bg-gs-surface-mid transition-colors disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40 focus-visible:ring-offset-2"
+        className="w-full mt-2 py-3.5 rounded-toss-button border border-gs-line-mid bg-white text-gs-text-soft text-sm font-semibold cursor-pointer hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40 focus-visible:ring-offset-2"
       >
         요금제 먼저 보기
       </button>
@@ -325,16 +327,16 @@ function SurveyShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gs-surface-muted">
-      <div className="max-w-[520px] mx-auto px-5 pt-8 pb-16">
+    <div className="min-h-screen bg-gs-navy-50/40">
+      <div className="max-w-[560px] mx-auto px-5 pt-10 md:pt-14 pb-16">
         <div className="mb-6">
-          <div className="text-[13px] font-semibold text-gs-muted-soft mb-2">
+          <div className="text-[13px] font-bold text-gs-navy-bright mb-2 tracking-[-0.01em]">
             {step}
           </div>
           {progress !== undefined && (
-            <div className="w-full h-1.5 rounded-full bg-gs-line-soft overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-gs-line-soft overflow-hidden">
               <div
-                className="h-full rounded-full bg-gs-blue transition-all duration-300"
+                className="h-full rounded-full bg-gs-navy-bright transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
