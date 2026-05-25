@@ -49,6 +49,38 @@
   --shadow-gs-card: 0 10px 26px rgba(2, 6, 23, 0.06);
   --shadow-gs-card-hover: 0 18px 40px rgba(15, 23, 42, 0.10);
   --shadow-gs-dropdown: 0 12px 32px rgba(15, 23, 42, 0.18);
+
+  /* 토스 톤 (Sprint B 신규) — 기존 gs-navy / gs-gold 토큰의 11단계 계조 alias.
+   * 정체성은 그대로(gs-navy / gs-gold). 토스의 "여백·계조·라운드"만 차용.
+   * 새 페이지·components/toss/*만 사용. 어드민·구 컴포넌트는 기존 shadow-gs-card 유지. */
+  --color-gs-navy-50: #f4f6fc;
+  --color-gs-navy-100: #e7ebf7;
+  --color-gs-navy-200: #c9d0e8;
+  --color-gs-navy-300: #a3aed9;
+  --color-gs-navy-400: #6c7bc4;
+  --color-gs-navy-500: #4458ad;
+  --color-gs-navy-600: #2343e9; /* gs-navy-bright alias */
+  --color-gs-navy-700: #2a3a7a;
+  --color-gs-navy-800: #1b2f86; /* gs-navy-mid alias */
+  --color-gs-navy-900: #0e1430; /* gs-navy alias */
+
+  --color-gs-gold-50: #fff8e8;
+  --color-gs-gold-100: #fff0c9;
+  --color-gs-gold-200: #ffe49a;
+  --color-gs-gold-300: #ffd76b;
+  --color-gs-gold-400: #fcd07a;
+  --color-gs-gold-500: #facc6b; /* gs-gold alias */
+  --color-gs-gold-600: #e0b35a;
+  --color-gs-gold-700: #caa24a; /* gs-gold-dark alias */
+  --color-gs-gold-800: #a8843c;
+  --color-gs-gold-900: #7a5f2c;
+
+  --shadow-toss-card: 0 4px 24px rgba(15, 23, 42, 0.04), 0 8px 40px rgba(15, 23, 42, 0.06);
+  --shadow-toss-card-hover: 0 8px 32px rgba(15, 23, 42, 0.08), 0 16px 48px rgba(15, 23, 42, 0.10);
+  --shadow-toss-deep: 0 16px 56px rgba(15, 23, 42, 0.14);
+
+  --radius-toss-card: 1rem;     /* rounded-2xl 16px */
+  --radius-toss-button: 0.75rem; /* rounded-xl 12px */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

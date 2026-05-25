@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" fill="none" role="img" aria-label="생각 분석 일러스트">
+  <rect width="480" height="360" rx="32" fill="#f4f6fc" />
+  <rect x="80" y="120" width="200" height="80" rx="20" fill="#fff" stroke="#e7ebf7" stroke-width="2" />
+  <circle cx="115" cy="160" r="4" fill="#1b2f86" />
+  <circle cx="135" cy="160" r="4" fill="#1b2f86" />
+  <circle cx="155" cy="160" r="4" fill="#1b2f86" />
+  <path d="M120 200 L100 220 L140 200 Z" fill="#fff" stroke="#e7ebf7" stroke-width="2" />
+  <rect x="220" y="180" width="180" height="80" rx="20" fill="#2343e9" />
+  <circle cx="260" cy="220" r="4" fill="#fff" />
+  <circle cx="280" cy="220" r="4" fill="#fff" />
+  <circle cx="300" cy="220" r="4" fill="#fff" />
+  <path d="M380 260 L400 280 L360 260 Z" fill="#2343e9" />
+  <circle cx="240" cy="80" r="20" fill="#facc6b" opacity="0.7" />
+  <text x="240" y="88" text-anchor="middle" font-size="22" fill="#1b2f86">💭</text>
+</svg>

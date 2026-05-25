@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" fill="none" role="img" aria-label="비워내기 일러스트">
+  <rect width="480" height="360" rx="32" fill="#f4f6fc" />
+  <circle cx="120" cy="100" r="32" fill="#facc6b" opacity="0.8" />
+  <line x1="120" y1="132" x2="120" y2="200" stroke="#caa24a" stroke-width="2" />
+  <circle cx="200" cy="80" r="24" fill="#2343e9" opacity="0.6" />
+  <line x1="200" y1="104" x2="200" y2="180" stroke="#1b2f86" stroke-width="2" />
+  <circle cx="280" cy="120" r="28" fill="#facc6b" opacity="0.6" />
+  <line x1="280" y1="148" x2="280" y2="220" stroke="#caa24a" stroke-width="2" />
+  <circle cx="370" cy="90" r="22" fill="#2343e9" opacity="0.5" />
+  <line x1="370" y1="112" x2="370" y2="190" stroke="#1b2f86" stroke-width="2" />
+  <path d="M60 280 Q240 240 420 280 L420 320 L60 320 Z" fill="#1b2f86" opacity="0.15" />
+  <text x="240" y="320" text-anchor="middle" font-size="20" fill="#1b2f86">✨</text>
+</svg>

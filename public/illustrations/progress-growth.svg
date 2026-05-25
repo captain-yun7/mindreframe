@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" fill="none" role="img" aria-label="성장 차트 일러스트">
+  <rect width="480" height="360" rx="32" fill="#f4f6fc" />
+  <line x1="80" y1="280" x2="400" y2="280" stroke="#c9d0e8" stroke-width="2" />
+  <line x1="80" y1="80" x2="80" y2="280" stroke="#c9d0e8" stroke-width="2" />
+  <path d="M80 250 L140 220 L200 200 L260 160 L320 120 L380 90" stroke="#2343e9" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M80 250 L140 220 L200 200 L260 160 L320 120 L380 90 L380 280 L80 280 Z" fill="#2343e9" opacity="0.1" />
+  <circle cx="140" cy="220" r="6" fill="#facc6b" />
+  <circle cx="200" cy="200" r="6" fill="#facc6b" />
+  <circle cx="260" cy="160" r="6" fill="#facc6b" />
+  <circle cx="320" cy="120" r="6" fill="#facc6b" />
+  <circle cx="380" cy="90" r="8" fill="#facc6b" stroke="#caa24a" stroke-width="2" />
+  <path d="M370 60 L380 80 L390 60" stroke="#caa24a" stroke-width="3" stroke-linecap="round" fill="none" />
+  <text x="380" y="48" text-anchor="middle" font-size="14" font-weight="800" fill="#1b2f86">✨</text>
+</svg>

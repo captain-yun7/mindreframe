@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" fill="none" role="img" aria-label="코치 채팅 일러스트">
+  <rect width="480" height="360" rx="32" fill="#f4f6fc" />
+  <circle cx="170" cy="180" r="56" fill="#1b2f86" />
+  <circle cx="170" cy="160" r="20" fill="#facc6b" />
+  <path d="M130 230 Q170 200 210 230 L210 280 L130 280 Z" fill="#1b2f86" />
+  <circle cx="310" cy="180" r="56" fill="#2343e9" />
+  <circle cx="310" cy="160" r="20" fill="#fff" />
+  <path d="M270 230 Q310 200 350 230 L350 280 L270 280 Z" fill="#2343e9" />
+  <path d="M220 170 L260 170" stroke="#caa24a" stroke-width="4" stroke-linecap="round" />
+  <path d="M255 165 L262 170 L255 175" stroke="#caa24a" stroke-width="4" stroke-linecap="round" fill="none" />
+  <text x="240" y="80" text-anchor="middle" font-size="28">🤝</text>
+</svg>

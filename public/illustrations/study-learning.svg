@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" fill="none" role="img" aria-label="알고가기 일러스트">
+  <rect width="480" height="360" rx="32" fill="#f4f6fc" />
+  <rect x="120" y="100" width="240" height="180" rx="16" fill="#fff" stroke="#e7ebf7" stroke-width="2" />
+  <rect x="120" y="100" width="240" height="32" rx="16" fill="#1b2f86" />
+  <rect x="120" y="116" width="240" height="16" fill="#1b2f86" />
+  <rect x="150" y="160" width="180" height="10" rx="5" fill="#c9d0e8" />
+  <rect x="150" y="180" width="160" height="10" rx="5" fill="#c9d0e8" />
+  <rect x="150" y="200" width="170" height="10" rx="5" fill="#c9d0e8" />
+  <rect x="150" y="230" width="80" height="24" rx="12" fill="#facc6b" />
+  <text x="190" y="246" text-anchor="middle" font-size="12" font-weight="800" fill="#1b2f86">학습완료</text>
+  <text x="80" y="80" font-size="24">📚</text>
+  <circle cx="400" cy="320" r="14" fill="#2343e9" opacity="0.3" />
+  <circle cx="60" cy="290" r="10" fill="#facc6b" opacity="0.6" />
+</svg>
