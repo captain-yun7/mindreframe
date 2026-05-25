@@ -239,7 +239,7 @@ export default async function ProgressPage() {
                     key={badge.title}
                     className={`rounded-toss-card p-3 text-center border transition-all ${
                       earned
-                        ? "bg-gradient-to-br from-gs-gold-50 to-[#fff4d1] border-gs-gold/50 shadow-toss-card"
+                        ? "bg-gradient-to-br from-gs-gold-50 to-gs-gold-100 border-gs-gold/50 shadow-toss-card"
                         : "bg-gs-surface-muted border-gs-line-soft opacity-50"
                     }`}
                   >

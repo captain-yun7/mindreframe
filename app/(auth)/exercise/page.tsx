@@ -5,7 +5,6 @@ import Image from "next/image";
 import { PageTitle } from "@/components/page-layout";
 import { Card, CardTitle, CardDescription } from "@/components/card";
 import { logExercise } from "@/lib/actions/exercise";
-import type { ExercisePayload } from "@/lib/exercise-payload";
 import { useToast } from "@/components/ui/toast";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
