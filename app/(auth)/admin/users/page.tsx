@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
+import { sanitizeSearchTerm } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 
@@ -36,8 +37,9 @@ export default async function AdminUsersPage({
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
-  if (q) {
-    query = query.or(`email.ilike.%${q}%,nickname.ilike.%${q}%`);
+  const safeQ = sanitizeSearchTerm(q);
+  if (safeQ) {
+    query = query.or(`email.ilike.%${safeQ}%,nickname.ilike.%${safeQ}%`);
   }
 
   const { data, count } = await query;

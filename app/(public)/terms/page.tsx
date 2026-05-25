@@ -4,6 +4,7 @@ import {
   applyPlaceholders,
   getSiteSettings,
 } from "@/lib/site-settings";
+import { sanitizeContentHtml } from "@/lib/sanitize-html";
 
 export const metadata: Metadata = {
   title: "이용약관",
@@ -15,7 +16,7 @@ export const revalidate = 300;
 export default async function TermsPage() {
   const settings = await getSiteSettings();
   const rawBody = settings.terms_html || FALLBACK_TERMS_HTML;
-  const body = applyPlaceholders(rawBody, settings);
+  const body = sanitizeContentHtml(applyPlaceholders(rawBody, settings));
   const effectiveDate = settings.effective_date || "2026-05-01";
 
   return (

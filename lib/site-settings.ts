@@ -171,7 +171,19 @@ export async function getSiteSettings(): Promise<Record<string, string>> {
   }
 }
 
-/** {{key}} placeholder를 settings 값으로 치환 */
+/**
+ * {{key}} placeholder를 settings 값으로 치환.
+ * 정의되지 않은 키는 빈 문자열로 치환하지 않고 원본(`{{key}}`)을 유지 — 운영자 오타 silent fail 방지.
+ * 개발 환경에서는 console.warn으로 알림.
+ */
 export function applyPlaceholders(html: string, settings: Record<string, string>): string {
-  return html.replace(/\{\{(\w+)\}\}/g, (_, key: string) => settings[key] ?? "");
+  return html.replace(/\{\{(\w+)\}\}/g, (match, key: string) => {
+    if (Object.prototype.hasOwnProperty.call(settings, key)) {
+      return settings[key];
+    }
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`[site-settings] applyPlaceholders: 정의되지 않은 키 "${key}" — 원본 유지`);
+    }
+    return match;
+  });
 }

@@ -4,6 +4,7 @@ import {
   applyPlaceholders,
   getSiteSettings,
 } from "@/lib/site-settings";
+import { sanitizeContentHtml } from "@/lib/sanitize-html";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침",
@@ -14,7 +15,7 @@ export const revalidate = 300;
 export default async function PrivacyPage() {
   const settings = await getSiteSettings();
   const rawBody = settings.privacy_html || FALLBACK_PRIVACY_HTML;
-  const body = applyPlaceholders(rawBody, settings);
+  const body = sanitizeContentHtml(applyPlaceholders(rawBody, settings));
   const effectiveDate = settings.effective_date || "2026-05-01";
 
   return (

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { findStudyContext, STUDY_ALL } from "@/lib/study-content"; // fallback
+import { sanitizeContentHtml } from "@/lib/sanitize-html";
 
 const CATEGORY_GROUP_TITLE: Record<string, string> = {
   core: "필수",
@@ -67,11 +68,22 @@ async function fetchArticleCtx(slug: string): Promise<ArticleCtx | null> {
   };
 }
 
-// generateStaticParams는 fallback 데이터로 — 빌드 시점에 DB 접근이 불안정할 수 있음.
-// 신규 글은 dynamicParams로 동적 생성.
+// 빌드 시점에 DB 정상이면 실제 slug로 정적 생성, 실패 시 fallback.
+// 신규 글·삭제 글은 dynamicParams + revalidatePath로 즉시 반영.
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("study_articles")
+      .select("slug");
+    if (!error && data && data.length > 0) {
+      return data.map((a) => ({ slug: a.slug as string }));
+    }
+  } catch {
+    // 빌드 시점 DB 접근 실패 시 fallback
+  }
   return STUDY_ALL.map((a) => ({ slug: a.slug }));
 }
 
@@ -116,7 +128,7 @@ export default async function StudyDetailPage({
 
         <div
           className="study-body text-[15px] leading-[1.85] text-gs-text-strong"
-          dangerouslySetInnerHTML={{ __html: item.body }}
+          dangerouslySetInnerHTML={{ __html: sanitizeContentHtml(item.body) }}
         />
 
         <nav className="mt-10 pt-6 border-t border-gs-line-soft flex items-center justify-between gap-3">

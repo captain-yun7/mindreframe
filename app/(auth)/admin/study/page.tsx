@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
+import { sanitizeSearchTerm } from "@/lib/utils";
 
 const PAGE_SIZE = 50;
 
@@ -47,7 +48,8 @@ export default async function AdminStudyPage({
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   if (category) query = query.eq("category", category);
-  if (q) query = query.or(`title.ilike.%${q}%,slug.ilike.%${q}%`);
+  const safeQ = sanitizeSearchTerm(q);
+  if (safeQ) query = query.or(`title.ilike.%${safeQ}%,slug.ilike.%${safeQ}%`);
 
   const { data, count, error } = await query;
   const rows = (data ?? []) as ArticleRow[];
