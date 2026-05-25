@@ -82,7 +82,9 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
     <>
       {/* 가이드 */}
       <div className="text-center mb-6">
-        <PageTitle className="text-center">지금 어디에 초점을 맞추고 싶나요?</PageTitle>
+        <PageTitle className="text-center text-2xl md:text-3xl">
+          지금 어디에 초점을 맞추고 싶나요?
+        </PageTitle>
         <div className="mt-4 text-sm text-gs-text-soft leading-[1.8] max-w-[600px] mx-auto">
           <p>① <b>원하는 것을 하나 선택해 보세요.</b></p>
           <p className="text-gs-muted text-[13px] mb-2">
@@ -105,13 +107,13 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
             key={cat.key}
             type="button"
             onClick={() => setActiveTab(cat.key)}
-            className={`p-6 rounded-[18px] text-center cursor-pointer border-2 transition-all ${
+            className={`p-6 rounded-toss-card text-center cursor-pointer border-2 transition-all ${
               activeTab === cat.key
-                ? "border-gs-gold-border bg-white shadow-gs-card"
-                : "border-gs-line-soft bg-white hover:border-gs-gold-border/50"
+                ? "border-gs-gold-border bg-white shadow-toss-card-hover -translate-y-0.5"
+                : "border-gs-line-soft bg-white hover:border-gs-gold-border/50 hover:-translate-y-0.5 hover:shadow-toss-card"
             }`}
           >
-            <p className="text-lg font-[950]">{cat.label}</p>
+            <p className="text-lg font-extrabold tracking-[-0.02em]">{cat.label}</p>
             <p className="text-[13px] text-gs-muted mt-1">{cat.desc}</p>
           </button>
         ))}
@@ -136,7 +138,7 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
       </div>
 
       {/* 트랙 목록 */}
-      <Card>
+      <Card className="shadow-toss-card">
         <h2 className="text-base font-bold">{catInfo.title}</h2>
         <p className="text-[13px] text-gs-muted mb-4">{catInfo.desc}</p>
 
@@ -151,10 +153,10 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
               return (
                 <div
                   key={track.slug}
-                  className="flex items-center justify-between p-3 border border-gs-line-soft rounded-[14px]"
+                  className="flex items-center justify-between p-3 border border-gs-line-soft rounded-toss-card hover:bg-gs-navy-50/40 transition-colors"
                 >
                   <div className="min-w-0">
-                    <div className="font-[950] text-sm">{track.title}</div>
+                    <div className="font-extrabold tracking-[-0.01em] text-sm">{track.title}</div>
                     {track.description ? (
                       <div className="text-xs text-gs-muted truncate">
                         {track.description}
@@ -165,12 +167,12 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
                     type="button"
                     onClick={() => handlePlay(track)}
                     disabled={isVideoOnly}
-                    className={`px-3 py-2 rounded-xl text-[13px] font-bold border shrink-0 ${
+                    className={`px-4 py-2 rounded-toss-button text-[13px] font-bold border shrink-0 transition-all ${
                       playing === track.audioUrl
                         ? "bg-gs-danger-bg border-gs-danger-border text-gs-danger"
                         : isVideoOnly
                           ? "bg-gs-surface-muted border-gs-line-soft text-gs-muted opacity-60 cursor-not-allowed"
-                          : "bg-gs-blue-light border-gs-blue/25 text-gs-blue"
+                          : "bg-gs-navy-50 border-gs-navy-bright/25 text-gs-navy-bright hover:-translate-y-0.5 hover:shadow-toss-card"
                     }`}
                   >
                     {playing === track.audioUrl

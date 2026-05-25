@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { HeroBanner } from "@/components/hero-banner";
+import Image from "next/image";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
 import { addThoughtRecord } from "@/lib/actions/thought-records";
 import { useToast } from "@/components/ui/toast";
 import { CrisisBanner } from "@/components/safety/crisis-banner";
 import { detectCrisis } from "@/lib/cbt/crisis-detection";
+import { PageFade } from "@/components/motion/page-fade";
+import { FadeIn } from "@/components/motion/fade-in";
 
 type StepKey = "situation" | "thought" | "emotion" | "bodyReaction" | "behavior";
 
@@ -157,53 +159,81 @@ export default function TrashPage() {
   }
 
   return (
-    <div>
-      <HeroBanner
-        title="생각쓰레기통"
-        subtitle="오늘 불안하거나, 우울하거나, 화가 났던 한 사건을 전부 쏟아놓으세요."
-        note='챗봇이 <b>상황 · 생각 · 감정 · 신체반응 · 행동</b>을 한 단계씩 나눠 받을게요.'
-      />
+    <PageFade>
+      {/* ── HERO ── */}
+      <section className="bg-gs-navy-50 py-12 md:py-16">
+        <div className="mx-auto w-full max-w-[1120px] px-4">
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+            <FadeIn delay={0} y={16}>
+              <div className="text-sm font-bold tracking-[-0.01em] text-gs-navy-bright mb-3">
+                생각쓰레기통
+              </div>
+              <h1 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] text-gs-navy leading-[1.15]">
+                마음을 비워봐요 ✨
+              </h1>
+              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
+                불안하거나 화가 났던 한 사건을 전부 쏟아놓으세요.
+                <br className="hidden md:block" />
+                <b className="text-gs-text-strong">상황 · 생각 · 감정 · 신체 · 행동</b>으로 한
+                단계씩 나눠 받을게요.
+              </p>
+            </FadeIn>
 
-      <main className="max-w-[720px] mx-auto px-3 py-6">
+            <FadeIn delay={0.1} y={16} className="hidden lg:flex items-center justify-center">
+              <Image
+                src="/illustrations/trash-release.svg"
+                alt=""
+                width={260}
+                height={260}
+                className="w-[220px] xl:w-[260px] h-auto"
+              />
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      <main className="max-w-[720px] mx-auto px-4 pt-8 md:pt-10 pb-24">
         <CrisisBanner
           visible={showCrisisBanner}
           onDismiss={() => setShowCrisisBanner(false)}
         />
 
-        <div className="bg-white rounded-[18px] p-4 shadow-gs-card border border-gs-line-soft">
-          <h2 className="text-base font-semibold mb-1 text-gs-text-strong">왜 생각을 나눌까요?</h2>
-          <p className="text-[13px] text-gs-text-soft mb-4 leading-[1.6]">
-            나누는 순간 <b>생각은 생각으로, 나는 나로</b> 분리됩니다. 한 줄씩만 적어보세요.
-          </p>
+        <FadeIn>
+          <div className="bg-white rounded-toss-card p-5 shadow-toss-card border border-gs-line-soft">
+            <h2 className="text-base font-bold mb-1 text-gs-text-strong">왜 생각을 나눌까요?</h2>
+            <p className="text-[13px] text-gs-text-soft mb-4 leading-[1.6]">
+              나누는 순간 <b>생각은 생각으로, 나는 나로</b> 분리됩니다. 한 줄씩만 적어보세요.
+            </p>
 
-          <ChatContainer
-            messages={messages}
-            onSend={handleSend}
-            isLoading={isSaving}
-            placeholder={
-              done
-                ? "정리가 완료되었어요. 다시 시작은 아래 버튼."
-                : `${stepIndex + 1} / ${STEPS.length} — 답변을 적어주세요`
-            }
-            headerTitle="생각쓰레기통"
-            headerTag={`${stepIndex + 1} / ${STEPS.length}`}
-          />
+            <ChatContainer
+              messages={messages}
+              onSend={handleSend}
+              isLoading={isSaving}
+              placeholder={
+                done
+                  ? "정리가 완료되었어요. 다시 시작은 아래 버튼."
+                  : `${stepIndex + 1} / ${STEPS.length} — 답변을 적어주세요`
+              }
+              headerTitle="생각쓰레기통"
+              headerTag={`${stepIndex + 1} / ${STEPS.length}`}
+            />
 
-          {done && (
-            <button
-              type="button"
-              onClick={handleReset}
-              className="mt-3 w-full py-3 rounded-[14px] border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft hover:bg-gs-surface-mid transition-colors"
-            >
-              다른 사건 또 정리하기
-            </button>
-          )}
+            {done && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="mt-3 w-full py-3 rounded-toss-button border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft hover:bg-gs-surface-mid hover:-translate-y-0.5 hover:shadow-toss-card transition-all"
+              >
+                다른 사건 또 정리하기
+              </button>
+            )}
 
-          <p className="mt-3 text-xs text-gs-muted text-center">
-            저장된 기록은 나의성장방에서 날짜별로 다시 볼 수 있어요.
-          </p>
-        </div>
+            <p className="mt-3 text-xs text-gs-muted text-center">
+              저장된 기록은 나의성장방에서 날짜별로 다시 볼 수 있어요.
+            </p>
+          </div>
+        </FadeIn>
       </main>
-    </div>
+    </PageFade>
   );
 }

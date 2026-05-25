@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { PageLayout, PageTitle, PageLead } from "@/components/page-layout";
+import Image from "next/image";
+import { PageTitle } from "@/components/page-layout";
 import { Card, CardTitle, CardDescription } from "@/components/card";
 import { logExercise } from "@/lib/actions/exercise";
 import type { ExercisePayload } from "@/lib/exercise-payload";
 import { useToast } from "@/components/ui/toast";
+import { PageFade } from "@/components/motion/page-fade";
+import { FadeIn } from "@/components/motion/fade-in";
+import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 
 type Mode = null | "courage" | "exposure";
 
@@ -75,62 +79,101 @@ export default function ExercisePage() {
 
   if (!mode) {
     return (
-      <PageLayout>
-        <PageTitle>행동연습장</PageTitle>
-        <PageLead>어떤 연습을 시작할까요?</PageLead>
+      <PageFade>
+        {/* ── HERO ── */}
+        <section className="bg-gs-navy-50 py-12 md:py-16">
+          <div className="mx-auto w-full max-w-[1120px] px-4">
+            <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+              <FadeIn delay={0} y={16}>
+                <div className="text-sm font-bold tracking-[-0.01em] text-gs-navy-bright mb-3">
+                  행동연습장
+                </div>
+                <h1 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] text-gs-navy leading-[1.15]">
+                  용기 한 걸음 🎯
+                </h1>
+                <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
+                  작은 행동 하나가 가장 강력한 무기예요.
+                  <br className="hidden md:block" />
+                  <b className="text-gs-text-strong">계획 → 실행 → 회고</b>로 한 걸음씩 기록해봐요.
+                </p>
+              </FadeIn>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-          <button
-            type="button"
-            onClick={() => setMode("courage")}
-            className="p-6 rounded-[18px] border-2 border-gs-line-soft bg-white text-left hover:border-gs-blue hover:shadow-gs-card-hover transition-all shadow-gs-card cursor-pointer"
-          >
-            <h2 className="text-xl font-[950] mb-2">용기있는 행동</h2>
-            <p className="text-sm text-gs-muted leading-[1.6]">
-              우울할 때, 작은 활동 하나가 가장 강력한 무기입니다.
-              <br />
-              계획 → 실행 → 회고로 한 걸음씩 기록해요.
-            </p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("exposure")}
-            className="p-6 rounded-[18px] border-2 border-gs-line-soft bg-white text-left hover:border-gs-blue hover:shadow-gs-card-hover transition-all shadow-gs-card cursor-pointer"
-          >
-            <h2 className="text-xl font-[950] mb-2">불안노출</h2>
-            <p className="text-sm text-gs-muted leading-[1.6]">
-              불안한 상황에 조금씩 노출하면 뇌가 &quot;안전하다&quot;는 걸 학습합니다.
-              <br />
-              가장 쉬운 것부터 계획·실행·회고.
-            </p>
-          </button>
-        </div>
-      </PageLayout>
+              <FadeIn delay={0.1} y={16} className="hidden lg:flex items-center justify-center">
+                <Image
+                  src="/illustrations/exercise-courage.svg"
+                  alt=""
+                  width={260}
+                  height={260}
+                  className="w-[220px] xl:w-[260px] h-auto"
+                />
+              </FadeIn>
+            </div>
+          </div>
+        </section>
+
+        <main className="max-w-[1120px] mx-auto px-4 pt-8 md:pt-10 pb-24">
+          <StaggerList stagger={0.1} className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+            <StaggerItem>
+              <button
+                type="button"
+                onClick={() => setMode("courage")}
+                className="w-full p-6 rounded-toss-card border-2 border-gs-line-soft bg-white text-left hover:border-gs-navy-bright hover:-translate-y-1 hover:shadow-toss-card-hover transition-all shadow-toss-card cursor-pointer"
+              >
+                <h2 className="text-xl font-extrabold tracking-[-0.02em] mb-2">
+                  용기있는 행동
+                </h2>
+                <p className="text-sm text-gs-muted leading-[1.6]">
+                  우울할 때, 작은 활동 하나가 가장 강력한 무기입니다.
+                  <br />
+                  계획 → 실행 → 회고로 한 걸음씩 기록해요.
+                </p>
+              </button>
+            </StaggerItem>
+            <StaggerItem>
+              <button
+                type="button"
+                onClick={() => setMode("exposure")}
+                className="w-full p-6 rounded-toss-card border-2 border-gs-line-soft bg-white text-left hover:border-gs-navy-bright hover:-translate-y-1 hover:shadow-toss-card-hover transition-all shadow-toss-card cursor-pointer"
+              >
+                <h2 className="text-xl font-extrabold tracking-[-0.02em] mb-2">불안노출</h2>
+                <p className="text-sm text-gs-muted leading-[1.6]">
+                  불안한 상황에 조금씩 노출하면 뇌가 &quot;안전하다&quot;는 걸 학습합니다.
+                  <br />
+                  가장 쉬운 것부터 계획·실행·회고.
+                </p>
+              </button>
+            </StaggerItem>
+          </StaggerList>
+        </main>
+      </PageFade>
     );
   }
 
   const isCourage = mode === "courage";
   const labelInputClass =
-    "w-full px-3 py-2 border border-gs-line-soft rounded-[14px] text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20";
+    "w-full px-3 py-2 border border-gs-line-soft rounded-toss-button text-sm outline-none focus:border-gs-navy-bright focus:ring-2 focus:ring-gs-navy-bright/20 transition-colors";
 
   return (
-    <PageLayout>
-      <div className="flex items-center gap-3 mb-4">
-        <button
-          type="button"
-          onClick={() => {
-            setMode(null);
-            reset();
-          }}
-          className="text-gs-muted hover:text-gs-text-strong text-sm"
-        >
-          ← 뒤로
-        </button>
-        <PageTitle>{isCourage ? "용기있는 행동" : "불안노출 연습"}</PageTitle>
-      </div>
+    <PageFade>
+      <main className="max-w-[1120px] mx-auto px-4 pt-8 md:pt-10 pb-24">
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            type="button"
+            onClick={() => {
+              setMode(null);
+              reset();
+            }}
+            className="text-gs-muted hover:text-gs-text-strong text-sm"
+          >
+            ← 뒤로
+          </button>
+          <PageTitle className="text-xl md:text-2xl">
+            {isCourage ? "용기있는 행동" : "불안노출 연습"}
+          </PageTitle>
+        </div>
 
       {/* 1단계 — 계획 */}
-      <Card>
+      <Card className="shadow-toss-card">
         <CardTitle>① 계획</CardTitle>
         <CardDescription>
           {isCourage
@@ -178,7 +221,7 @@ export default function ExercisePage() {
       </Card>
 
       {/* 2단계 — 실행 */}
-      <Card className="mt-4">
+      <Card className="mt-4 shadow-toss-card">
         <CardTitle>② 실행</CardTitle>
         <CardDescription>실행한 후 기록해요. 안 했어도 OK — 솔직하게.</CardDescription>
 
@@ -241,7 +284,7 @@ export default function ExercisePage() {
       </Card>
 
       {/* 3단계 — 회고 */}
-      <Card className="mt-4">
+      <Card className="mt-4 shadow-toss-card">
         <CardTitle>③ 회고</CardTitle>
         <CardDescription>
           새로 알게 된 것, 다음에 시도할 것 — 짧아도 좋아요.
@@ -251,28 +294,29 @@ export default function ExercisePage() {
           onChange={(e) => setReflection(e.target.value)}
           placeholder="예) 막상 해보니 생각보다 괜찮았다. 다음엔 10분으로 늘려보고 싶다."
           rows={3}
-          className="w-full mt-4 border border-gs-line-soft rounded-[14px] p-3 text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 resize-y"
+          className="w-full mt-4 border border-gs-line-soft rounded-toss-card p-3 text-sm outline-none focus:border-gs-navy-bright focus:ring-2 focus:ring-gs-navy-bright/20 resize-y transition-colors"
         />
 
-        <div className="mt-4 flex gap-2 flex-wrap">
-          <button
-            type="button"
-            disabled={saving || !planWhat.trim()}
-            onClick={handleSave}
-            className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-4 py-2 text-[13px] font-[950] cursor-pointer hover:translate-y-[-1px] hover:shadow-gs-card transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? "저장 중..." : "기록 저장"}
-          </button>
-          <button
-            type="button"
-            onClick={reset}
-            disabled={saving}
-            className="border border-gs-line-soft bg-white rounded-xl px-4 py-2 text-[13px] font-[950] cursor-pointer hover:translate-y-[-1px] hover:shadow-gs-card transition-transform"
-          >
-            초기화
-          </button>
-        </div>
-      </Card>
-    </PageLayout>
+          <div className="mt-4 flex gap-2 flex-wrap">
+            <button
+              type="button"
+              disabled={saving || !planWhat.trim()}
+              onClick={handleSave}
+              className="border border-gs-navy-bright/35 bg-gs-navy-50 text-gs-navy-bright rounded-toss-button px-4 py-2 text-[13px] font-extrabold cursor-pointer hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? "저장 중..." : "기록 저장"}
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              disabled={saving}
+              className="border border-gs-line-soft bg-white rounded-toss-button px-4 py-2 text-[13px] font-extrabold cursor-pointer hover:-translate-y-0.5 hover:shadow-toss-card transition-all"
+            >
+              초기화
+            </button>
+          </div>
+        </Card>
+      </main>
+    </PageFade>
   );
 }

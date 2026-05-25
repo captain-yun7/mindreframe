@@ -1,7 +1,9 @@
-import { PageLayout } from "@/components/page-layout";
+import Image from "next/image";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { MeditationOnboardingModal } from "@/components/meditation-onboarding-modal";
 import { MeditationPlayer, type Track } from "./meditation-player";
+import { PageFade } from "@/components/motion/page-fade";
+import { FadeIn } from "@/components/motion/fade-in";
 
 // 마이그레이션 미적용 시 fallback (기존 코드 박힘 12개)
 const FALLBACK_TRACKS: Track[] = [
@@ -179,9 +181,44 @@ export default async function MeditationPage() {
   }
 
   return (
-    <PageLayout>
-      <MeditationPlayer tracks={tracks} />
-      <MeditationOnboardingModal daysSinceJoin={daysSinceJoin} />
-    </PageLayout>
+    <PageFade>
+      {/* ── HERO ── */}
+      <section className="bg-gs-navy-50 py-12 md:py-16">
+        <div className="mx-auto w-full max-w-[1120px] px-4">
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+            <FadeIn delay={0} y={16}>
+              <div className="text-sm font-bold tracking-[-0.01em] text-gs-navy-bright mb-3">
+                명상하기
+              </div>
+              <h1 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] text-gs-navy leading-[1.15]">
+                잠시 쉬어가요 🌙
+              </h1>
+              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
+                하루 3분, <b className="text-gs-text-strong">한 곳에 초점</b>을 두면
+                <br className="hidden md:block" />
+                마음이 차분해져요.
+              </p>
+            </FadeIn>
+
+            <FadeIn delay={0.1} y={16} className="hidden lg:flex items-center justify-center">
+              <Image
+                src="/illustrations/meditation-calm.svg"
+                alt=""
+                width={260}
+                height={260}
+                className="w-[220px] xl:w-[260px] h-auto"
+              />
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      <main className="max-w-[1120px] mx-auto px-4 pt-8 md:pt-10 pb-24">
+        <FadeIn>
+          <MeditationPlayer tracks={tracks} />
+        </FadeIn>
+        <MeditationOnboardingModal daysSinceJoin={daysSinceJoin} />
+      </main>
+    </PageFade>
   );
 }
