@@ -27,6 +27,16 @@ CREATE POLICY "notification_messages_admin_write" ON public.notification_message
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'))
   WITH CHECK (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
+-- touch_updated_at trigger (다른 마이그레이션에서 이미 등록됐다면 OR REPLACE로 안전)
+-- 적용 순서 의존성 제거: 본 파일만 단독 적용해도 깨지지 않음.
+CREATE OR REPLACE FUNCTION public.touch_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 DROP TRIGGER IF EXISTS notification_messages_touch ON public.notification_messages;
 CREATE TRIGGER notification_messages_touch
   BEFORE UPDATE ON public.notification_messages

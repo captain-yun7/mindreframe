@@ -41,6 +41,16 @@ CREATE POLICY "meditations_admin_write" ON public.meditations
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'))
   WITH CHECK (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
+-- touch_updated_at trigger (다른 마이그레이션에서 이미 등록됐다면 OR REPLACE로 안전)
+-- 적용 순서 의존성 제거: 본 파일만 단독 적용해도 깨지지 않음.
+CREATE OR REPLACE FUNCTION public.touch_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 DROP TRIGGER IF EXISTS meditations_touch ON public.meditations;
 CREATE TRIGGER meditations_touch
   BEFORE UPDATE ON public.meditations
