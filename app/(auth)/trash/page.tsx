@@ -3,158 +3,89 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
-import { addThoughtRecord } from "@/lib/actions/thought-records";
+import { sendTrashMessage, type TrashMsg } from "@/lib/actions/thought-records";
 import { useToast } from "@/components/ui/toast";
 import { CrisisBanner } from "@/components/safety/crisis-banner";
 import { detectCrisis } from "@/lib/cbt/crisis-detection";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 
-type StepKey = "situation" | "thought" | "emotion" | "bodyReaction" | "behavior";
-
-interface Step {
-  key: StepKey;
-  prompt: string;
-}
-
-const STEPS: Step[] = [
-  {
-    key: "situation",
-    prompt:
-      "어떤 일이 있었나요?\n언제·어디서·누구와 — 사실만 한 줄로 적어주세요.",
-  },
-  {
-    key: "thought",
-    prompt:
-      "그때 머릿속에 가장 먼저 떠오른 생각은 무엇이었나요?\n자동사고를 그대로 적어보세요.",
-  },
-  {
-    key: "emotion",
-    prompt:
-      "그때 어떤 감정이 일어났나요?\n예) 불안 80, 무력감 60 — 감정 이름과 점수(0~100)를 함께.",
-  },
-  {
-    key: "bodyReaction",
-    prompt:
-      "몸으로 어떤 반응이 느껴졌나요?\n예) 가슴이 답답하고 손이 떨렸다. (없으면 '없음'이라고 적어주세요.)",
-  },
-  {
-    key: "behavior",
-    prompt:
-      "그때 한 행동(또는 하지 못한 행동)은 무엇인가요?\n예) 발표를 짧게 끝내고 자리에 앉았다. (없으면 '없음'이라고 적어주세요.)",
-  },
-];
-
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "안녕하세요. 오늘 마음이 무거웠던 한 사건을 함께 정리해볼까요?\n한 단계씩 짧게 답해주시면 됩니다. 먼저—",
+    "오늘 불안하거나, 우울하거나, 화가 났던 순간이 하나라도 떠오르면\n그냥 생각나는 대로 적어요.\n\n문장이 정리가 안 돼도 되고, 감정부터 적어도 돼요.\n그냥 '이래서 힘들었다' 싶은 것부터 하나만 얘기해주세요.",
 };
 
 export default function TrashPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    INITIAL_MESSAGE,
-    { role: "assistant", content: STEPS[0].prompt },
-  ]);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [collected, setCollected] = useState<Record<StepKey, string>>({
-    situation: "",
-    thought: "",
-    emotion: "",
-    bodyReaction: "",
-    behavior: "",
-  });
-  const [isSaving, setIsSaving] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
+  const [isLoading, setIsLoading] = useState(false);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [done, setDone] = useState(false);
   const toast = useToast();
 
   async function handleSend(content: string) {
     if (done) return;
-
     const trimmed = content.trim();
-    if (!trimmed) return;
+    if (!trimmed || isLoading) return;
 
-    const currentStep = STEPS[stepIndex];
-
-    // 사용자 답변 저장
     setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
 
-    // 위기 키워드 감지
     if (detectCrisis(trimmed).level === "warn") {
+      setShowCrisisBanner(true);
+    }
+
+    // 누적 history (현재까지의 user/assistant — system은 서버에서 붙임)
+    const historyForApi: TrashMsg[] = messages
+      .filter((m): m is { role: "user" | "assistant"; content: string } =>
+        m.role === "user" || m.role === "assistant",
+      )
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    setIsLoading(true);
+    const result = await sendTrashMessage({
+      history: historyForApi,
+      content: trimmed,
+    });
+    setIsLoading(false);
+
+    if (!result.ok) {
+      toast.show(result.error, "error");
+      return;
+    }
+
+    if (result.crisis) {
       setShowCrisisBanner(true);
       toast.show("긴급 상담이 필요하시면 1393에 전화해주세요", "error");
     }
 
-    const next = { ...collected, [currentStep.key]: trimmed };
-    setCollected(next);
+    setMessages((prev) => [...prev, { role: "assistant", content: result.reply }]);
 
-    if (stepIndex < STEPS.length - 1) {
-      // 다음 질문
-      const nextStep = STEPS[stepIndex + 1];
-      setMessages((prev) => [...prev, { role: "assistant", content: nextStep.prompt }]);
-      setStepIndex(stepIndex + 1);
-      return;
-    }
-
-    // 마지막 단계 → 저장
-    setIsSaving(true);
-    setMessages((prev) => [
-      ...prev,
-      { role: "assistant", content: "잘 적어주셨어요. 정리해서 성장방에 저장할게요…" },
-    ]);
-
-    const norm = (v: string) => (v.toLowerCase() === "없음" ? undefined : v);
-    const result = await addThoughtRecord({
-      situation: next.situation,
-      thought: next.thought || undefined,
-      emotion: next.emotion || undefined,
-      bodyReaction: norm(next.bodyReaction),
-      behavior: norm(next.behavior),
-    });
-    setIsSaving(false);
-
-    if (!result.ok) {
-      toast.show(result.error, "error");
+    if (result.saved && result.parsedRecord) {
+      const p = result.parsedRecord;
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: `저장에 실패했어요: ${result.error}` },
+        {
+          role: "system",
+          content:
+            "📌 성장방에 저장되었어요\n" +
+            `• 상황: ${p.situation ?? "—"}\n` +
+            `• 생각: ${p.thought ?? "—"}\n` +
+            `• 감정: ${p.emotion_name ?? "—"}${
+              typeof p.emotion_intensity === "number"
+                ? ` (${p.emotion_intensity}/100)`
+                : ""
+            }\n` +
+            `• 신체: ${p.body_reaction ?? "—"}\n` +
+            `• 행동: ${p.behavior ?? "—"}`,
+        },
       ]);
-      return;
+      toast.show("성장방에 저장되었어요", "success");
+      setDone(true);
     }
-
-    toast.show("성장방에 저장되었어요", "success");
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "system",
-        content:
-          "📌 정리 완료\n" +
-          `• 상황: ${next.situation}\n` +
-          `• 생각: ${next.thought || "—"}\n` +
-          `• 감정: ${next.emotion || "—"}\n` +
-          `• 신체: ${norm(next.bodyReaction) || "—"}\n` +
-          `• 행동: ${norm(next.behavior) || "—"}`,
-      },
-      {
-        role: "assistant",
-        content:
-          "오늘도 한 사건을 잘 분리해주셨어요. 나의성장방에서 다시 볼 수 있어요.",
-      },
-    ]);
-    setDone(true);
   }
 
   function handleReset() {
-    setMessages([INITIAL_MESSAGE, { role: "assistant", content: STEPS[0].prompt }]);
-    setStepIndex(0);
-    setCollected({
-      situation: "",
-      thought: "",
-      emotion: "",
-      bodyReaction: "",
-      behavior: "",
-    });
+    setMessages([INITIAL_MESSAGE]);
     setDone(false);
   }
 
@@ -174,8 +105,11 @@ export default function TrashPage() {
               <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
                 불안하거나 화가 났던 한 사건을 전부 쏟아놓으세요.
                 <br className="hidden md:block" />
-                <b className="text-gs-text-strong">상황 · 생각 · 감정 · 신체 · 행동</b>으로 한
-                단계씩 나눠 받을게요.
+                생각쓰레기통이 알아서{" "}
+                <b className="text-gs-text-strong">
+                  상황 · 생각 · 감정 · 신체반응 · 행동
+                </b>
+                을 나눠줄게요.
               </p>
             </FadeIn>
 
@@ -199,23 +133,43 @@ export default function TrashPage() {
         />
 
         <FadeIn>
-          <div className="bg-white rounded-toss-card p-5 shadow-toss-card border border-gs-line-soft">
-            <h2 className="text-base font-bold mb-1 text-gs-text-strong">왜 생각을 나눌까요?</h2>
-            <p className="text-[13px] text-gs-text-soft mb-4 leading-[1.6]">
-              나누는 순간 <b>생각은 생각으로, 나는 나로</b> 분리됩니다. 한 줄씩만 적어보세요.
+          <div className="bg-white rounded-toss-card p-5 shadow-toss-card border border-gs-line-soft mb-4">
+            <h2 className="text-base font-bold mb-3 text-gs-text-strong">왜 생각을 나눌까요?</h2>
+            <ol className="text-[13px] text-gs-text-soft space-y-2 leading-[1.6] list-decimal pl-5">
+              <li>
+                생각쓰레기통의 목적은 <b>생각을 없애는 것</b>이 아니라{" "}
+                <b>생각과 나를 분리</b>하는 거예요.
+              </li>
+              <li>
+                떠오른 자동사고를 글로 적으면, 그 생각은 더 이상 &lsquo;나&rsquo;가 아니라{" "}
+                <b>밖에 놓인 한 줄</b>이 됩니다.
+              </li>
+              <li>
+                AI 코치가 <b>상황 · 생각 · 감정 · 몸 · 행동</b>을 차례로 물어줄게요.
+              </li>
+              <li>
+                5요소가 충분히 모이면 성장방에 자동으로 저장됩니다.
+              </li>
+            </ol>
+            <p className="mt-3 text-xs text-gs-muted-light">
+              * 처음엔 잘 모르겠어도 괜찮아요. 떠오르는 대로 적어주세요.
             </p>
+          </div>
+        </FadeIn>
 
+        <FadeIn>
+          <div className="bg-white rounded-toss-card p-5 shadow-toss-card border border-gs-line-soft">
             <ChatContainer
               messages={messages}
               onSend={handleSend}
-              isLoading={isSaving}
+              isLoading={isLoading}
               placeholder={
                 done
-                  ? "정리가 완료되었어요. 다시 시작은 아래 버튼."
-                  : `${stepIndex + 1} / ${STEPS.length} — 답변을 적어주세요`
+                  ? "정리가 완료되었어요. 다른 사건은 아래 버튼으로."
+                  : "오늘 마음에 남은 한 사건을 떠올려보세요"
               }
               headerTitle="생각쓰레기통"
-              headerTag={`${stepIndex + 1} / ${STEPS.length}`}
+              headerTag={done ? "정리 완료" : "AI 코치와 대화"}
             />
 
             {done && (
