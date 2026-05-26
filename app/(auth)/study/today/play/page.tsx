@@ -50,8 +50,12 @@ export default async function StudyTodayPlayPage({
     );
   }
 
-  // no_user는 위에서 redirect로 걸렀음 — 도달 X. no_row는 placeholder로 처리.
-  const dayNumber = result.ok ? result.dayNumber : 1;
+  // no_user는 위에서 redirect로 걸렀음 — 도달 X. no_row는 사용자 실제 일차 유지.
+  const dayNumber = result.ok
+    ? result.dayNumber
+    : result.reason === "no_row"
+      ? result.dayNumber
+      : 1;
   const title = result.ok ? result.title : `${dayNumber}일차 영상`;
   const videoUrl = result.ok ? result.videoUrl : null;
 

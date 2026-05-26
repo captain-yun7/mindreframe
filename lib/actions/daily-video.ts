@@ -68,7 +68,8 @@ export type TodayDailyVideo =
       videoUrl: string | null;
       durationSeconds: number | null;
     }
-  | { ok: false; reason: "no_user" | "not_started" | "no_row" };
+  | { ok: false; reason: "no_user" | "not_started" }
+  | { ok: false; reason: "no_row"; dayNumber: number };
 
 /**
  * 대시보드 / 영상 페이지에서 N일차 영상 메타 fetch.
@@ -128,7 +129,7 @@ export async function getTodayDailyVideo(): Promise<TodayDailyVideo> {
       duration_seconds: number | null;
     };
   }
-  if (!row) return { ok: false, reason: "no_row" };
+  if (!row) return { ok: false, reason: "no_row", dayNumber };
 
   const videoUrl = await getVideoUrl(row.video_url);
   return {

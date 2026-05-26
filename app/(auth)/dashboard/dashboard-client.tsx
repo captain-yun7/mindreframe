@@ -201,58 +201,66 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
       <main className="max-w-[1120px] mx-auto px-4 pt-8 md:pt-10 pb-24">
         <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-4 items-start max-lg:grid-cols-1">
           <div>
-            {initial.todayVideo?.ok ? (
-              <FadeIn>
-                <Card className="shadow-toss-card mb-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-gs-navy-bright">
-                        {initial.todayVideo.dayNumber}일차
-                      </p>
-                      <CardTitle className="mt-1">오늘의 영상</CardTitle>
-                      <CardDescription className="line-clamp-2">
-                        {initial.todayVideo.title}
-                      </CardDescription>
+            {(() => {
+              const v = initial.todayVideo;
+              if (!v) return null;
+              if (v.ok === false && v.reason !== "no_row") return null;
+              const dayNumber = v.ok ? v.dayNumber : v.dayNumber;
+              const title = v.ok ? v.title : `${dayNumber}일차 영상`;
+              const videoUrl = v.ok ? v.videoUrl : null;
+              return (
+                <FadeIn>
+                  <Card className="shadow-toss-card mb-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-gs-navy-bright">
+                          {dayNumber}일차
+                        </p>
+                        <CardTitle className="mt-1">오늘의 영상</CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {title}
+                        </CardDescription>
+                      </div>
+                      {checks.daily_video && (
+                        <span
+                          data-testid="daily-video-checked"
+                          className="shrink-0 text-gs-gold-700 text-xs font-bold whitespace-nowrap"
+                        >
+                          ✓ 시청 완료
+                        </span>
+                      )}
                     </div>
-                    {checks.daily_video && (
-                      <span
-                        data-testid="daily-video-checked"
-                        className="shrink-0 text-gs-gold-700 text-xs font-bold whitespace-nowrap"
+                    {videoUrl ? (
+                      <Link
+                        href="/study/today/play"
+                        data-testid="dashboard-today-video-card"
+                        aria-label={`${dayNumber}일차 오늘의 영상 재생`}
+                        className="group relative block mt-4 aspect-video rounded-[12px] overflow-hidden bg-gradient-to-br from-gs-navy to-gs-navy-bright shadow-toss-card transition-transform hover:translate-y-[-1px] hover:shadow-toss-card-hover"
                       >
-                        ✓ 시청 완료
-                      </span>
-                    )}
-                  </div>
-                  {initial.todayVideo.videoUrl ? (
-                    <Link
-                      href="/study/today/play"
-                      data-testid="dashboard-today-video-card"
-                      aria-label={`${initial.todayVideo.dayNumber}일차 오늘의 영상 재생`}
-                      className="group relative block mt-4 aspect-video rounded-[12px] overflow-hidden bg-gradient-to-br from-gs-navy to-gs-navy-bright shadow-toss-card transition-transform hover:translate-y-[-1px] hover:shadow-toss-card-hover"
-                    >
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-full bg-white/95 flex items-center justify-center shadow-toss-card group-hover:bg-gs-gold transition-colors">
-                          <span className="text-2xl text-gs-navy translate-x-[2px]">▶</span>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-16 h-16 rounded-full bg-white/95 flex items-center justify-center shadow-toss-card group-hover:bg-gs-gold transition-colors">
+                            <span className="text-2xl text-gs-navy translate-x-[2px]">▶</span>
+                          </div>
                         </div>
+                        <div className="absolute bottom-3 left-4 right-4 text-white text-xs font-bold drop-shadow">
+                          오늘의 {dayNumber}일차 영상 보기
+                        </div>
+                      </Link>
+                    ) : (
+                      <div
+                        data-testid="dashboard-today-video-placeholder"
+                        className="mt-4 aspect-video rounded-[12px] bg-gs-surface-muted border border-gs-line-soft flex flex-col items-center justify-center text-gs-muted"
+                      >
+                        <p className="text-sm font-bold">영상 준비 중입니다</p>
+                        <p className="text-[11px] mt-1">
+                          {dayNumber}일차 영상이 곧 업로드돼요
+                        </p>
                       </div>
-                      <div className="absolute bottom-3 left-4 right-4 text-white text-xs font-bold drop-shadow">
-                        오늘의 {initial.todayVideo.dayNumber}일차 영상 보기
-                      </div>
-                    </Link>
-                  ) : (
-                    <div
-                      data-testid="dashboard-today-video-placeholder"
-                      className="mt-4 aspect-video rounded-[12px] bg-gs-surface-muted border border-gs-line-soft flex flex-col items-center justify-center text-gs-muted"
-                    >
-                      <p className="text-sm font-bold">영상 준비 중입니다</p>
-                      <p className="text-[11px] mt-1">
-                        {initial.todayVideo.dayNumber}일차 영상이 곧 업로드돼요
-                      </p>
-                    </div>
-                  )}
-                </Card>
-              </FadeIn>
-            ) : null}
+                    )}
+                  </Card>
+                </FadeIn>
+              );
+            })()}
 
             <FadeIn>
               <Card className="shadow-toss-card">

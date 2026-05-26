@@ -38,6 +38,13 @@ function expectedObjectKey(dayNumber: number): string {
   return `video/day-${dayNumber}.mp4`;
 }
 
+/** 어드민 업로드에서 허용되는 Content-Type 화이트리스트. */
+const ALLOWED_UPLOAD_TYPES = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
+
 /**
  * R2 PUT presigned URL 발급. 객체 키는 `video/day-N.mp4` 고정.
  * 만료: 30분 (대용량 mp4 업로드 여유).
@@ -55,10 +62,10 @@ export async function requestVideoUploadUrl(
   ) {
     return { ok: false as const, error: "day_number는 1~100" };
   }
-  const safeContentType =
-    typeof contentType === "string" && contentType.length > 0 && contentType.length < 100
-      ? contentType
-      : "video/mp4";
+  // 화이트리스트 외 Content-Type 거부 (host만 서명되지만 클라가 보낼 헤더 정합성 확보)
+  const safeContentType = ALLOWED_UPLOAD_TYPES.has(contentType)
+    ? contentType
+    : "video/mp4";
 
   const objectKey = expectedObjectKey(dayNumber);
   const presigned = await getVideoUploadUrl(objectKey, safeContentType, 60 * 30);
