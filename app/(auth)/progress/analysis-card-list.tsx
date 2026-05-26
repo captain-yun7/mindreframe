@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { parseAlternativeThought } from "@/lib/cbt/analysis-format";
 
 export interface AnalysisItem {
   id: string;
@@ -46,7 +47,9 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
   return (
     <>
       <ul className="mt-4 space-y-3" data-testid="recent-analyses">
-        {items.map((a) => (
+        {items.map((a) => {
+          const altView = parseAlternativeThought(a.alternative_thought);
+          return (
           <li
             key={a.id}
             className="p-4 rounded-toss-card bg-white border border-gs-line-soft shadow-toss-card hover:shadow-toss-card-hover hover:-translate-y-0.5 transition-all text-[13px] space-y-1.5"
@@ -59,9 +62,9 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
               <span className="text-gs-muted-soft font-bold">자동사고 · </span>
               {a.automatic_thought || "—"}
             </div>
-            <div>
+            <div className="whitespace-pre-wrap">
               <span className="text-gs-muted-soft font-bold">대안사고 · </span>
-              {a.alternative_thought || "—"}
+              {altView.text || "—"}
             </div>
             {Array.isArray(a.distortion_types) && a.distortion_types.length > 0 && (
               <div className="flex flex-wrap gap-1 pt-1">
@@ -83,7 +86,8 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
               대화 전체 보기 →
             </button>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       {openSessionId && (

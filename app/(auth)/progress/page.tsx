@@ -3,6 +3,7 @@ import { Card, CardTitle, CardDescription } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { AnalysisCardList, type AnalysisItem } from "./analysis-card-list";
 import { parseExerciseNote } from "@/lib/exercise-payload";
+import { parseAlternativeThought } from "@/lib/cbt/analysis-format";
 import { EmotionChart } from "./emotion-chart";
 import { GratitudeList } from "./gratitude-list";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -261,14 +262,17 @@ export default async function ProgressPage() {
             <CardDescription>가짜생각 분석기에서 찾은 대안적 사고들이 모입니다.</CardDescription>
             {stats && stats.recentAlternatives.length > 0 ? (
               <ul className="mt-4 space-y-2">
-                {stats.recentAlternatives.map((r) => (
-                  <li
-                    key={r.id}
-                    className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
-                  >
-                    {r.alternative_thought}
-                  </li>
-                ))}
+                {stats.recentAlternatives.map((r) => {
+                  const parsed = parseAlternativeThought(r.alternative_thought);
+                  return (
+                    <li
+                      key={r.id}
+                      className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px] whitespace-pre-wrap"
+                    >
+                      {parsed.text || "—"}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <div className="mt-4 text-center text-gs-muted-soft text-[13px] py-8">

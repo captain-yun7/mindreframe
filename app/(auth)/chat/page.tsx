@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { ChatContainer, type ChatMessage } from "@/components/chat/chat-container";
 import { Card } from "@/components/card";
-import { sendChatMessage, summarizeAndSaveSession } from "@/lib/actions/chat";
+import {
+  analyzeUserInput,
+  startTherapy,
+  continueTherapy,
+  finalizeAndSave,
+} from "@/lib/actions/chat";
 import { useToast } from "@/components/ui/toast";
 import { CrisisBanner } from "@/components/safety/crisis-banner";
 import { detectCrisis } from "@/lib/cbt/crisis-detection";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
+import { DISTORTIONS, type AnalysisResult } from "@/lib/cbt/prompts";
+
+type Phase = "analysis" | "selection" | "therapy" | "done";
 
 const steps = [
   {
@@ -35,65 +43,207 @@ const steps = [
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
-    "안녕하세요! 가짜생각 분석기입니다.\n\n오늘 힘들었던 상황과 그때 떠오른 생각, 그리고 감정 점수(0~100)를 알려주세요.\n\n예) \"회의에서 발표할 때 다들 나를 무시하는 것 같았어요. 감정: 불안 80점\"",
+    "어떤 일이 있었는지, 그리고 어떤 생각이 들었는지 구체적으로 적어주세요. 그리고 감정을 0~100점으로 측정해주세요.\n\n예시: \"회의에서 발표를 해야 하는데, 떨려서 실수할 것 같고 사람들이 나를 이상하게 볼 것 같아요. 80점\"",
+};
+
+const PHASE_LABEL: Record<Phase, string> = {
+  analysis: "1단계 · 분석",
+  selection: "2단계 · 왜곡 선택",
+  therapy: "3단계 · 합리적 사고 만들기",
+  done: "정리 완료",
 };
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [phase, setPhase] = useState<Phase>("analysis");
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
+  const awaitingEmotionAfterRef = useRef(false);
+  const pendingSaveRef = useRef(false);
+  const saveLockRef = useRef(false);
   const toast = useToast();
 
-  async function handleSend(content: string) {
-    const userMsg: ChatMessage = { role: "user", content };
-    setMessages((prev) => [...prev, userMsg]);
+  function appendAssistant(text: string) {
+    setMessages((prev) => [...prev, { role: "assistant", content: text }]);
+  }
 
-    // 클라이언트 1차 감지 — 서버 왕복 전에 즉시 배너 표시
-    if (detectCrisis(content).level === "warn") {
-      setShowCrisisBanner(true);
-    }
+  function appendSystem(text: string) {
+    setMessages((prev) => [...prev, { role: "system", content: text }]);
+  }
 
+  async function runAnalysis(content: string) {
     setIsLoading(true);
-    const result = await sendChatMessage({ sessionId, content });
+    const result = await analyzeUserInput({ content });
     setIsLoading(false);
-
     if (!result.ok) {
       toast.show(result.error, "error");
       return;
     }
-    setSessionId(result.sessionId);
     if (result.crisis) {
       setShowCrisisBanner(true);
+      setSessionId(result.sessionId);
+      appendAssistant(result.reply);
       toast.show("긴급 상담이 필요하시면 1393에 전화해주세요", "error");
-    }
-    setMessages((prev) => [...prev, { role: "assistant", content: result.reply }]);
-  }
-
-  async function handleSummarize() {
-    if (!sessionId) {
-      toast.show("아직 대화가 없어요", "error");
       return;
     }
-    setIsSummarizing(true);
-    const r = await summarizeAndSaveSession(sessionId);
-    setIsSummarizing(false);
+    setSessionId(result.sessionId);
+    setAnalysis(result.analysis);
+    appendAssistant(result.summary);
+
+    // 1.3초 딜레이 후 분기 — 원본 setTimeout(1300) 그대로
+    await new Promise((r) => setTimeout(r, 1300));
+
+    if (result.analysis.distortions.length === 1) {
+      await runStartTherapy(result.sessionId, result.analysis, result.analysis.distortions[0].name);
+    } else {
+      setPhase("selection");
+    }
+  }
+
+  async function runStartTherapy(
+    sid: string,
+    analysisData: AnalysisResult,
+    distortionName: string,
+  ) {
+    setIsLoading(true);
+    const r = await startTherapy({
+      sessionId: sid,
+      analysis: analysisData,
+      selectedDistortion: distortionName,
+    });
+    setIsLoading(false);
     if (!r.ok) {
       toast.show(r.error, "error");
       return;
     }
-    toast.show("분석이 저장되었습니다. 성장방에서 확인하세요", "success");
+    appendAssistant(r.reply);
+    setPhase("therapy");
+  }
+
+  async function runFinalize(sid: string, score: number) {
+    if (saveLockRef.current) return;
+    saveLockRef.current = true;
+    try {
+      const r = await finalizeAndSave({ sessionId: sid, emotionAfterScore: score });
+      if (!r.ok) {
+        toast.show(r.error, "error");
+        return;
+      }
+      const before = r.emotions?.before ?? "—";
+      const after = r.emotions?.after ?? "—";
+      appendSystem(
+        `📌 분석 정리 저장됨\n• 감정점수: ${before} → ${after}\n${
+          r.summary ? `\n${r.summary}` : ""
+        }`,
+      );
+      appendAssistant(
+        "오늘 정말 잘하셨어요. 이렇게 자기 생각을 들여다보는 것 자체가 쉽지 않은 일인데, 끝까지 해내셨어요. 마음속으로 합리적 사고를 새기세요. 할 수 있어요. 무조건 됩니다. 응원합니다.",
+      );
+      toast.show("성장방에 저장되었어요", "success");
+      setPhase("done");
+    } finally {
+      saveLockRef.current = false;
+    }
+  }
+
+  async function handleSend(content: string) {
+    if (phase === "done") return;
+    const trimmed = content.trim();
+    if (!trimmed || isLoading) return;
+
+    setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
+
+    if (detectCrisis(trimmed).level === "warn") {
+      setShowCrisisBanner(true);
+    }
+
+    if (phase === "analysis") {
+      await runAnalysis(trimmed);
+      return;
+    }
+
+    if (phase === "selection") {
+      // 사용자가 번호로 입력해도 받아주는 폴백 (원본 호환)
+      const match = trimmed.match(/\d+/);
+      if (match && analysis) {
+        const idx = parseInt(match[0], 10) - 1;
+        if (idx >= 0 && idx < analysis.distortions.length && sessionId) {
+          await runStartTherapy(
+            sessionId,
+            analysis,
+            analysis.distortions[idx].name,
+          );
+          return;
+        }
+      }
+      appendSystem("아래 카드에서 왜곡을 골라주세요. 또는 번호를 입력해도 돼요.");
+      return;
+    }
+
+    if (phase === "therapy" && sessionId) {
+      // 감정점수(후) 응답 — 원본 sendMessage() line 1139~1146
+      if (awaitingEmotionAfterRef.current) {
+        const n = Number(trimmed);
+        if (!Number.isNaN(n) && n >= 0 && n <= 100) {
+          awaitingEmotionAfterRef.current = false;
+          pendingSaveRef.current = true;
+          (window as unknown as { __emotionAfterScore: number }).__emotionAfterScore = n;
+        }
+      }
+
+      setIsLoading(true);
+      const r = await continueTherapy({ sessionId, content: trimmed });
+      setIsLoading(false);
+      if (!r.ok) {
+        toast.show(r.error, "error");
+        return;
+      }
+      if (r.crisis) setShowCrisisBanner(true);
+      appendAssistant(r.reply);
+
+      if (r.awaitingEmotionAfter) {
+        awaitingEmotionAfterRef.current = true;
+      }
+
+      // 예약된 자동 저장 실행 — 다음 assistant 응답 직후
+      if (pendingSaveRef.current) {
+        pendingSaveRef.current = false;
+        const score =
+          (window as unknown as { __emotionAfterScore?: number }).__emotionAfterScore ?? 0;
+        await runFinalize(sessionId, score);
+      }
+    }
+  }
+
+  async function handlePickDistortion(name: string) {
+    if (!sessionId || !analysis) return;
     setMessages((prev) => [
       ...prev,
-      {
-        role: "system",
-        content: `📌 분석 정리 저장됨\n• 상황: ${r.situation}\n• 자동사고: ${r.automaticThought}\n• 대안사고: ${r.alternativeThought}${
-          r.distortionTypes.length > 0 ? `\n• 인지왜곡: ${r.distortionTypes.join(", ")}` : ""
-        }`,
-      },
+      { role: "user", content: `"${name}" 왜곡을 다뤄볼게요` },
     ]);
+    await runStartTherapy(sessionId, analysis, name);
   }
+
+  async function handleManualFinalize() {
+    if (!sessionId) {
+      toast.show("아직 대화가 없어요", "error");
+      return;
+    }
+    setIsLoading(true);
+    await runFinalize(sessionId, 0);
+    setIsLoading(false);
+  }
+
+  const placeholder =
+    phase === "analysis"
+      ? "자동사고와 감정 점수를 적어주세요..."
+      : phase === "selection"
+        ? "아래 카드를 골라주세요 (또는 번호 입력)"
+        : phase === "done"
+          ? "분석이 마무리되었어요"
+          : "답을 적어주세요...";
 
   return (
     <PageFade>
@@ -182,22 +332,74 @@ export default function ChatPage() {
         {/* 채팅 */}
         <FadeIn>
           <Card className="shadow-toss-card">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-bold text-gs-navy-bright px-2 py-0.5 rounded-full bg-gs-navy-50">
+                {PHASE_LABEL[phase]}
+              </span>
+              {phase === "therapy" && (
+                <span className="text-[11px] text-gs-muted-light">
+                  치료 대화 진행 중
+                </span>
+              )}
+            </div>
+
             <ChatContainer
               messages={messages}
               onSend={handleSend}
               isLoading={isLoading}
-              placeholder="자동사고와 감정 점수를 적어주세요..."
+              placeholder={placeholder}
               headerTitle="가짜생각 분석기"
               headerTag="인지왜곡 분석 · 대안사고"
             />
-            <button
-              type="button"
-              onClick={handleSummarize}
-              disabled={isSummarizing || !sessionId || messages.length < 3}
-              className="mt-4 w-full py-3 rounded-toss-button bg-gs-navy-50 border border-gs-navy-bright/25 text-gs-navy-bright text-sm font-bold cursor-pointer hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSummarizing ? "분석 정리 중..." : "이 대화 정리하고 저장"}
-            </button>
+
+            {/* 인지왜곡 선택 카드 — selection phase */}
+            {phase === "selection" && analysis && (
+              <div className="mt-4 grid grid-cols-1 gap-2 max-sm:grid-cols-1">
+                {analysis.distortions.map((d, i) => {
+                  const info = DISTORTIONS[d.name];
+                  return (
+                    <button
+                      key={`${d.name}-${i}`}
+                      type="button"
+                      onClick={() => handlePickDistortion(d.name)}
+                      disabled={isLoading}
+                      className="text-left p-4 rounded-toss-card border border-gs-line-soft bg-white hover:border-gs-navy-bright hover:-translate-y-0.5 hover:shadow-toss-card-hover transition-all shadow-toss-card disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="shrink-0 w-7 h-7 rounded-full bg-gs-navy-50 text-gs-navy-bright text-xs font-bold flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <div className="flex-1">
+                          <div className="text-sm font-bold text-gs-text-strong mb-1">
+                            #{d.name}
+                          </div>
+                          <p className="text-[12.5px] text-gs-muted leading-[1.6]">
+                            {d.description}
+                          </p>
+                          {info?.goal && (
+                            <p className="mt-2 text-[11.5px] text-gs-navy-bright font-bold">
+                              목표 · {info.goal}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 백업: 수동 종료 버튼 — therapy 진행 중일 때만 */}
+            {phase === "therapy" && (
+              <button
+                type="button"
+                onClick={handleManualFinalize}
+                disabled={isLoading || !sessionId}
+                className="mt-4 w-full py-3 rounded-toss-button bg-gs-navy-50 border border-gs-navy-bright/25 text-gs-navy-bright text-sm font-bold cursor-pointer hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "분석 정리 중..." : "이 대화 정리하고 저장"}
+              </button>
+            )}
           </Card>
         </FadeIn>
       </main>
