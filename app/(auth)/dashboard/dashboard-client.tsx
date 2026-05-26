@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Card, CardTitle, CardDescription } from "@/components/card";
@@ -15,6 +16,7 @@ import {
   saveGratitudeEntry,
   toggleRoutineCheck,
 } from "@/lib/actions/dashboard";
+import type { TodayDailyVideo } from "@/lib/actions/daily-video";
 import { useToast } from "@/components/ui/toast";
 
 const checklistItems = [
@@ -25,6 +27,14 @@ const checklistItems = [
     actionLabel: "보기",
     actionHref: "/progress#emotion-chart",
     ghost: true,
+  },
+  {
+    key: "daily_video",
+    label: "오늘의 영상 시청 (70% 이상)",
+    description: "오늘의 영상을 70% 이상 보면 자동으로 체크돼요.",
+    actionLabel: "재생",
+    actionHref: "/study/today/play",
+    ghost: false,
   },
   {
     key: "trash",
@@ -73,6 +83,7 @@ export interface DashboardInitial {
   streak: number;
   totalDays: number;
   nickname?: string | null;
+  todayVideo?: TodayDailyVideo;
 }
 
 export function DashboardClient({ initial }: { initial: DashboardInitial }) {
@@ -190,6 +201,59 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
       <main className="max-w-[1120px] mx-auto px-4 pt-8 md:pt-10 pb-24">
         <div className="grid grid-cols-[minmax(0,1fr)_320px] gap-4 items-start max-lg:grid-cols-1">
           <div>
+            {initial.todayVideo?.ok ? (
+              <FadeIn>
+                <Card className="shadow-toss-card mb-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gs-navy-bright">
+                        {initial.todayVideo.dayNumber}일차
+                      </p>
+                      <CardTitle className="mt-1">오늘의 영상</CardTitle>
+                      <CardDescription className="line-clamp-2">
+                        {initial.todayVideo.title}
+                      </CardDescription>
+                    </div>
+                    {checks.daily_video && (
+                      <span
+                        data-testid="daily-video-checked"
+                        className="shrink-0 text-gs-gold-700 text-xs font-bold whitespace-nowrap"
+                      >
+                        ✓ 시청 완료
+                      </span>
+                    )}
+                  </div>
+                  {initial.todayVideo.videoUrl ? (
+                    <Link
+                      href="/study/today/play"
+                      data-testid="dashboard-today-video-card"
+                      aria-label={`${initial.todayVideo.dayNumber}일차 오늘의 영상 재생`}
+                      className="group relative block mt-4 aspect-video rounded-[12px] overflow-hidden bg-gradient-to-br from-gs-navy to-gs-navy-bright shadow-toss-card transition-transform hover:translate-y-[-1px] hover:shadow-toss-card-hover"
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-white/95 flex items-center justify-center shadow-toss-card group-hover:bg-gs-gold transition-colors">
+                          <span className="text-2xl text-gs-navy translate-x-[2px]">▶</span>
+                        </div>
+                      </div>
+                      <div className="absolute bottom-3 left-4 right-4 text-white text-xs font-bold drop-shadow">
+                        오늘의 {initial.todayVideo.dayNumber}일차 영상 보기
+                      </div>
+                    </Link>
+                  ) : (
+                    <div
+                      data-testid="dashboard-today-video-placeholder"
+                      className="mt-4 aspect-video rounded-[12px] bg-gs-surface-muted border border-gs-line-soft flex flex-col items-center justify-center text-gs-muted"
+                    >
+                      <p className="text-sm font-bold">영상 준비 중입니다</p>
+                      <p className="text-[11px] mt-1">
+                        {initial.todayVideo.dayNumber}일차 영상이 곧 업로드돼요
+                      </p>
+                    </div>
+                  )}
+                </Card>
+              </FadeIn>
+            ) : null}
+
             <FadeIn>
               <Card className="shadow-toss-card">
                 <CardTitle>1) 오늘 감정 점수</CardTitle>
@@ -223,8 +287,15 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                                   behavior: "smooth",
                                 });
                               }
-                            : item.key === "mood"
-                              ? () => {}
+                            : item.key === "mood" || item.key === "daily_video"
+                              ? () => {
+                                  if (item.key === "daily_video") {
+                                    toast.show(
+                                      "영상을 70% 이상 시청하면 자동으로 체크돼요",
+                                      "success",
+                                    );
+                                  }
+                                }
                               : handleCheck
                         }
                         actionLabel={item.actionLabel}

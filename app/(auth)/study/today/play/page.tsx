@@ -1,22 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getVideoUrl } from "@/lib/video/r2-video";
-import { VideoPlayer } from "@/app/(public)/study/[slug]/play/video-player";
+import { getTodayDailyVideo } from "@/lib/actions/daily-video";
+import { DailyVideoPlayer } from "@/components/daily-video-player";
 
 export const dynamic = "force-dynamic";
 
-function computeDayNumber(startedAt: string): number {
-  const start = new Date(`${startedAt}T00:00:00+09:00`);
-  const diff = Math.floor((Date.now() - start.getTime()) / 86_400_000) + 1;
-  return Math.min(100, Math.max(1, diff));
-}
-
 /**
- * F78 — 100일 알림톡 정적 fallback URL.
- *   카카오 알림톡 동적 URL 검수 통과 전까지 사용.
+ * F78 — 100일 알림 영상 풀스크린 재생 페이지.
  *   사용자 인증 후 notifications_started_at 기반으로 day_number 계산 →
  *   notification_videos 테이블에서 해당 day의 video_url(R2 객체 키) → presigned URL 재생.
+ *   70% 도달 시 routine_checks(item_key='daily_video') 자동 INSERT.
  */
 export default async function StudyTodayPlayPage({
   searchParams,
@@ -26,6 +20,7 @@ export default async function StudyTodayPlayPage({
   const sp = await searchParams;
   const autoplay = sp.autoplay === "1";
 
+  // 미로그인 → /login으로 (getTodayDailyVideo 이전에 supabase 세션만 확인)
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -34,17 +29,9 @@ export default async function StudyTodayPlayPage({
     redirect("/login?next=/study/today/play");
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("notifications_started_at")
-    .eq("id", user.id)
-    .single();
+  const result = await getTodayDailyVideo();
 
-  const startedRaw =
-    (profile as { notifications_started_at?: string | null } | null)
-      ?.notifications_started_at ?? null;
-
-  if (!startedRaw) {
+  if (!result.ok && result.reason === "not_started") {
     return (
       <div className="flex-1 bg-gs-bg px-4 py-8">
         <div className="max-w-[640px] mx-auto bg-white rounded-[18px] border border-gs-line-soft p-7 text-center">
@@ -63,58 +50,35 @@ export default async function StudyTodayPlayPage({
     );
   }
 
-  const dayNumber = computeDayNumber(startedRaw);
-
-  // 마이그 미적용 환경 fallback — video_url 컬럼 부재 시 video_id 기준 select 재시도
-  let videoRow:
-    | { title?: string; video_url?: string | null; duration_seconds?: number | null }
-    | null = null;
-  {
-    const res = await supabase
-      .from("notification_videos")
-      .select("title, video_url, duration_seconds")
-      .eq("day_number", dayNumber)
-      .maybeSingle();
-    if (
-      res.error &&
-      (res.error.code === "42703" || /video_url/.test(res.error.message))
-    ) {
-      const r2 = await supabase
-        .from("notification_videos")
-        .select("title, duration_seconds")
-        .eq("day_number", dayNumber)
-        .maybeSingle();
-      if (r2.data) {
-        videoRow = r2.data as {
-          title?: string;
-          duration_seconds?: number | null;
-        };
-      }
-    } else if (!res.error) {
-      videoRow = res.data as typeof videoRow;
-    }
-  }
-
-  const videoUrl = await getVideoUrl(videoRow?.video_url ?? null);
+  // no_user는 위에서 redirect로 걸렀음 — 도달 X. no_row는 placeholder로 처리.
+  const dayNumber = result.ok ? result.dayNumber : 1;
+  const title = result.ok ? result.title : `${dayNumber}일차 영상`;
+  const videoUrl = result.ok ? result.videoUrl : null;
 
   return (
     <div className="flex-1 bg-gs-navy-50/40 px-4 py-10 md:py-14">
       <div className="max-w-[800px] mx-auto">
         <Link
-          href="/study"
+          href="/dashboard"
           className="inline-flex items-center text-sm text-gs-muted hover:text-gs-navy-bright mb-5 transition-colors"
         >
-          ← 알고가기
+          ← 대시보드
         </Link>
         <div className="mb-5">
-          <p className="text-sm font-bold text-gs-navy-bright">{dayNumber}일차</p>
+          <p className="text-sm font-bold text-gs-navy-bright">
+            {dayNumber}일차
+          </p>
           <h1 className="text-2xl md:text-4xl font-extrabold tracking-[-0.03em] leading-[1.2] mt-1 text-gs-text-strong">
-            {videoRow?.title ?? `${dayNumber}일차 영상`}
+            {title}
           </h1>
         </div>
 
         {videoUrl ? (
-          <VideoPlayer videoUrl={videoUrl} autoplay={autoplay} />
+          <DailyVideoPlayer
+            videoUrl={videoUrl}
+            dayNumber={dayNumber}
+            autoplay={autoplay}
+          />
         ) : (
           <div
             data-testid="video-placeholder-today"
@@ -126,6 +90,10 @@ export default async function StudyTodayPlayPage({
             </p>
           </div>
         )}
+
+        <p className="mt-4 text-xs text-gs-muted text-center">
+          영상을 70% 이상 시청하면 오늘의 루틴에 자동으로 체크돼요
+        </p>
       </div>
     </div>
   );
