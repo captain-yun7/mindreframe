@@ -95,10 +95,19 @@ export default function ChatPage() {
     // 1.3초 딜레이 후 분기 — 원본 setTimeout(1300) 그대로
     await new Promise((r) => setTimeout(r, 1300));
 
-    if (result.analysis.distortions.length === 1) {
+    const distCount = result.analysis.distortions.length;
+    if (distCount === 1) {
       await runStartTherapy(result.sessionId, result.analysis, result.analysis.distortions[0].name);
-    } else {
+    } else if (distCount > 1) {
       setPhase("selection");
+    } else {
+      // distortions가 0개 — 분석이 인지왜곡을 찾지 못한 케이스. 사용자 재입력 유도.
+      appendSystem(
+        "분석에서 명확한 인지왜곡을 찾지 못했어요. 자동사고와 감정을 좀 더 구체적으로 적어주시면 다시 분석해볼게요.",
+      );
+      // phase는 analysis 유지 — 같은 세션 폐기, 다음 입력 받아 새 세션으로 진행
+      setSessionId(null);
+      setAnalysis(null);
     }
   }
 
@@ -207,8 +216,9 @@ export default function ChatPage() {
         awaitingEmotionAfterRef.current = true;
       }
 
-      // 예약된 자동 저장 실행 — 다음 assistant 응답 직후
-      if (pendingSaveRef.current) {
+      // 예약된 자동 저장 실행 — 다음 assistant 응답 직후.
+      // 위기 응답인 경우 자동 저장 보류 (안전 우선).
+      if (pendingSaveRef.current && !r.crisis) {
         pendingSaveRef.current = false;
         const score =
           (window as unknown as { __emotionAfterScore?: number }).__emotionAfterScore ?? 0;

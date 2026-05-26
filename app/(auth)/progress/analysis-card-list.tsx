@@ -35,7 +35,9 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
       .select("id, role, content, created_at")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true });
-    setMessages((data ?? []) as ChatMsg[]);
+    // system 메시지(치료 프롬프트)는 모달에 노출하지 않음 — 사용자에게는 user/assistant만 표시
+    const visible = (data ?? []).filter((m) => m.role !== "system");
+    setMessages(visible as ChatMsg[]);
     setLoading(false);
   }
 

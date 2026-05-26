@@ -187,10 +187,11 @@ export async function sendTrashMessage({
   const parsedJson = extractTrashJson(raw);
   const visibleText = stripJsonBlock(raw);
 
+  // 위기 응답이 감지된 경우 자동 저장 보류 (안전 우선) — 사용자 재입력 유도.
   // JSON 블록이 추출되면 자동 저장
   let saved = false;
   let savedId: string | null = null;
-  if (parsedJson && parsedJson.situation) {
+  if (!crisis && parsedJson && parsedJson.situation) {
     const intensity =
       typeof parsedJson.emotion_intensity === "number"
         ? parsedJson.emotion_intensity

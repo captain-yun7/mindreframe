@@ -272,19 +272,35 @@ export async function continueTherapy({
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
-  // 누적된 대화 (system 포함) 로드
-  const { data: history } = await supabase
+  // 누적된 대화 로드.
+  // 원본은 startTherapy 시점에 conversationHistory=[therapyPrompt]로 초기화하므로
+  // 분석 단계(첫 user + 📊 분석 결과 assistant)는 OpenAI에 포함되지 않는다.
+  // → 마지막 system(치료 프롬프트) 이후의 메시지만 전달한다.
+  const { data: rawHistory } = await supabase
     .from("chat_messages")
-    .select("role, content")
+    .select("role, content, created_at")
     .eq("session_id", sessionId)
     .order("created_at", { ascending: true });
+
+  const all = rawHistory ?? [];
+  let lastSystemIdx = -1;
+  for (let i = all.length - 1; i >= 0; i--) {
+    if (all[i].role === "system") {
+      lastSystemIdx = i;
+      break;
+    }
+  }
+  const therapyHistory =
+    lastSystemIdx >= 0
+      ? all.slice(lastSystemIdx) // system + 그 이후 user/assistant 만
+      : all;
 
   await supabase
     .from("chat_messages")
     .insert({ session_id: sessionId, role: "user", content: trimmed });
 
   const messages = [
-    ...(history ?? []).map((m) => ({ role: m.role, content: m.content })),
+    ...therapyHistory.map((m) => ({ role: m.role, content: m.content })),
     { role: "user", content: trimmed },
   ];
 
