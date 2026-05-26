@@ -346,18 +346,60 @@ export default async function ProgressPage() {
               <ul className="mt-4 space-y-2" data-testid="recent-exercises">
                 {stats.recentExercises.map((e) => {
                   const parsed = parseExerciseNote(e.note as string | null);
-                  const isStructured = "plan" in parsed;
+                  const isNew =
+                    "type" in parsed &&
+                    (parsed.type === "anxiety_exposure" ||
+                      parsed.type === "depress_activity");
+                  const isLegacy = !isNew && "plan" in parsed;
+                  const modeLabel =
+                    isNew && parsed.type === "anxiety_exposure"
+                      ? "불안 줄이기"
+                      : isNew && parsed.type === "depress_activity"
+                        ? "우울 벗어나기"
+                        : e.exercise_key === "courage"
+                          ? "용기있는 행동"
+                          : "불안노출";
                   return (
                     <li
                       key={e.id}
                       className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
                     >
                       <div className="text-gs-muted-soft text-[11px] mb-1">
-                        {e.exercise_key === "courage" ? "용기있는 행동" : "불안노출"} ·{" "}
+                        {modeLabel} ·{" "}
                         {new Date(e.completed_at).toLocaleString("ko-KR")}
                       </div>
                       <div className="font-bold">{e.exercise_title}</div>
-                      {isStructured ? (
+                      {isNew && parsed.type === "anxiety_exposure" && (
+                        <div className="mt-1 space-y-0.5 text-gs-text-soft">
+                          <div>
+                            {parsed.did === "did" ? "✓ 도전함" : "✕ 못 함"}
+                            {parsed.actualBefore != null && parsed.actualAfter != null && (
+                              <> {" · "}불안 {parsed.actualBefore} → {parsed.actualAfter}</>
+                            )}
+                          </div>
+                          {parsed.learnedLine && (
+                            <div className="text-gs-muted-soft text-[12px]">
+                              💭 {parsed.learnedLine}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {isNew && parsed.type === "depress_activity" && (
+                        <div className="mt-1 space-y-0.5 text-gs-text-soft">
+                          <div>
+                            {parsed.did === "did" ? "✓ 실행함" : "✕ 못 함"}
+                            {parsed.actualAfter != null && (
+                              <> {" · "}활동 후 기분 {parsed.actualAfter}</>
+                            )}
+                          </div>
+                          {parsed.learnedLine && (
+                            <div className="text-gs-muted-soft text-[12px]">
+                              💭 {parsed.learnedLine}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {isLegacy && (
                         <div className="mt-1 space-y-0.5 text-gs-text-soft">
                           {parsed.plan.when && <div>📅 {parsed.plan.when}</div>}
                           {parsed.plan.whereWho && <div>📍 {parsed.plan.whereWho}</div>}
@@ -380,12 +422,13 @@ export default async function ProgressPage() {
                             </div>
                           )}
                         </div>
-                      ) : (
+                      )}
+                      {!isNew &&
+                        !isLegacy &&
                         "plain" in parsed &&
                         parsed.plain && (
                           <div className="text-gs-text-soft mt-0.5">{parsed.plain}</div>
-                        )
-                      )}
+                        )}
                     </li>
                   );
                 })}
