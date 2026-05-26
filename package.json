@@ -11,7 +11,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "visual:capture": "tsx scripts/visual-check.ts",
-    "visual:toss-ref": "tsx scripts/visual-check.ts --reference"
+    "visual:toss-ref": "tsx scripts/visual-check.ts --reference",
+    "upload:video": "tsx scripts/upload-daily-video.ts",
+    "upload:videos": "tsx scripts/upload-daily-video.ts --dir"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.52",
@@ -50,6 +52,7 @@
     "playwright": "^1.59.1",
     "prettier": "^3.8.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
