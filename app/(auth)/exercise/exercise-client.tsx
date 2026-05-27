@@ -242,6 +242,7 @@ export function ExerciseClient({
   }, [depRows]);
 
   // F113: 2단계 표에 1개 행이라도 입력되면 자동으로 planSaved 전환
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!anxSaved && anxRows.some((r) => r.situation.trim())) {
       setAnxSaved(true);
@@ -253,6 +254,7 @@ export function ExerciseClient({
       setDepSaved(true);
     }
   }, [depRows, depSaved]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // F114: DB 저장 (debounce 600ms) — 주요 상태 변경 시 전체 스냅샷 push
   useEffect(() => {

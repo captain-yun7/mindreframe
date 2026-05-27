@@ -10,6 +10,7 @@ import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 import { PageFade } from "@/components/motion/page-fade";
 import { getSiteSettings } from "@/lib/site-settings";
+import { AlternativeThoughtCard } from "@/components/alternative-thought-card";
 
 export const dynamic = "force-dynamic";
 
@@ -276,19 +277,18 @@ export default async function ProgressPage() {
             <CardTitle>대안적 사고 카드</CardTitle>
             <CardDescription>가짜생각 분석기에서 찾은 대안적 사고들이 모입니다.</CardDescription>
             {stats && stats.recentAlternatives.length > 0 ? (
-              <ul className="mt-4 space-y-2">
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {stats.recentAlternatives.map((r) => {
                   const parsed = parseAlternativeThought(r.alternative_thought);
                   return (
-                    <li
+                    <AlternativeThoughtCard
                       key={r.id}
-                      className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px] whitespace-pre-wrap"
-                    >
-                      {parsed.text || "—"}
-                    </li>
+                      text={parsed.text || "—"}
+                      createdAt={r.created_at}
+                    />
                   );
                 })}
-              </ul>
+              </div>
             ) : (
               <div className="mt-4 text-center text-gs-muted-soft text-[13px] py-8">
                 아직 저장된 대안사고가 없어요.

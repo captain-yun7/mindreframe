@@ -1,121 +1,190 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { analyzeAnonymous } from "@/lib/actions/landing-analyzer";
+import type { AnalysisResult } from "@/lib/cbt/prompts";
 
-interface DemoMessage {
-  role: "user" | "assistant" | "system";
-  content: string;
+/**
+ * H6/F122 — 랜딩 비로그인 분석기.
+ * 비로그인 사용자가 1회 무료 분석 → 결과 카드 → 결제 유도(/pricing).
+ *
+ * 추적: localStorage[landing_analyzer_anon_id] + server에서 IP+UUID+content_hash 검증.
+ */
+
+const STORAGE_KEY = "landing_analyzer_anon_id";
+
+function getOrCreateAnonymousId(): string {
+  try {
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached && /^[0-9a-f-]{36}$/i.test(cached)) return cached;
+    const id = crypto.randomUUID();
+    localStorage.setItem(STORAGE_KEY, id);
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
 }
 
-const DEMO_FLOW: DemoMessage[] = [
-  {
-    role: "assistant",
-    content:
-      "안녕하세요! 가짜생각 분석기입니다.\n오늘 힘들었던 상황과 그때 떠오른 생각을 알려주세요.",
-  },
-  {
-    role: "user",
-    content: "회의에서 발표할 때 다들 나를 무시하는 것 같았어요. 감정: 불안 80점",
-  },
-  {
-    role: "assistant",
-    content:
-      "그 상황이 정말 힘드셨겠어요.\n혹시 그때 '다들 나를 무시한다'는 생각이 사실이라는 증거가 있었나요?\n구체적으로 무시하는 말이나 행동이 있었는지 떠올려 보세요.",
-  },
-  {
-    role: "user",
-    content: "사실… 그렇게 보이는 사람은 한 명 정도였어요. 다들은 아니었어요.",
-  },
-  {
-    role: "assistant",
-    content:
-      "잘 짚어주셨어요. '다들'이라고 느꼈던 건 **흑백사고**일 수 있어요.\n대안: \"한 사람의 표정을 모두의 마음으로 확장했구나\" 어떠세요?",
-  },
-];
-
-const DISTORTIONS = [
-  { tag: "흑백사고", desc: "전부 아니면 아예 안 돼" },
-  { tag: "독심술", desc: "쟤가 분명히 나를 무시해" },
-  { tag: "재앙화", desc: "분명히 최악의 일이 일어날 거야" },
-];
-
 export function LandingAnalyzerPreview() {
-  const [step, setStep] = useState(2); // 2단계까지 미리 보임
-  const visible = DEMO_FLOW.slice(0, step + 1);
+  const [anonId, setAnonId] = useState<string | null>(null);
+  const [text, setText] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [alreadyUsed, setAlreadyUsed] = useState(false);
 
-  return (
-    <div className="w-full rounded-[18px] overflow-hidden border border-gs-line-soft bg-gs-surface-muted">
-      {/* 헤더 */}
-      <div className="px-4 py-3 border-b border-gs-line-soft bg-white flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-gs-success" />
-          <span className="text-[13px] font-bold">가짜생각 분석기</span>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-gs-blue-soft text-gs-blue-soft-fg">
-            미리보기
-          </span>
-        </div>
-        <span className="text-[11px] text-gs-muted">CBT 인지왜곡 분석</span>
-      </div>
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    setAnonId(getOrCreateAnonymousId());
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
-      {/* 메시지 */}
-      <div className="px-3 py-4 space-y-2 min-h-[280px]">
-        {visible.map((m, i) => (
-          <div
-            key={i}
-            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`max-w-[80%] px-3 py-2 rounded-[14px] text-[13px] leading-[1.6] whitespace-pre-wrap break-words ${
-                m.role === "user"
-                  ? "bg-gs-navy-bright text-white"
-                  : "bg-white border border-gs-line-soft text-gs-text-strong"
-              }`}
-            >
-              {m.content}
+  async function handleSubmit() {
+    setError(null);
+    if (!anonId) return;
+    const t = text.trim();
+    if (!t) {
+      setError("생각이나 상황을 적어주세요");
+      return;
+    }
+    setPending(true);
+    const r = await analyzeAnonymous({ anonymousId: anonId, content: t });
+    setPending(false);
+
+    if (!r.ok) {
+      setError(r.error ?? "분석에 실패했어요");
+      return;
+    }
+    if (r.crisis) {
+      setError(
+        "지금 많이 힘드신 것 같아요. 자살예방상담전화 1393 (24시간), 정신건강위기상담전화 1577-0199로 연락해주세요.",
+      );
+      return;
+    }
+    if (r.alreadyUsed) {
+      setAlreadyUsed(true);
+    }
+    if (r.result) {
+      setResult(r.result);
+    }
+  }
+
+  // 결과 카드 — 인지왜곡 선택 시 결제 유도
+  if (result) {
+    return (
+      <div className="w-full">
+        <div className="rounded-[18px] overflow-hidden border-2 border-gs-gold-border bg-[#fff5ec] p-1">
+          <div className="bg-white rounded-[16px] p-5">
+            <div className="text-[12px] font-bold text-gs-navy-bright mb-2">
+              ✨ {alreadyUsed ? "이전 분석 결과" : "분석 결과"}
+            </div>
+            <div className="space-y-2 text-[13.5px] text-gs-text-strong leading-relaxed">
+              <div>
+                <span className="font-bold text-gs-navy">상황 · </span>
+                {result.situation}
+              </div>
+              <div>
+                <span className="font-bold text-gs-navy">자동사고 · </span>
+                {result.automatic_thought}
+              </div>
+              <div>
+                <span className="font-bold text-gs-navy">감정 · </span>
+                {result.emotion?.name ?? "—"}{" "}
+                {typeof result.emotion?.intensity === "number"
+                  ? `(${result.emotion.intensity}점)`
+                  : ""}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="text-[12px] font-bold text-gs-muted-soft mb-2">
+                발견된 인지왜곡 — 클릭하면 합리적 대안사고를 알려드려요
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {result.distortions.map((d, i) => (
+                  <Link
+                    key={`${d.name}-${i}`}
+                    href="/pricing"
+                    className="text-left p-3 rounded-toss-card border-2 border-gs-gold-border bg-[#fffaf3] hover:bg-white hover:-translate-y-0.5 hover:shadow-toss-card-hover transition-all"
+                  >
+                    <div className="text-[13px] font-bold text-gs-navy">
+                      #{d.name}
+                    </div>
+                    <div className="text-[11.5px] text-gs-muted leading-[1.5] mt-1">
+                      {d.description}
+                    </div>
+                    <div className="mt-2 text-[11px] text-gs-gold-700 font-bold">
+                      → 합리적 대안 보기
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* 다음 단계 시뮬레이션 버튼 */}
-      {step < DEMO_FLOW.length - 1 ? (
-        <div className="px-4 py-3 bg-white border-t border-gs-line-soft flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setStep((s) => Math.min(s + 1, DEMO_FLOW.length - 1))}
-            className="flex-1 py-2.5 rounded-full bg-gs-blue-light border border-gs-blue/35 text-gs-blue text-sm font-bold hover:translate-y-[-1px] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-blue/40"
-          >
-            다음 응답 보기 ({step + 1} / {DEMO_FLOW.length - 1})
-          </button>
         </div>
-      ) : (
-        <div className="px-4 py-4 bg-gradient-to-br from-gs-blue to-gs-navy-bright text-white">
-          <div className="text-[12px] opacity-80 mb-1">
-            ✨ 이 대화에서 발견된 인지왜곡
-          </div>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {DISTORTIONS.slice(0, 1).map((d) => (
-              <span
-                key={d.tag}
-                className="px-2.5 py-0.5 rounded-full bg-white/20 text-[11px] font-bold"
-              >
-                #{d.tag}
-              </span>
-            ))}
-          </div>
-          <p className="text-[13px] leading-[1.6] mb-3 opacity-95">
-            <b>지금 떠오른 그 생각</b>도 가짜일 수 있어요. 진짜 분석은 회원가입 후
-            5분이면 충분해요.
+
+        <div className="mt-5 p-5 rounded-toss-card bg-gradient-to-br from-gs-navy to-gs-navy-bright text-white">
+          <p className="text-[13.5px] leading-[1.6] mb-3 opacity-95">
+            <b>여기서 끝이 아니에요.</b> 합리적 대안사고 만들기, 4단계 행동연습장, 코치 채팅까지 — 100일 프로그램으로 진짜 변화를 만들어요.
           </p>
           <Link
-            href="/signup"
-            className="inline-block px-5 py-2.5 rounded-full bg-gs-gold text-gs-text-strong text-sm font-bold hover:brightness-105 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            href="/pricing"
+            className="inline-block px-5 py-2.5 rounded-full bg-gs-gold text-gs-navy text-sm font-bold hover:brightness-105 transition-all"
           >
-            내 생각도 분석해보기 →
+            100일 프로그램 시작하기 →
           </Link>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div className="rounded-[18px] overflow-hidden border-2 border-gs-gold-border bg-[#fff5ec] p-1">
+        <div className="bg-white rounded-[16px] p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gs-success" />
+              <span className="text-[13px] font-bold">가짜생각 분석기</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#fffaf3] border border-gs-gold-border text-gs-navy">
+                무료 1회 체험
+              </span>
+            </div>
+            <span className="text-[11px] text-gs-muted">CBT 인지왜곡 분석</span>
+          </div>
+
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={pending}
+            rows={4}
+            placeholder='예) 회의에서 발표할 때 다들 나를 무시하는 것 같았어요. 감정: 불안 80점'
+            className="w-full px-3 py-3 rounded-[12px] border border-gs-line-soft text-[13.5px] outline-none focus:border-gs-navy-bright focus:ring-2 focus:ring-gs-navy-bright/20 transition-colors resize-y"
+          />
+
+          {error ? (
+            <div className="mt-2 text-[12px] text-gs-danger bg-gs-danger-bg border border-gs-danger-border rounded-[10px] px-3 py-2">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={pending || !anonId}
+              className="flex-1 py-2.5 rounded-full bg-gs-navy text-white text-sm font-bold hover:bg-gs-navy-bright transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {pending ? "분석 중..." : "분석해보기 (가입 없이 1회 무료)"}
+            </button>
+          </div>
+
+          <p className="mt-2 text-[11px] text-gs-muted-soft text-center">
+            * 무료 체험은 1회 분석까지. 합리적 대안 만들기·코치 채팅은 가입 후 이용 가능해요.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

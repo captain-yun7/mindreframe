@@ -96,7 +96,8 @@ export function CoachThreadClient({
   }
 
   return (
-    <Card className="mt-4 p-0 overflow-hidden">
+    <div className="mt-4 rounded-toss-card border-2 border-gs-gold-border bg-[#fff5ec] p-1">
+    <Card className="p-0 overflow-hidden !rounded-[16px]">
       <div className="px-4 py-3 border-b border-gs-line-soft bg-gs-surface-muted text-sm font-bold flex items-center justify-between">
         <span>{activeSession ? "코치와 대화 중" : "지난 대화"}</span>
         {activeSession && <RealtimeStatusDot status={status} />}
@@ -207,5 +208,6 @@ export function CoachThreadClient({
         </div>
       )}
     </Card>
+    </div>
   );
 }
