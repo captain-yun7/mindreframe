@@ -103,7 +103,7 @@ export default function TrashPage() {
                 마음을 비워봐요 ✨
               </h1>
               <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
-                불안하거나 화가 났던 한 사건을 전부 쏟아놓으세요.
+                불안하거나 화가 났던 한 사건을 전부 쏟아놓으세요.{" "}
                 <br className="hidden md:block" />
                 생각쓰레기통이 알아서{" "}
                 <b className="text-gs-text-strong">

@@ -66,6 +66,12 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
       void recordCompletion(track);
       return;
     }
+    // F121 — 다른 트랙 재생 중이면 기존 트랙 먼저 로깅 후 새 트랙으로 전환
+    if (playing) {
+      const prev = tracks.find((t) => t.audioUrl === playing);
+      audioRef.current?.pause();
+      if (prev) void recordCompletion(prev);
+    }
     if (audioRef.current) {
       audioRef.current.src = track.audioUrl;
       audioRef.current.play().catch(() => {});

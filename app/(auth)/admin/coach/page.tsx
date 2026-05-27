@@ -21,7 +21,7 @@ export default async function CoachAdminPage() {
     return (
       <PageLayout>
         <PageTitle>접근 권한 없음</PageTitle>
-        <PageLead>상담사 또는 관리자 권한이 필요해요.</PageLead>
+        <PageLead>코치 또는 관리자 권한이 필요해요.</PageLead>
       </PageLayout>
     );
   }
@@ -31,7 +31,7 @@ export default async function CoachAdminPage() {
 
   return (
     <PageLayout>
-      <PageTitle>상담사 어드민</PageTitle>
+      <PageTitle>코치 어드민</PageTitle>
       <PageLead>활성 대화 {sessions.length}건</PageLead>
 
       {sessions.length === 0 ? (

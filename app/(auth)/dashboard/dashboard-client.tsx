@@ -30,8 +30,8 @@ const checklistItems = [
   },
   {
     key: "daily_video",
-    label: "오늘의 영상 시청 (70% 이상)",
-    description: "오늘의 영상을 70% 이상 보면 자동으로 체크돼요.",
+    label: "오늘의 영상 시청",
+    description: "오늘의 영상을 보면 자동으로 체크돼요.",
     actionLabel: "재생",
     actionHref: "/study/today/play",
     ghost: false,
@@ -160,7 +160,7 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                 {greetName}오늘은 {dayLabel}예요 🌱
               </h1>
               <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
-                작은 한 걸음이 큰 변화로 이어져요.
+                작은 한 걸음이 큰 변화로 이어져요.{" "}
                 <br className="hidden md:block" />
                 오늘도 1%만 해도 충분해요.
               </p>
@@ -299,7 +299,7 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                               ? () => {
                                   if (item.key === "daily_video") {
                                     toast.show(
-                                      "영상을 70% 이상 시청하면 자동으로 체크돼요",
+                                      "영상을 시청하면 자동으로 체크돼요",
                                       "success",
                                     );
                                   }

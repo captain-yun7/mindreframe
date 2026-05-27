@@ -98,7 +98,7 @@ export function CoachThreadClient({
   return (
     <Card className="mt-4 p-0 overflow-hidden">
       <div className="px-4 py-3 border-b border-gs-line-soft bg-gs-surface-muted text-sm font-bold flex items-center justify-between">
-        <span>{activeSession ? "상담사와 대화 중" : "지난 대화"}</span>
+        <span>{activeSession ? "코치와 대화 중" : "지난 대화"}</span>
         {activeSession && <RealtimeStatusDot status={status} />}
       </div>
       {activeSession && status === "disconnected" && (
@@ -121,7 +121,7 @@ export function CoachThreadClient({
         {rendered.length === 0 ? (
           <div className="text-center text-gs-muted text-sm py-12">
             {activeSession
-              ? "상담사에게 첫 메시지를 보내보세요. 보통 평일 24시간 이내 답변드려요."
+              ? "코치에게 첫 메시지를 보내보세요. 보통 평일 24시간 이내 답변드려요."
               : "아직 대화 기록이 없어요."}
           </div>
         ) : (

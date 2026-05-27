@@ -171,9 +171,9 @@ export default async function MyPage() {
 
         <FadeIn>
           <Card className="mt-4 shadow-toss-card">
-            <CardTitle>상담사 열람 동의</CardTitle>
+            <CardTitle>코치 열람 동의</CardTitle>
             <p className="text-xs text-gs-muted mt-1 leading-[1.6]">
-              1:1 코칭 중인 상담사가 내 행동연습장 기록을 참고할 수 있도록 허용합니다.
+              1:1 코칭 중인 코치가 내 행동연습장 기록을 참고할 수 있도록 허용합니다.
               언제든 다시 해제할 수 있어요.
             </p>
             <div className="mt-3">

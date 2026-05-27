@@ -266,7 +266,7 @@ async function requireCoach() {
     .eq("id", r.user.id)
     .single();
   if (u?.role !== "coach" && u?.role !== "admin") {
-    return { ok: false as const, error: "상담사 권한이 필요해요" };
+    return { ok: false as const, error: "코치 권한이 필요해요" };
   }
   return { ok: true as const, supabase: r.supabase, user: r.user };
 }
@@ -281,7 +281,7 @@ async function requireCoachOrAdmin() {
     .eq("id", r.user.id)
     .single();
   if (u?.role !== "coach" && u?.role !== "admin") {
-    return { ok: false as const, error: "상담사 또는 관리자 권한이 필요해요" };
+    return { ok: false as const, error: "코치 또는 관리자 권한이 필요해요" };
   }
   return { ok: true as const, supabase: r.supabase, user: r.user };
 }

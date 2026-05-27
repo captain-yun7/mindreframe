@@ -43,31 +43,31 @@ const features = [
   {
     emoji: "💭",
     title: "가짜생각 분석기",
-    description: "자동사고를 인지왜곡으로 분류하고 대안사고를 함께 찾아드려요.",
+    description: "생각 한 줄만 적으면 인지왜곡, 대안사고까지 전부 찾아드려요.",
     href: "/chat",
   },
   {
     emoji: "🗑️",
     title: "생각쓰레기통",
-    description: "지금 떠오르는 생각을 한 줄만 버리세요. 마음이 조금 가벼워져요.",
+    description: "여기에 생각을 버리고, 뭉친 마음의 실타래를 푸세요!",
     href: "/trash",
   },
   {
     emoji: "🌙",
     title: "명상하기",
-    description: "3분만 멈춰 호흡으로 돌아와요. 짧고 가볍게 매일.",
+    description: "초점 이동, 짧고 가볍게 매일.",
     href: "/meditation",
   },
   {
     emoji: "🎯",
     title: "행동연습장",
-    description: "용기 한 걸음, 불안에 다가가는 한 걸음. 작은 실행을 기록해요.",
+    description: "불안 줄이기 연습, 우울 벗어나기 연습. 작은 용기를 쌓으세요.",
     href: "/exercise",
   },
   {
     emoji: "🤝",
     title: "코치 채팅",
-    description: "막힐 때는 코치와 함께. 알림톡으로 답변을 받아볼 수 있어요.",
+    description: "가짜 생각 코치와 100일을 시작하세요.",
     href: "/coach",
   },
   {
@@ -94,7 +94,7 @@ export default function LandingPage() {
                 훈련으로만 바뀝니다 🌱
               </h1>
               <p className="mt-6 text-base md:text-lg text-white/85 leading-relaxed">
-                반복되는 &lsquo;가짜생각&rsquo;을 하루 10분, 쉽고 짧게.
+                반복되는 &lsquo;가짜생각&rsquo;을 하루 20분, 쉽고 짧게.
                 <br />
                 100일이면 분명히 달라져요.
               </p>
@@ -159,9 +159,6 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-navy">
               지금 떠오른 생각, 한 번 적어볼까요?
             </h2>
-            <p className="mt-4 text-base md:text-lg text-gs-muted-soft">
-              가입 없이도 분석기를 체험해볼 수 있어요.
-            </p>
           </div>
           <div className="bg-white rounded-toss-card px-6 py-7 shadow-toss-card max-w-[880px] mx-auto">
             <LandingAnalyzerPreview />
@@ -203,7 +200,7 @@ export default function LandingPage() {
           <StaggerItem>
             <div className="text-center">
               <div className="text-5xl md:text-6xl font-extrabold tracking-[-0.04em] text-gs-gold">
-                1,000+
+                10+
               </div>
               <div className="mt-3 text-sm md:text-base font-medium text-white/70">
                 함께한 사람들
@@ -213,7 +210,7 @@ export default function LandingPage() {
           <StaggerItem>
             <div className="text-center">
               <div className="text-5xl md:text-6xl font-extrabold tracking-[-0.04em] text-gs-gold">
-                50,000+
+                500+
               </div>
               <div className="mt-3 text-sm md:text-base font-medium text-white/70">
                 분석된 생각
@@ -265,7 +262,7 @@ export default function LandingPage() {
               오늘 시작해보세요 🌱
             </h2>
             <p className="mt-5 md:mt-6 text-base md:text-lg text-white/80 leading-relaxed">
-              하루 10분, 100일이면 분명히 달라져요.
+              하루 20분, 100일이면 분명히 달라져요.
               <br />
               완벽보다 시작이 중요해요.
             </p>

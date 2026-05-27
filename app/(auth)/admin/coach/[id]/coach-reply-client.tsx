@@ -156,7 +156,7 @@ export function CoachReplyClient({
                   <div
                     className={`text-[10px] mt-1 ${item.m.sender_role === "coach" ? "text-white/70" : "text-gs-muted"}`}
                   >
-                    {item.m.sender_role === "user" ? "사용자 · " : "상담사 · "}
+                    {item.m.sender_role === "user" ? "사용자 · " : "코치 · "}
                     {new Date(item.m.created_at).toLocaleString("ko-KR", {
                       month: "2-digit",
                       day: "2-digit",

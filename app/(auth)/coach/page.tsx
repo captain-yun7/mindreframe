@@ -33,7 +33,7 @@ export default async function CoachPage() {
     return (
       <PageLayout>
         <PageTitle>코치와 1:1 채팅</PageTitle>
-        <PageLead>1:1 상담사 채팅은 라이트 이상 플랜에서 이용할 수 있어요.</PageLead>
+        <PageLead>1:1 코치 채팅은 라이트 이상 플랜에서 이용할 수 있어요.</PageLead>
         <Card className="mt-4 p-6 text-center shadow-toss-card">
           <p className="text-sm text-gs-text-soft mb-4">
             현재 플랜: <b>{plan}</b>
@@ -69,7 +69,7 @@ export default async function CoachPage() {
                 함께 이야기해요 🤝
               </h1>
               <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
-                궁금한 점·고민을 상담사에게 편하게 적어주세요.
+                궁금한 점·고민을 코치에게 편하게 적어주세요.
                 <br className="hidden md:block" />
                 <b className="text-gs-text-strong">평일 24시간 이내</b> 답변드려요.
               </p>

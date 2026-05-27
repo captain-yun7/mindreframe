@@ -258,7 +258,7 @@ export default function SurveyPage() {
         const total = depPercent + anxPercent;
         const recommended =
           total > 140
-            ? { key: "premium", label: "프리미엄", reason: "전담 상담사와 함께 깊이 있는 변화를" }
+            ? { key: "premium", label: "프리미엄", reason: "전담 코치와 함께 깊이 있는 변화를" }
             : total > 100
               ? { key: "pro", label: "프로", reason: "행동연습장·명상·1:1 코칭으로 입체적 케어를" }
               : { key: "light", label: "라이트", reason: "분석기와 기록으로 부드러운 시작을" };

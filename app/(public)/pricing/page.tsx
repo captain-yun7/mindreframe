@@ -34,8 +34,10 @@ const FALLBACK_PLANS: PlanCard[] = [
     period: "100일",
     features: [
       "가짜생각 분석기 5회/일",
+      "생각쓰레기통 5회/일",
+      "행동연습장 5회/일",
+      "명상하기 5회/일",
       "주 1회 1:1 코칭",
-      "생각쓰레기통",
       "오늘의 루틴",
       "알고가기(학습) 전체",
       "나의성장방",
@@ -48,11 +50,12 @@ const FALLBACK_PLANS: PlanCard[] = [
     price: "394,000",
     period: "100일",
     features: [
-      "라이트 전체 포함",
       "가짜생각 분석기 7회/일",
+      "생각쓰레기통 7회/일",
       "주 2회 1:1 코칭",
-      "행동연습장",
-      "명상하기",
+      "오늘의 루틴",
+      "알고가기(학습) 전체",
+      "나의성장방",
     ],
     recommended: true,
   },
@@ -62,8 +65,10 @@ const FALLBACK_PLANS: PlanCard[] = [
     price: "694,000",
     period: "100일",
     features: [
-      "프로 전체 포함",
       "가짜생각 분석기 무제한/일",
+      "생각쓰레기통 무제한/일",
+      "행동연습장 무제한/일",
+      "명상하기 무제한/일",
       "주 4회 1:1 코칭",
       "우선 고객 지원",
     ],
@@ -272,7 +277,7 @@ export default async function PricingPage({
 
         {/* 환불 정책 요약 */}
         <p className="mt-8 text-center text-xs text-gs-muted-light leading-[1.6]">
-          7일 내 콘텐츠 미사용 시 전액 환불 / 사용 후엔 일할 계산.{" "}
+          무료로 써보세요. 주 1회 사용했는데 효과 없으면 100% 환불해드려요.{" "}
           <Link href="/terms" className="text-gs-navy-bright font-bold hover:underline">
             자세히
           </Link>

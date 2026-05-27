@@ -173,7 +173,7 @@ export default async function ProgressPage() {
                 {greetName}성장하고 있어요 ✨
               </h1>
               <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
-                기록은 거짓말하지 않아요.
+                기록은 거짓말하지 않아요.{" "}
                 <br className="hidden md:block" />
                 오늘까지 함께한 {dayLabel}의 흔적을 확인해보세요.
               </p>
