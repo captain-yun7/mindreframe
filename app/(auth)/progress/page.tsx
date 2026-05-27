@@ -58,6 +58,7 @@ interface ProgressStats {
     exercise_title: string;
     note: string | null;
     completed_at: string;
+    courage_level?: number | null;
   }[];
   recentMeditations: {
     id: string;
@@ -66,6 +67,8 @@ interface ProgressStats {
     completed_at: string;
   }[];
   emotionPoints: { score: number; recorded_at: string }[];
+  courageLevel?: number | null;
+  totalExercises?: number | null;
 }
 
 async function loadStats() {
@@ -105,6 +108,8 @@ async function loadStats() {
     recentExercises: stats.recentExercises,
     recentMeditations: stats.recentMeditations,
     recentAnalyses: stats.recentAnalyses,
+    courageLevel: stats.courageLevel ?? 0,
+    totalExercises: stats.totalExercises ?? 0,
     emotionPoints: stats.emotionPoints.map((p) => ({
       date: p.recorded_at,
       score: p.score,
@@ -369,14 +374,22 @@ export default async function ProgressPage() {
                         : e.exercise_key === "courage"
                           ? "용기있는 행동"
                           : "불안노출";
+                  const courageLevel = e.courage_level ?? null;
                   return (
                     <li
                       key={e.id}
                       className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
                     >
-                      <div className="text-gs-muted-soft text-[11px] mb-1">
-                        {modeLabel} ·{" "}
-                        {new Date(e.completed_at).toLocaleString("ko-KR")}
+                      <div className="text-gs-muted-soft text-[11px] mb-1 flex items-center justify-between flex-wrap gap-1">
+                        <span>
+                          {modeLabel} ·{" "}
+                          {new Date(e.completed_at).toLocaleString("ko-KR")}
+                        </span>
+                        {courageLevel != null && courageLevel > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
+                            🏆 용기 레벨 {courageLevel}
+                          </span>
+                        ) : null}
                       </div>
                       <div className="font-bold">{e.exercise_title}</div>
                       {isNew && parsed.type === "anxiety_exposure" && (
@@ -392,6 +405,11 @@ export default async function ProgressPage() {
                               💭 {parsed.learnedLine}
                             </div>
                           )}
+                          {parsed.unexpectedThought && (
+                            <div className="text-gs-muted-soft text-[12px] italic">
+                              🤔 예상치 못한 생각 · {parsed.unexpectedThought}
+                            </div>
+                          )}
                         </div>
                       )}
                       {isNew && parsed.type === "depress_activity" && (
@@ -405,6 +423,11 @@ export default async function ProgressPage() {
                           {parsed.learnedLine && (
                             <div className="text-gs-muted-soft text-[12px]">
                               💭 {parsed.learnedLine}
+                            </div>
+                          )}
+                          {parsed.unexpectedThought && (
+                            <div className="text-gs-muted-soft text-[12px] italic">
+                              🤔 예상치 못한 생각 · {parsed.unexpectedThought}
                             </div>
                           )}
                         </div>
