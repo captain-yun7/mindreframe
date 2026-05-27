@@ -397,6 +397,9 @@ export const userBadges = pgTable(
 );
 
 // ─── ai_usage ───
+// H2: feature 컬럼 추가, UNIQUE를 (user_id, used_at, feature)로 재구성.
+//   - analyzer: 분석기 finalize 1회
+//   - trash: 쓰레기통 JSON 추출 + INSERT 성공 1회
 export const aiUsage = pgTable(
   "ai_usage",
   {
@@ -405,9 +408,46 @@ export const aiUsage = pgTable(
       .notNull()
       .references(() => users.id),
     usedAt: date("used_at").notNull().defaultNow(),
+    feature: text("feature").notNull().default("analyzer"),
     count: integer("count").notNull().default(1),
   },
   (table) => [
-    uniqueIndex("uq_ai_usage_user_date").on(table.userId, table.usedAt),
+    uniqueIndex("uq_ai_usage_user_date_feature").on(
+      table.userId,
+      table.usedAt,
+      table.feature,
+    ),
   ],
 );
+
+// ─── exercise_state (H5/F114) ───
+// 행동연습장 진행 상태 영속 — 사용자당 단일 row, jsonb로 1~4단계 입력 저장.
+export const exerciseState = pgTable("exercise_state", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  mode: text("mode"),
+  anxPlan: jsonb("anx_plan"),
+  depPlan: jsonb("dep_plan"),
+  anxSaved: boolean("anx_saved").notNull().default(false),
+  depSaved: boolean("dep_saved").notNull().default(false),
+  anxSelectedIdx: integer("anx_selected_idx"),
+  depSelectedIdx: integer("dep_selected_idx"),
+  anxStep4: jsonb("anx_step4"),
+  depStep4: jsonb("dep_step4"),
+  step4Open: boolean("step4_open").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// ─── landing_analyzer_usage (H6/F122) ───
+// 랜딩 비로그인 분석기 사용 추적 — anonymous_id/IP 기반 abuse 차단.
+export const landingAnalyzerUsage = pgTable("landing_analyzer_usage", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  anonymousId: uuid("anonymous_id").notNull(),
+  clientIp: text("client_ip"),
+  contentHash: text("content_hash"),
+  result: jsonb("result"),
+  usedAt: timestamp("used_at", { withTimezone: true }).notNull().defaultNow(),
+});
