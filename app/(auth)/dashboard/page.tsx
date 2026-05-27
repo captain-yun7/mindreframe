@@ -1,6 +1,7 @@
 import { loadTodayDashboard } from "@/lib/actions/dashboard";
 import { getTodayDailyVideo, type TodayDailyVideo } from "@/lib/actions/daily-video";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getSiteSettings } from "@/lib/site-settings";
 import { DashboardClient, type DashboardInitial } from "./dashboard-client";
 
 export const dynamic = "force-dynamic";
@@ -22,11 +23,13 @@ async function loadNickname(): Promise<string | null> {
 }
 
 export default async function DashboardPage() {
-  const [r, nickname, todayVideo] = await Promise.all([
+  const [r, nickname, todayVideo, settings] = await Promise.all([
     loadTodayDashboard(),
     loadNickname(),
     getTodayDailyVideo(),
+    getSiteSettings(),
   ]);
+  const heroSubtitle = settings.dashboard_hero_subtitle;
 
   // F12: server-side에서 initial 데이터 fetch → 첫 렌더부터 채워진 상태 (깜빡임 제거)
   const initial: DashboardInitial = r.ok
@@ -40,6 +43,7 @@ export default async function DashboardPage() {
         totalDays: r.totalDays,
         nickname,
         todayVideo: todayVideo as TodayDailyVideo,
+        heroSubtitle,
       }
     : {
         moodScore: null,
@@ -51,6 +55,7 @@ export default async function DashboardPage() {
         totalDays: 0,
         nickname,
         todayVideo: todayVideo as TodayDailyVideo,
+        heroSubtitle,
       };
 
   return <DashboardClient initial={initial} />;

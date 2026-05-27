@@ -142,6 +142,42 @@ export const FALLBACK_PRIVACY_HTML = `
 <p>본 방침은 법령·서비스 변경에 따라 개정될 수 있으며, 개정 시 최소 7일 전 공지합니다.</p>
 `;
 
+// H3: 랜딩·페이지 hero·팝업 콘텐츠 fallback (DB 마이그 미적용 시에도 페이지 정상 동작)
+export const FALLBACK_LANDING_HERO_TITLE =
+  "우울·불안은 <gold>생각습관</gold>이에요.\n훈련으로만 바뀝니다 🌱";
+export const FALLBACK_LANDING_HERO_SUBTITLE =
+  "반복되는 '가짜생각'을 하루 20분, 쉽고 짧게.\n100일이면 분명히 달라져요.";
+
+export const FALLBACK_LANDING_MENU_ITEMS =
+  '[{"emoji":"💭","title":"가짜생각 분석기","description":"생각 한 줄만 적으면 인지왜곡, 대안사고까지 전부 찾아드려요.","href":"/chat"},{"emoji":"🗑️","title":"생각쓰레기통","description":"여기에 생각을 버리고, 뭉친 마음의 실타래를 푸세요!","href":"/trash"},{"emoji":"🌙","title":"명상하기","description":"초점 이동, 짧고 가볍게 매일.","href":"/meditation"},{"emoji":"🎯","title":"행동연습장","description":"불안 줄이기 연습, 우울 벗어나기 연습. 작은 용기를 쌓으세요.","href":"/exercise"},{"emoji":"🤝","title":"코치 채팅","description":"가짜 생각 코치와 100일을 시작하세요.","href":"/coach"},{"emoji":"🌱","title":"나의 성장방","description":"오늘의 기록이 쌓여 100일의 변화로. 한눈에 확인하세요.","href":"/progress"}]';
+
+export const FALLBACK_LANDING_STATS =
+  '[{"value":"10+","label":"함께한 사람들"},{"value":"500+","label":"분석된 생각"},{"value":"100일","label":"훈련 프로그램"}]';
+
+export const FALLBACK_LANDING_FINAL_CTA =
+  '{"title":"오늘 시작해보세요 🌱","subtitle":"하루 20분, 100일이면 분명히 달라져요.\\n완벽보다 시작이 중요해요."}';
+
+export const FALLBACK_POPUP_TRASH_INTRO =
+  '{"title":"왜 생각을 나눌까요?","body":"생각쓰레기통의 목적은 생각을 없애는 것이 아니라 생각과 나를 분리하는 거예요.\\n\\n떠오른 자동사고를 글로 적으면, 그 생각은 더 이상 \'나\'가 아니라 밖에 놓인 한 줄이 됩니다.\\n\\nAI 코치가 상황·생각·감정·몸·행동을 차례로 물어줄게요.","cta":"시작하기"}';
+
+export const FALLBACK_POPUP_CHAT_INTRO =
+  '{"title":"가짜생각 분석기 사용법","body":"① 생각쓰레기통에서 찾은 생각을 쓰거나, 떠오른 자동사고와 감정점수(0~100)를 적으세요.\\n② 분석기가 인지왜곡을 찾아 질문하면 따라가 주세요.\\n③ 객관적으로 거리를 두고, 탐정이 된 듯 답해봅니다.\\n④ 합리적 사고를 함께 찾아요!\\n⑤ 합리적 사고를 외우고 상황에 적용해요. 꼭이요!","cta":"시작하기"}';
+
+export const FALLBACK_POPUP_MEDITATION_FOCUS =
+  '{"title":"잠시 쉬어가요 🌙","body":"① 원하는 것을 하나 선택해 보세요. 소리, 호흡, 손에 닿는 물의 감각... 하나면 충분합니다.\\n② 선택한 곳에 잠시 초점을 두어봅니다. 잘하려고 애쓰지 않아도 괜찮습니다.\\n③ 중간에 초점이 흩어져도 괜찮습니다. 알아차렸다면, 다시 원하는 곳으로 돌아오면 됩니다.\\n\\n최소 3분 이상 해봐요!","cta":"오늘 시작하기"}';
+
+export const FALLBACK_POPUP_EXERCISE_STEP1 =
+  '{"title":"용기 한 걸음 🎯","body":"어떤 연습을 할까요?\\n\\n불안 줄이기 — 피해왔던 상황을 단계적으로 도전\\n우울 벗어나기 — 작은 행동이 기분을 깨워요","cta":"시작하기"}';
+
+export const FALLBACK_POPUP_EXERCISE_STEP2 =
+  '{"title":"2단계 — 목록 만들기","body":"두렵거나 피해왔던 상황 10개를 적고, 피한 순위를 매겨주세요. 자동/합리적 사고는 나중에 채워도 돼요.\\n\\n작성 중 자동 저장됩니다.","cta":"네, 적어볼게요"}';
+
+export const FALLBACK_POPUP_EXERCISE_STEP3 =
+  '{"title":"3단계 — 오늘의 도전 선택","body":"표에서 라디오를 체크하면 여기 표시됩니다. 너무 어려운 단계부터 시작하지 말고, 피한 순위가 낮은 것부터.","cta":"고를게요"}';
+
+export const FALLBACK_POPUP_EXERCISE_STEP4_PRAISE =
+  '{"title":"용기 레벨 1 획득 🏆","body":"오늘 한 걸음을 내디뎠어요.\\n\\n결과가 아쉬워도, 시도한 사실 자체가 성장이에요. 이 기록은 평생 남아요.","cta":"성장방에서 확인하기"}';
+
 const FALLBACK_SETTINGS: Record<string, string> = {
   service_name: "가짜생각",
   company_name: "마인드시어터",
@@ -150,7 +186,84 @@ const FALLBACK_SETTINGS: Record<string, string> = {
   footer_address: "",
   terms_html: FALLBACK_TERMS_HTML,
   privacy_html: FALLBACK_PRIVACY_HTML,
+
+  // H3 — 랜딩·페이지 hero
+  landing_hero_title: FALLBACK_LANDING_HERO_TITLE,
+  landing_hero_subtitle: FALLBACK_LANDING_HERO_SUBTITLE,
+  landing_menu_items: FALLBACK_LANDING_MENU_ITEMS,
+  landing_stats: FALLBACK_LANDING_STATS,
+  landing_final_cta: FALLBACK_LANDING_FINAL_CTA,
+  dashboard_hero_subtitle:
+    "작은 한 걸음이 큰 변화로 이어져요. 오늘도 1%만 해도 충분해요.",
+  trash_hero_subtitle:
+    "불안하거나 화가 났던 한 사건을 전부 쏟아놓으세요. 생각쓰레기통이 알아서 상황·생각·감정·신체반응·행동을 나눠줄게요.",
+  progress_hero_subtitle:
+    "기록은 거짓말하지 않아요. 오늘까지 함께한 흔적을 확인해보세요.",
+  chat_hero_subtitle:
+    "지금 떠오른 그 생각, 정말 사실일까요? 11가지 인지왜곡 패턴을 함께 찾고 합리적인 대안사고를 만들어 드려요.",
+  exercise_hero_subtitle:
+    "작은 행동 하나가 가장 강력한 무기예요. 계획 → 선택 → 도전 → 기록으로 한 걸음씩.",
+  meditation_hero_subtitle:
+    "하루 3분, 한 곳에 초점을 두면 마음이 차분해져요.",
+
+  // H3 — 팝업
+  popup_trash_intro: FALLBACK_POPUP_TRASH_INTRO,
+  popup_chat_intro: FALLBACK_POPUP_CHAT_INTRO,
+  popup_meditation_focus: FALLBACK_POPUP_MEDITATION_FOCUS,
+  popup_exercise_step1: FALLBACK_POPUP_EXERCISE_STEP1,
+  popup_exercise_step2: FALLBACK_POPUP_EXERCISE_STEP2,
+  popup_exercise_step3: FALLBACK_POPUP_EXERCISE_STEP3,
+  popup_exercise_step4_praise: FALLBACK_POPUP_EXERCISE_STEP4_PRAISE,
 };
+
+/** H3: 팝업/메뉴 JSON 파싱 결과 타입 */
+export interface PopupContent {
+  title: string;
+  body: string;
+  cta?: string;
+}
+
+export interface LandingMenuItem {
+  emoji: string;
+  title: string;
+  description: string;
+  href: string;
+}
+
+export interface LandingStatItem {
+  value: string;
+  label: string;
+}
+
+export interface LandingFinalCta {
+  title: string;
+  subtitle: string;
+}
+
+/**
+ * site_settings 값(string)을 JSON 객체로 파싱. 실패 시 fallback string을 파싱.
+ * 양쪽 다 실패하면 null (운영자 입력 검증을 한 번 더 통과한 상태라 거의 발생 X).
+ */
+export function parseSettingJson<T>(
+  value: string | undefined,
+  fallbackJsonString: string,
+): T | null {
+  const tryParse = (s: string): T | null => {
+    try {
+      return JSON.parse(s) as T;
+    } catch {
+      return null;
+    }
+  };
+  if (value) {
+    const parsed = tryParse(value);
+    if (parsed) return parsed;
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[site-settings] JSON 파싱 실패, fallback 사용:", value.slice(0, 80));
+    }
+  }
+  return tryParse(fallbackJsonString);
+}
 
 export async function getSiteSettings(): Promise<Record<string, string>> {
   try {

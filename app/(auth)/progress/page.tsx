@@ -9,6 +9,7 @@ import { GratitudeList } from "./gratitude-list";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 import { PageFade } from "@/components/motion/page-fade";
+import { getSiteSettings } from "@/lib/site-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -128,7 +129,14 @@ async function loadNickname(): Promise<string | null> {
 }
 
 export default async function ProgressPage() {
-  const [stats, nickname] = await Promise.all([loadStats(), loadNickname()]);
+  const [stats, nickname, settings] = await Promise.all([
+    loadStats(),
+    loadNickname(),
+    getSiteSettings(),
+  ]);
+  const heroSubtitle =
+    settings.progress_hero_subtitle ??
+    "기록은 거짓말하지 않아요. 오늘까지 함께한 흔적을 확인해보세요.";
 
   const kpis = [
     { label: "총 훈련일수", value: stats?.totalDays ?? 0, suffix: "일", accent: "navy" as const },
@@ -172,10 +180,12 @@ export default async function ProgressPage() {
               <h1 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] text-gs-navy leading-[1.15]">
                 {greetName}성장하고 있어요 ✨
               </h1>
-              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
-                기록은 거짓말하지 않아요.{" "}
-                <br className="hidden md:block" />
-                오늘까지 함께한 {dayLabel}의 흔적을 확인해보세요.
+              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed whitespace-pre-line">
+                {heroSubtitle}
+                <span className="text-gs-navy-bright font-bold">
+                  {" "}
+                  ({dayLabel})
+                </span>
               </p>
             </FadeIn>
 

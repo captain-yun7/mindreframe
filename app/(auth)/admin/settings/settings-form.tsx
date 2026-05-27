@@ -10,7 +10,41 @@ interface Row {
   description: string | null;
 }
 
-const LONG_VALUE_KEYS = new Set(["terms_html", "privacy_html"]);
+const LONG_VALUE_KEYS = new Set([
+  "terms_html",
+  "privacy_html",
+  "landing_hero_title",
+  "landing_hero_subtitle",
+  "landing_menu_items",
+  "landing_stats",
+  "landing_final_cta",
+  "dashboard_hero_subtitle",
+  "trash_hero_subtitle",
+  "progress_hero_subtitle",
+  "chat_hero_subtitle",
+  "exercise_hero_subtitle",
+  "meditation_hero_subtitle",
+  "popup_trash_intro",
+  "popup_chat_intro",
+  "popup_meditation_focus",
+  "popup_exercise_step1",
+  "popup_exercise_step2",
+  "popup_exercise_step3",
+  "popup_exercise_step4_praise",
+]);
+const JSON_KEYS = new Set([
+  "landing_menu_items",
+  "landing_stats",
+  "landing_final_cta",
+  "popup_trash_intro",
+  "popup_chat_intro",
+  "popup_meditation_focus",
+  "popup_exercise_step1",
+  "popup_exercise_step2",
+  "popup_exercise_step3",
+  "popup_exercise_step4_praise",
+]);
+const HTML_KEYS = new Set(["terms_html", "privacy_html"]);
 const READONLY_KEYS = new Set(["footer_address"]);
 
 export function SettingsForm({ rows: initial }: { rows: Row[] }) {
@@ -35,6 +69,15 @@ export function SettingsForm({ rows: initial }: { rows: Row[] }) {
   };
 
   const save = (row: Row) => {
+    // JSON 키는 client에서도 사전 검증 (서버에서도 한번 더 검증)
+    if (JSON_KEYS.has(row.key) && row.value.trim()) {
+      try {
+        JSON.parse(row.value);
+      } catch {
+        toast.show(`${row.key}: JSON 형식 오류`, "error");
+        return;
+      }
+    }
     startTransition(async () => {
       const r = await adminUpdateSiteSetting(row.key, row.value);
       if (r.ok) {
@@ -100,16 +143,44 @@ export function SettingsForm({ rows: initial }: { rows: Row[] }) {
 
             {isLong ? (
               showPreview ? (
-                <div
-                  className="prose prose-sm max-w-none p-3 bg-gs-surface-muted rounded border border-gs-line-soft min-h-[100px] overflow-x-auto"
-                  dangerouslySetInnerHTML={{ __html: row.value }}
-                />
+                HTML_KEYS.has(row.key) ? (
+                  <div
+                    className="prose prose-sm max-w-none p-3 bg-gs-surface-muted rounded border border-gs-line-soft min-h-[100px] overflow-x-auto"
+                    dangerouslySetInnerHTML={{ __html: row.value }}
+                  />
+                ) : JSON_KEYS.has(row.key) ? (
+                  (() => {
+                    let parsed: unknown;
+                    let err: string | null = null;
+                    try {
+                      parsed = JSON.parse(row.value);
+                    } catch (e) {
+                      err = e instanceof Error ? e.message : "JSON 파싱 실패";
+                    }
+                    if (err) {
+                      return (
+                        <pre className="p-3 bg-gs-warn-bg border border-gs-warn-border rounded text-xs text-gs-warn whitespace-pre-wrap">
+                          JSON 형식 오류: {err}
+                        </pre>
+                      );
+                    }
+                    return (
+                      <pre className="p-3 bg-gs-surface-muted rounded border border-gs-line-soft text-xs overflow-x-auto whitespace-pre-wrap break-words">
+                        {JSON.stringify(parsed, null, 2)}
+                      </pre>
+                    );
+                  })()
+                ) : (
+                  <div className="p-3 bg-gs-surface-muted rounded border border-gs-line-soft text-sm whitespace-pre-wrap">
+                    {row.value}
+                  </div>
+                )
               ) : (
                 <textarea
                   value={row.value}
                   onChange={(e) => updateValue(row.key, e.target.value)}
                   disabled={pending || isReadonly}
-                  rows={16}
+                  rows={HTML_KEYS.has(row.key) ? 16 : JSON_KEYS.has(row.key) ? 8 : 4}
                   className="w-full px-3 py-2 rounded border border-gs-line-soft text-sm font-mono"
                 />
               )

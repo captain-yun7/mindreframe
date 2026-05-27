@@ -4,6 +4,7 @@ import { MeditationOnboardingModal } from "@/components/meditation-onboarding-mo
 import { MeditationPlayer, type Track } from "./meditation-player";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
+import { getSiteSettings } from "@/lib/site-settings";
 
 // 마이그레이션 미적용 시 fallback (기존 코드 박힘 12개)
 const FALLBACK_TRACKS: Track[] = [
@@ -180,6 +181,10 @@ export default async function MeditationPage() {
     }
   }
 
+  const settings = await getSiteSettings();
+  const heroSubtitle = settings.meditation_hero_subtitle;
+  const popupMeditationFocus = settings.popup_meditation_focus;
+
   return (
     <PageFade>
       {/* ── HERO ── */}
@@ -193,10 +198,8 @@ export default async function MeditationPage() {
               <h1 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] text-gs-navy leading-[1.15]">
                 잠시 쉬어가요 🌙
               </h1>
-              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
-                하루 3분, <b className="text-gs-text-strong">한 곳에 초점</b>을 두면
-                <br className="hidden md:block" />
-                마음이 차분해져요.
+              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed whitespace-pre-line">
+                {heroSubtitle ?? "하루 3분, 한 곳에 초점을 두면 마음이 차분해져요."}
               </p>
             </FadeIn>
 
@@ -217,7 +220,10 @@ export default async function MeditationPage() {
         <FadeIn>
           <MeditationPlayer tracks={tracks} />
         </FadeIn>
-        <MeditationOnboardingModal daysSinceJoin={daysSinceJoin} />
+        <MeditationOnboardingModal
+          daysSinceJoin={daysSinceJoin}
+          popupJson={popupMeditationFocus}
+        />
       </main>
     </PageFade>
   );

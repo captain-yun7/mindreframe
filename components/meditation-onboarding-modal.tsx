@@ -23,10 +23,32 @@ const TOTAL_DAYS = 14;
 
 export interface MeditationOnboardingModalProps {
   daysSinceJoin: number | null;
+  /** H3·H4: site_settings.popup_meditation_focus JSON 원본 — 본문 카피 교체 */
+  popupJson?: string;
+}
+
+interface PopupContent {
+  title: string;
+  body: string;
+  cta?: string;
+}
+
+function parsePopup(raw: string | undefined): PopupContent | null {
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw);
+    if (obj && typeof obj === "object" && typeof obj.title === "string") {
+      return obj as PopupContent;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 export function MeditationOnboardingModal({
   daysSinceJoin,
+  popupJson,
 }: MeditationOnboardingModalProps) {
   const [open, setOpen] = useState(false);
 
@@ -91,6 +113,9 @@ export function MeditationOnboardingModal({
   const currentDay = Math.min(Math.max(daysSinceJoin, 1), TOTAL_DAYS);
   const progressPct = Math.round((currentDay / TOTAL_DAYS) * 100);
 
+  // H4: site_settings에서 초점 이동 훈련 가이드 콘텐츠 (있으면 본문 교체)
+  const popup = parsePopup(popupJson);
+
   return (
     <AnimatePresence>
       {open ? (
@@ -136,11 +161,17 @@ export function MeditationOnboardingModal({
                 id="meditation-modal-title"
                 className="text-2xl font-extrabold tracking-[-0.03em] text-gs-text-strong"
               >
-                잠시 쉬어가요 🌙
+                {popup?.title ?? "잠시 쉬어가요 🌙"}
               </h2>
-              <p className="mt-2 text-sm text-gs-muted-soft leading-relaxed">
-                오늘은 {currentDay}일차예요. 5분만 함께해요
-              </p>
+              {popup?.body ? (
+                <p className="mt-3 text-[13.5px] text-gs-muted-soft leading-relaxed whitespace-pre-line text-left">
+                  {popup.body}
+                </p>
+              ) : (
+                <p className="mt-2 text-sm text-gs-muted-soft leading-relaxed">
+                  오늘은 {currentDay}일차예요. 5분만 함께해요
+                </p>
+              )}
 
               {/* 진행률 바 */}
               <div className="mt-6">
@@ -171,7 +202,7 @@ export function MeditationOnboardingModal({
                   fullWidth
                   onClick={handleClose}
                 >
-                  오늘 시작하기
+                  {popup?.cta ?? "오늘 시작하기"}
                 </BigCTA>
                 <button
                   type="button"

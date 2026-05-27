@@ -84,6 +84,7 @@ export interface DashboardInitial {
   totalDays: number;
   nickname?: string | null;
   todayVideo?: TodayDailyVideo;
+  heroSubtitle?: string;
 }
 
 export function DashboardClient({ initial }: { initial: DashboardInitial }) {
@@ -159,10 +160,9 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
               <h1 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] text-gs-navy leading-[1.15]">
                 {greetName}오늘은 {dayLabel}예요 🌱
               </h1>
-              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
-                작은 한 걸음이 큰 변화로 이어져요.{" "}
-                <br className="hidden md:block" />
-                오늘도 1%만 해도 충분해요.
+              <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed whitespace-pre-line">
+                {initial.heroSubtitle ??
+                  "작은 한 걸음이 큰 변화로 이어져요. 오늘도 1%만 해도 충분해요."}
               </p>
 
               {/* 진행률 바 */}

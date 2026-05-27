@@ -8,6 +8,16 @@ import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 import { Section } from "@/components/toss/section";
 import { FeatureCard } from "@/components/toss/feature-card";
 import { BigCTA } from "@/components/toss/big-cta";
+import {
+  getSiteSettings,
+  parseSettingJson,
+  FALLBACK_LANDING_MENU_ITEMS,
+  FALLBACK_LANDING_STATS,
+  FALLBACK_LANDING_FINAL_CTA,
+  type LandingMenuItem,
+  type LandingStatItem,
+  type LandingFinalCta,
+} from "@/lib/site-settings";
 
 const reviews = [
   {
@@ -39,64 +49,95 @@ const reviews = [
   },
 ];
 
-const features = [
-  {
-    emoji: "💭",
-    title: "가짜생각 분석기",
-    description: "생각 한 줄만 적으면 인지왜곡, 대안사고까지 전부 찾아드려요.",
-    href: "/chat",
-  },
-  {
-    emoji: "🗑️",
-    title: "생각쓰레기통",
-    description: "여기에 생각을 버리고, 뭉친 마음의 실타래를 푸세요!",
-    href: "/trash",
-  },
-  {
-    emoji: "🌙",
-    title: "명상하기",
-    description: "초점 이동, 짧고 가볍게 매일.",
-    href: "/meditation",
-  },
-  {
-    emoji: "🎯",
-    title: "행동연습장",
-    description: "불안 줄이기 연습, 우울 벗어나기 연습. 작은 용기를 쌓으세요.",
-    href: "/exercise",
-  },
-  {
-    emoji: "🤝",
-    title: "코치 채팅",
-    description: "가짜 생각 코치와 100일을 시작하세요.",
-    href: "/coach",
-  },
-  {
-    emoji: "🌱",
-    title: "나의 성장방",
-    description: "오늘의 기록이 쌓여 100일의 변화로. 한눈에 확인하세요.",
-    href: "/progress",
-  },
-];
+/**
+ * <gold> 태그만 안전하게 <em class="text-gs-gold">로 치환.
+ * 다른 HTML 태그는 escape (XSS 방지).
+ */
+function renderHeroTitle(raw: string): React.ReactNode {
+  const escapeHtml = (s: string) =>
+    s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
 
-export default function LandingPage() {
+  const lines = raw.split("\n");
+  return lines.map((line, lineIdx) => {
+    const parts: React.ReactNode[] = [];
+    let cursor = 0;
+    const re = /<gold>(.*?)<\/gold>/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(line)) !== null) {
+      if (m.index > cursor) {
+        parts.push(
+          <span
+            key={`t-${lineIdx}-${cursor}`}
+            dangerouslySetInnerHTML={{ __html: escapeHtml(line.slice(cursor, m.index)) }}
+          />,
+        );
+      }
+      parts.push(
+        <em key={`g-${lineIdx}-${m.index}`} className="text-gs-gold not-italic">
+          {m[1]}
+        </em>,
+      );
+      cursor = m.index + m[0].length;
+    }
+    if (cursor < line.length) {
+      parts.push(
+        <span
+          key={`t-${lineIdx}-end`}
+          dangerouslySetInnerHTML={{ __html: escapeHtml(line.slice(cursor)) }}
+        />,
+      );
+    }
+    return (
+      <span key={`line-${lineIdx}`}>
+        {parts}
+        {lineIdx < lines.length - 1 && <br />}
+      </span>
+    );
+  });
+}
+
+export default async function LandingPage() {
+  const settings = await getSiteSettings();
+
+  const heroTitleRaw =
+    settings.landing_hero_title ?? "우울·불안은 <gold>생각습관</gold>이에요.\n훈련으로만 바뀝니다 🌱";
+  const heroSubtitleRaw =
+    settings.landing_hero_subtitle ??
+    "반복되는 '가짜생각'을 하루 20분, 쉽고 짧게.\n100일이면 분명히 달라져요.";
+
+  const features =
+    parseSettingJson<LandingMenuItem[]>(
+      settings.landing_menu_items,
+      FALLBACK_LANDING_MENU_ITEMS,
+    ) ?? [];
+
+  const stats =
+    parseSettingJson<LandingStatItem[]>(
+      settings.landing_stats,
+      FALLBACK_LANDING_STATS,
+    ) ?? [];
+
+  const finalCta = parseSettingJson<LandingFinalCta>(
+    settings.landing_final_cta,
+    FALLBACK_LANDING_FINAL_CTA,
+  ) ?? { title: "오늘 시작해보세요 🌱", subtitle: "" };
+
   return (
     <PageFade>
-      {/* ── HERO (강한 다크 그라데이션 유지 + 일러스트 split 추가) ── */}
+      {/* ── HERO ── */}
       <section className="w-full px-4 py-24 md:py-32 text-white bg-[radial-gradient(circle_at_20%_0%,rgba(63,99,255,0.4)_0,transparent_50%),linear-gradient(135deg,var(--color-gs-navy)_0%,var(--color-gs-navy-mid)_40%,var(--color-gs-navy-bright)_100%)]">
         <div className="mx-auto w-full max-w-[1200px]">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <FadeIn delay={0} y={20}>
               <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.15] font-extrabold tracking-[-0.03em]">
-                우울·불안은{" "}
-                <em className="text-gs-gold not-italic">생각습관</em>
-                이에요.
-                <br />
-                훈련으로만 바뀝니다 🌱
+                {renderHeroTitle(heroTitleRaw)}
               </h1>
-              <p className="mt-6 text-base md:text-lg text-white/85 leading-relaxed">
-                반복되는 &lsquo;가짜생각&rsquo;을 하루 20분, 쉽고 짧게.
-                <br />
-                100일이면 분명히 달라져요.
+              <p className="mt-6 text-base md:text-lg text-white/85 leading-relaxed whitespace-pre-line">
+                {heroSubtitleRaw}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <BigCTA href="/signup" variant="gold" size="xl">
@@ -152,7 +193,7 @@ export default function LandingPage() {
         </StaggerList>
       </Section>
 
-      {/* ── 토닥챗 소개 (체험) ── */}
+      {/* ── 분석기 미리보기 ── */}
       <Section tone="navy-50">
         <FadeIn>
           <div className="text-center mb-8 md:mb-10">
@@ -184,7 +225,7 @@ export default function LandingPage() {
         </StaggerList>
       </Section>
 
-      {/* ── Stats (다크 배경 + gs-gold 강조) ── */}
+      {/* ── Stats ── */}
       <Section tone="dark">
         <FadeIn>
           <div className="text-center mb-10 md:mb-14">
@@ -197,36 +238,18 @@ export default function LandingPage() {
           </div>
         </FadeIn>
         <StaggerList stagger={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-          <StaggerItem>
-            <div className="text-center">
-              <div className="text-5xl md:text-6xl font-extrabold tracking-[-0.04em] text-gs-gold">
-                10+
+          {stats.map((s, i) => (
+            <StaggerItem key={`${s.label}-${i}`}>
+              <div className="text-center">
+                <div className="text-5xl md:text-6xl font-extrabold tracking-[-0.04em] text-gs-gold">
+                  {s.value}
+                </div>
+                <div className="mt-3 text-sm md:text-base font-medium text-white/70">
+                  {s.label}
+                </div>
               </div>
-              <div className="mt-3 text-sm md:text-base font-medium text-white/70">
-                함께한 사람들
-              </div>
-            </div>
-          </StaggerItem>
-          <StaggerItem>
-            <div className="text-center">
-              <div className="text-5xl md:text-6xl font-extrabold tracking-[-0.04em] text-gs-gold">
-                500+
-              </div>
-              <div className="mt-3 text-sm md:text-base font-medium text-white/70">
-                분석된 생각
-              </div>
-            </div>
-          </StaggerItem>
-          <StaggerItem>
-            <div className="text-center">
-              <div className="text-5xl md:text-6xl font-extrabold tracking-[-0.04em] text-gs-gold">
-                100일
-              </div>
-              <div className="mt-3 text-sm md:text-base font-medium text-white/70">
-                훈련 프로그램
-              </div>
-            </div>
-          </StaggerItem>
+            </StaggerItem>
+          ))}
         </StaggerList>
       </Section>
 
@@ -254,17 +277,15 @@ export default function LandingPage() {
         </FadeIn>
       </Section>
 
-      {/* ── 최종 CTA (다크 hero 톤) ── */}
+      {/* ── 최종 CTA ── */}
       <section className="w-full px-4 py-20 md:py-28 text-white bg-[linear-gradient(135deg,var(--color-gs-navy)_0%,var(--color-gs-navy-mid)_100%)]">
         <div className="mx-auto w-full max-w-[880px] text-center">
           <FadeIn>
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] leading-[1.15]">
-              오늘 시작해보세요 🌱
+              {finalCta.title}
             </h2>
-            <p className="mt-5 md:mt-6 text-base md:text-lg text-white/80 leading-relaxed">
-              하루 20분, 100일이면 분명히 달라져요.
-              <br />
-              완벽보다 시작이 중요해요.
+            <p className="mt-5 md:mt-6 text-base md:text-lg text-white/80 leading-relaxed whitespace-pre-line">
+              {finalCta.subtitle}
             </p>
             <div className="mt-9 flex flex-wrap justify-center gap-3">
               <BigCTA href="/signup" variant="gold" size="xl">
