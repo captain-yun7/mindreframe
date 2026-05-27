@@ -178,7 +178,7 @@ test.describe("Sprint D — F71 사용자 CRUD + ADMIN_BYPASS + F87", () => {
       // 접근 권한 없음 페이지가 아니어야 함
       await expect(page.getByText("접근 권한 없음")).toHaveCount(0);
       await expect(
-        page.getByRole("heading", { name: "상담사 어드민", level: 1 }),
+        page.getByRole("heading", { name: "코치 어드민", level: 1 }),
       ).toBeVisible();
     } finally {
       await deleteTestUser(adminUser.id);

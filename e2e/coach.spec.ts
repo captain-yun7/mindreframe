@@ -61,7 +61,8 @@ test.describe("/coach F25 — 고객·상담사 채팅", () => {
     try {
       await loginAs(page, user);
       await page.goto("/admin/coach");
-      await expect(page.getByText(/상담사 권한이 필요/)).toBeVisible();
+      // H1 카피 치환: "상담사 권한" → "코치 또는 관리자 권한이 필요"
+      await expect(page.getByText(/코치 (또는 관리자 )?권한이 필요/)).toBeVisible();
     } finally {
       await deleteTestUser(user.id);
     }

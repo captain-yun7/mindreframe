@@ -78,6 +78,7 @@ export function CelebrationModal({
           transition={{ duration: 0.25 }}
           role="dialog"
           aria-modal="true"
+          data-testid="celebration-modal"
         >
           <button
             type="button"

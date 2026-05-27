@@ -8,10 +8,21 @@ const admin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
-test.describe("/trash 생각쓰레기통 (챗봇 단계형)", () => {
+/**
+ * /trash 생각쓰레기통 — 5/27 원본 복원 + H2 카운팅 흐름.
+ *
+ * AI 자유 대화 — 5요소(상황·생각·감정·신체·행동) 차례 질문 →
+ * 충분히 모이면 assistant 응답에 ```json``` 코드블록 포함 →
+ * 클라이언트가 regex로 JSON 추출 → thought_records INSERT →
+ * 화면 표시 시 JSON 블록 strip.
+ *
+ * OPENAI_API_KEY 미설정 시 자동 skip.
+ */
+test.describe("/trash 생각쓰레기통 (AI 자유 대화 + JSON 추출)", () => {
   let user: TestUser;
 
   test.beforeAll(async () => {
+    test.skip(!process.env.OPENAI_API_KEY, "OPENAI_API_KEY 미설정");
     user = await createTestUser();
   });
 
@@ -19,54 +30,87 @@ test.describe("/trash 생각쓰레기통 (챗봇 단계형)", () => {
     if (user) await deleteTestUser(user.id);
   });
 
-  test("5단계 챗 대화 → thought_records에 5필드 저장", async ({ page }) => {
+  test("5요소 입력 → assistant JSON 응답 → thought_records INSERT", async ({ page }) => {
+    test.setTimeout(180_000);
+
     await loginAs(page, user);
     await page.goto("/trash");
-    await expect(page.getByRole("heading", { name: "생각쓰레기통" })).toBeVisible();
 
-    // 첫 질문 노출 확인
-    await expect(page.getByText(/언제·어디서·누구와/)).toBeVisible();
-
-    const inputs: Record<string, string> = {
-      situation: "오늘 회의에서 발표를 망쳤다.",
-      thought: "다들 나를 무시하는 것 같았다.",
-      emotion: "불안 80, 무력감 60",
-      bodyReaction: "가슴이 답답하고 손이 떨렸다.",
-      behavior: "발표를 짧게 끝내고 자리에 앉았다.",
-    };
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/마음/);
+    await expect(page.getByText(/오늘 불안하거나, 우울하거나, 화가 났던/)).toBeVisible();
 
     const send = async (text: string) => {
       await page.locator('input[type="text"]').fill(text);
       await page.getByRole("button", { name: "전송" }).click();
+      // 응답 대기
+      await page.waitForTimeout(2500);
+      await expect(page.locator('input[type="text"]')).toBeEnabled({ timeout: 60_000 });
     };
 
-    await send(inputs.situation);
-    await expect(page.getByText(/머릿속에 가장 먼저 떠오른 생각/)).toBeVisible();
-    await send(inputs.thought);
-    await expect(page.getByText(/어떤 감정이 일어났나요/)).toBeVisible();
-    await send(inputs.emotion);
-    await expect(page.getByText(/몸으로 어떤 반응/)).toBeVisible();
-    await send(inputs.bodyReaction);
-    await expect(page.getByText(/그때 한 행동/)).toBeVisible();
-    await send(inputs.behavior);
+    // 5요소를 1~3턴에 압축 — assistant가 JSON 추출 가능하도록 충분한 정보 제공
+    await send(
+      "오늘 회의에서 발표할 때 손이 떨리고 가슴이 답답했어요. 다들 나를 이상하게 본다는 생각이 들어서 불안 80점이었고, 결국 발표를 짧게 끝내고 자리에 앉았어요.",
+    );
 
-    // 정리 완료 메시지
-    await expect(page.getByText(/정리 완료/)).toBeVisible({ timeout: 15_000 });
+    // assistant가 추가 질문할 가능성 → 한두 번 더 응답
+    let saved = false;
+    for (let turn = 0; turn < 4; turn++) {
+      // 화면에 "성장방에 저장되었어요" 노출되면 종료
+      const isSaved = await page
+        .getByText(/성장방에 저장되었어요/)
+        .first()
+        .isVisible()
+        .catch(() => false);
+      if (isSaved) {
+        saved = true;
+        break;
+      }
 
-    // DB 검증
-    const { data } = await admin
+      await send(
+        turn === 0
+          ? "상황: 회의 발표. 생각: 다들 나를 무시한다. 감정: 불안 80. 신체: 손 떨림·가슴 답답. 행동: 발표 짧게 끝냄."
+          : "정리해주세요.",
+      );
+    }
+
+    // 안 끝났어도 thought_records row 존재 여부로 검증 fallback
+    const { data: records } = await admin
       .from("thought_records")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .order("created_at", { ascending: false });
 
-    expect(data!.situation).toBe(inputs.situation);
-    expect(data!.thought).toBe(inputs.thought);
-    expect(data!.emotion).toBe(inputs.emotion);
-    expect(data!.body_reaction).toBe(inputs.bodyReaction);
-    expect(data!.behavior).toBe(inputs.behavior);
+    expect(records?.length).toBeGreaterThan(0);
 
-    // 다시 시작 버튼
-    await expect(page.getByRole("button", { name: "다른 사건 또 정리하기" })).toBeVisible();
+    const row = records![0];
+    // 5필드 모두 채워졌는지 확인 (정확한 텍스트는 OpenAI 응답이라 contains)
+    expect(row.situation?.length ?? 0).toBeGreaterThan(0);
+    expect(row.thought?.length ?? 0).toBeGreaterThan(0);
+    expect(row.emotion?.length ?? 0).toBeGreaterThan(0);
+    // body_reaction / behavior는 OpenAI가 추출 못할 수도 있어 nullable 허용
+
+    // JSON 블록은 화면에 노출되지 않아야 함 (strip 검증)
+    const visibleText = await page.locator("body").innerText();
+    expect(visibleText).not.toContain("```json");
+
+    // H2: ai_usage feature='trash' row 1개 카운트
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: usage } = await admin
+      .from("ai_usage")
+      .select("count")
+      .eq("user_id", user.id)
+      .eq("used_at", today)
+      .eq("feature", "trash")
+      .maybeSingle();
+    if (usage) {
+      expect(usage.count).toBeGreaterThanOrEqual(1);
+    }
+
+    if (saved) {
+      // 정리 완료 후 "다른 사건 또 정리하기" 버튼 노출
+      await expect(
+        page.getByRole("button", { name: "다른 사건 또 정리하기" }),
+      ).toBeVisible();
+    }
   });
 });

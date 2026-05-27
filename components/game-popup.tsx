@@ -120,6 +120,7 @@ export function GamePopup({
           transition={{ duration: 0.2 }}
           role="dialog"
           aria-modal="true"
+          data-testid={`game-popup-${storageKey}`}
         >
           <button
             type="button"
