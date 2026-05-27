@@ -38,7 +38,17 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const playStartRef = useRef<number | null>(null);
+  // H4·F110: 트랙 목록 ref → 카테고리 선택 시 자동 스크롤 대상
+  const trackListRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
+
+  function pickCategory(key: Category) {
+    setActiveTab(key);
+    // 다음 paint 이후 스크롤 (Card mount 후)
+    window.setTimeout(() => {
+      trackListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
 
   async function recordCompletion(track: Track) {
     const elapsed = playStartRef.current
@@ -106,13 +116,13 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
         </div>
       </div>
 
-      {/* 카테고리 큰 카드 */}
-      <div className="grid grid-cols-3 gap-4 mb-4 max-sm:grid-cols-1">
+      {/* 카테고리 큰 카드 (F110: 작은 탭 제거, 큰 카드 클릭 시 트랙 목록으로 자동 스크롤) */}
+      <div className="grid grid-cols-3 gap-4 mb-6 max-sm:grid-cols-1">
         {categories.map((cat) => (
           <button
             key={cat.key}
             type="button"
-            onClick={() => setActiveTab(cat.key)}
+            onClick={() => pickCategory(cat.key)}
             className={`p-6 rounded-toss-card text-center cursor-pointer border-2 transition-all ${
               activeTab === cat.key
                 ? "border-gs-gold-border bg-white shadow-toss-card-hover -translate-y-0.5"
@@ -125,26 +135,8 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
         ))}
       </div>
 
-      {/* 탭 */}
-      <div className="flex gap-2 mb-4">
-        {categories.map((cat) => (
-          <button
-            key={cat.key}
-            type="button"
-            onClick={() => setActiveTab(cat.key)}
-            className={`px-4 py-2 rounded-full text-[13px] font-bold border ${
-              activeTab === cat.key
-                ? "bg-gs-navy-bright text-white border-gs-navy-bright"
-                : "bg-white text-gs-text-soft border-gs-line-soft hover:bg-gs-surface-mid"
-            }`}
-          >
-            {cat.label}
-          </button>
-        ))}
-      </div>
-
       {/* 트랙 목록 */}
-      <Card className="shadow-toss-card">
+      <Card ref={trackListRef} className="shadow-toss-card scroll-mt-24">
         <h2 className="text-base font-bold">{catInfo.title}</h2>
         <p className="text-[13px] text-gs-muted mb-4">{catInfo.desc}</p>
 

@@ -4,6 +4,8 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   /** 호버 시 그림자 강조 (Link 카드 등 클릭 가능한 카드) */
   interactive?: boolean;
+  /** H4: 스크롤 target 등 ref 노출 */
+  ref?: React.Ref<HTMLDivElement>;
 }
 
 /**
@@ -12,9 +14,10 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
  * - radius: 18px (카드 표준), Hero/배지/배너는 별도 처리
  * - shadow: gs-card (단일), interactive=true일 때 hover에서 gs-card-hover
  */
-export function Card({ className, children, interactive, ...props }: CardProps) {
+export function Card({ className, children, interactive, ref, ...props }: CardProps) {
   return (
     <div
+      ref={ref}
       className={cn(
         "bg-white rounded-[18px] p-4 border border-gs-line-soft shadow-gs-card",
         interactive && "transition-shadow hover:shadow-gs-card-hover",
