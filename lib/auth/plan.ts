@@ -17,6 +17,33 @@ const PLAN_RANK: Record<Plan, number> = {
   premium: 3,
 };
 
+/**
+ * 플랜별 기능 한도 (일일).
+ * - analyzer: 가짜생각 분석기 finalize 완료 횟수 (= chat_analyses alternative_thought 업데이트 시점)
+ * - trash: 생각쓰레기통 JSON 추출 + thought_records INSERT 완료 횟수
+ *
+ * H2 정책 (사용자 결정 해석A):
+ *   free     0 / 0
+ *   light    5 / 5
+ *   pro      7 / 7
+ *   premium  무제한
+ */
+export type UsageFeature = "analyzer" | "trash";
+
+export const PLAN_FEATURE_LIMITS: Record<Plan, Record<UsageFeature, number>> = {
+  free: { analyzer: 0, trash: 0 },
+  light: { analyzer: 5, trash: 5 },
+  pro: { analyzer: 7, trash: 7 },
+  premium: {
+    analyzer: Number.MAX_SAFE_INTEGER,
+    trash: Number.MAX_SAFE_INTEGER,
+  },
+};
+
+export function getPlanFeatureLimit(plan: Plan, feature: UsageFeature): number {
+  return PLAN_FEATURE_LIMITS[plan][feature];
+}
+
 /** DB에 저장된 raw 값을 표준 Plan 키로 정규화. */
 export function normalizePlan(raw: string | null | undefined): Plan {
   switch (raw) {

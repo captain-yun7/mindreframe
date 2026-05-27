@@ -7,7 +7,7 @@ import {
   detectCrisis,
   CRISIS_GUIDE_MESSAGE,
 } from "@/lib/cbt/crisis-detection";
-import { checkAndIncrementUsage } from "@/lib/ai/usage";
+import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
 import { TRASH_SYSTEM_PROMPT } from "@/lib/cbt/prompts";
 
 type ThoughtInput = {
@@ -133,7 +133,8 @@ export async function sendTrashMessage({
     };
   }
 
-  const usage = await checkAndIncrementUsage(supabase, user.id);
+  // H2: 사전 체크만 (카운팅은 JSON 추출 성공 시점)
+  const usage = await checkUsageOnly(supabase, user.id, "trash");
   if (!usage.ok) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
@@ -219,6 +220,8 @@ export async function sendTrashMessage({
       saved = true;
       savedId = row.id;
       await autoCheckRoutine(supabase, user.id, "trash");
+      // H2: 쓰레기통 카운팅은 JSON 추출 + INSERT 성공 시 1회만
+      await incrementUsage(supabase, user.id, "trash");
       revalidatePath("/progress");
       revalidatePath("/dashboard");
       revalidatePath("/trash");

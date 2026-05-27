@@ -7,7 +7,7 @@ import {
   detectCrisis,
   CRISIS_GUIDE_MESSAGE,
 } from "@/lib/cbt/crisis-detection";
-import { checkAndIncrementUsage } from "@/lib/ai/usage";
+import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
 import {
   ANALYSIS_PROMPT,
   FINALIZE_PROMPT_KO,
@@ -97,8 +97,8 @@ export async function analyzeUserInput({ content }: { content: string }) {
     };
   }
 
-  // 사용량 체크
-  const usage = await checkAndIncrementUsage(supabase, user.id);
+  // 사용량 사전 체크 — finalize까지 못 가면 카운트 안 함 (H2)
+  const usage = await checkUsageOnly(supabase, user.id, "analyzer");
   if (!usage.ok) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
@@ -199,7 +199,8 @@ export async function startTherapy({
   } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
 
-  const usage = await checkAndIncrementUsage(supabase, user.id);
+  // H2: startTherapy는 한도만 체크. 카운팅은 finalize에서만.
+  const usage = await checkUsageOnly(supabase, user.id, "analyzer");
   if (!usage.ok) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
@@ -267,7 +268,8 @@ export async function continueTherapy({
     };
   }
 
-  const usage = await checkAndIncrementUsage(supabase, user.id);
+  // H2: continueTherapy는 한도만 체크. 카운팅은 finalize에서만.
+  const usage = await checkUsageOnly(supabase, user.id, "analyzer");
   if (!usage.ok) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
@@ -472,6 +474,9 @@ export async function finalizeAndSave({
     .eq("id", sessionId);
 
   await autoCheckRoutine(supabase, user.id, "analysis");
+
+  // H2: 분석기 카운팅은 finalize 1회만 (analyzeUserInput/startTherapy/continueTherapy는 사전 체크만)
+  await incrementUsage(supabase, user.id, "analyzer");
 
   revalidatePath("/progress");
   revalidatePath("/dashboard");
