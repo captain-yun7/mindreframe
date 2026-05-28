@@ -39,6 +39,9 @@ const KEY_DRAFT_D = "ws_draft_depress";
 const KEY_PLAN_A = "ws_plan_anxiety";
 const KEY_PLAN_D = "ws_plan_depress";
 
+// F137: 3단계 자동 unlock 임계값 (5행+ 채우면 열림)
+const EXERCISE_UNLOCK_MIN_ROWS = 5;
+
 function safeRead<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
   try {
@@ -241,16 +244,18 @@ export function ExerciseClient({
     };
   }, [depRows]);
 
-  // F113: 2단계 표에 1개 행이라도 입력되면 자동으로 planSaved 전환
+  // F137: 5행 이상 완성되면 자동으로 planSaved 전환 (3단계 unlock)
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (!anxSaved && anxRows.some((r) => r.situation.trim())) {
+    const filled = anxRows.filter((r) => r.situation.trim()).length;
+    if (!anxSaved && filled >= EXERCISE_UNLOCK_MIN_ROWS) {
       setAnxSaved(true);
     }
   }, [anxRows, anxSaved]);
 
   useEffect(() => {
-    if (!depSaved && depRows.some((r) => r.activity.trim())) {
+    const filled = depRows.filter((r) => r.activity.trim()).length;
+    if (!depSaved && filled >= EXERCISE_UNLOCK_MIN_ROWS) {
       setDepSaved(true);
     }
   }, [depRows, depSaved]);
@@ -578,8 +583,8 @@ export function ExerciseClient({
 
   return (
     <PageFade>
-      {/* F106: 2단계 진입 팝업 */}
-      {popups.step2 ? (
+      {/* F106: 2단계 진입 팝업 — F136: step3 와의 mount 충돌 방지 위해 !planSaved gate */}
+      {popups.step2 && !planSaved ? (
         <GamePopup
           storageKey={`popup_exercise_step2_dismissed_at_${mode}`}
           title={popups.step2.title}
