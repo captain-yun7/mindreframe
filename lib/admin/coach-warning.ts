@@ -1,18 +1,24 @@
+import { normalizePlan } from "@/lib/auth/plan";
+
 /**
  * F87 — 플랜 미달 빨간 경고 룰.
  * pro: 주 2회 한도 + 주 시작 5일 경과 + 0회 → 'red'
  * premium: 주 4회 한도 + 주 시작 2일 경과 + 0회 → 'red' (더 엄격)
  * free / light: 표시 안 함
+ *
+ * NOTE: 'ai' 같은 옛 키나 null이 들어오면 매칭 누락되던 버그가 있어
+ * 항상 `normalizePlan`을 거쳐 표준 Plan 키로 정규화 후 비교.
  */
 export function getCoachWarningLevel(
   plan: string | null | undefined,
   daysSinceWeekStart: number,
   sessionsThisWeek: number,
 ): "red" | null {
-  if (plan === "pro" && daysSinceWeekStart >= 5 && sessionsThisWeek === 0) {
+  const p = normalizePlan(plan);
+  if (p === "pro" && daysSinceWeekStart >= 5 && sessionsThisWeek === 0) {
     return "red";
   }
-  if (plan === "premium" && daysSinceWeekStart >= 2 && sessionsThisWeek === 0) {
+  if (p === "premium" && daysSinceWeekStart >= 2 && sessionsThisWeek === 0) {
     return "red";
   }
   return null;
