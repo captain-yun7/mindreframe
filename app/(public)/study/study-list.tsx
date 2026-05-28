@@ -3,13 +3,16 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { StudyGroup, StudyItem } from "@/lib/study-content";
+import { IntroVideoCard } from "@/components/study/intro-video-card";
 
 export function StudyList({
   core,
   groups,
+  introUnlocked,
 }: {
   core: StudyItem[];
   groups: StudyGroup[];
+  introUnlocked: boolean;
 }) {
   const [q, setQ] = useState("");
   const term = q.trim().toLowerCase();
@@ -55,6 +58,22 @@ export function StudyList({
           <h2 className="text-2xl font-extrabold tracking-[-0.03em]">필수</h2>
           <p className="text-[13px] text-gs-muted mt-1">먼저 이것만 보면 됩니다</p>
         </header>
+
+        <div className="grid gap-3 sm:grid-cols-2 mb-3">
+          <IntroVideoCard
+            slot={1}
+            title="필수영상 1"
+            subtitle="가짜생각 100일 훈련 시작 전, 꼭 봐야 할 인트로 ①"
+            locked={!introUnlocked}
+          />
+          <IntroVideoCard
+            slot={2}
+            title="필수영상 2"
+            subtitle="가짜생각 100일 훈련 시작 전, 꼭 봐야 할 인트로 ②"
+            locked={!introUnlocked}
+          />
+        </div>
+
         {filteredCore.length === 0 ? (
           <div className="text-center text-gs-muted text-sm py-8 border border-dashed border-gs-line-soft rounded-[14px]">
             검색 결과가 없어요.
