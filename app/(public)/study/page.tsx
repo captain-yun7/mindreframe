@@ -96,9 +96,9 @@ export default async function StudyPage() {
               <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
                 알아야 바뀝니다.
                 <br />
-                우울·불안의 원리부터 인지왜곡, 회피, 반추까지 —
+                우울·불안의 원리부터 인지왜곡, 회피, 반추까지
                 <br />
-                <b className="text-gs-text-strong">100일 훈련에 필요한 모든 개념</b>을 한 곳에서.
+                — <b className="text-gs-text-strong">100일 훈련에 필요한 모든 개념</b>을 한 곳에서.
               </p>
             </FadeIn>
 
