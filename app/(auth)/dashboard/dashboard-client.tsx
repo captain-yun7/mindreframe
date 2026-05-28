@@ -26,7 +26,6 @@ const checklistItems = [
     description: "슬라이더를 한 번 움직이면 완료로 처리돼요.",
     actionLabel: "보기",
     actionHref: "/progress#emotion-chart",
-    ghost: true,
   },
   {
     key: "daily_video",
@@ -70,7 +69,6 @@ const checklistItems = [
     description: "작게라도 '원하는 방향'으로 한 걸음.",
     actionLabel: "열기",
     actionHref: "/exercise",
-    ghost: true,
   },
 ];
 
