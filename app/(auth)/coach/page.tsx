@@ -4,10 +4,9 @@ import { PageLayout, PageTitle, PageLead } from "@/components/page-layout";
 import { Card } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import {
+  canAccessFeature,
   getCoachWeeklyLimit,
   normalizePlan,
-  isPlanGateEnabled,
-  planAtLeast,
 } from "@/lib/auth/plan";
 import { getMyCoachThread } from "@/lib/actions/coach-chat";
 import { CoachThreadClient } from "./coach-thread-client";
@@ -29,8 +28,9 @@ export default async function CoachPage() {
 
   const plan = normalizePlan(userRowRes.data?.plan);
 
-  // 플랜 가드
-  if (isPlanGateEnabled() && !planAtLeast(plan, "light")) {
+  // 플랜 가드 — coach는 라이트 이상. ENV 토글에 의존하지 않는 다층 방어.
+  // (운영자 우회는 middleware에서 처리됨 — admin role/이메일 화이트리스트)
+  if (!canAccessFeature(plan, "coach")) {
     return (
       <PageLayout>
         <PageTitle>코치와 1:1 채팅</PageTitle>

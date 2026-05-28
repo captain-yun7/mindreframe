@@ -1,14 +1,42 @@
+import { redirect } from "next/navigation";
 import {
   getSiteSettings,
   parseSettingJson,
   type PopupContent,
 } from "@/lib/site-settings";
 import { loadExerciseState } from "@/lib/actions/exercise-state";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { canAccessFeature, normalizePlan } from "@/lib/auth/plan";
 import { ExerciseClient } from "./exercise-client";
 
 export const dynamic = "force-dynamic";
 
+const ADMIN_EMAILS = ["mindtheater00@gmail.com"];
+
 export default async function ExercisePage() {
+  // 2차 가드 — middleware는 light 이상만 통과시키지만 행동연습장은 pro 차단이라
+  // 페이지 server component에서 매트릭스로 재검증. 운영자(admin/이메일 화이트리스트)는 면제.
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("plan, role")
+      .eq("id", user.id)
+      .single();
+    const isAdmin =
+      profile?.role === "admin" ||
+      (user.email && ADMIN_EMAILS.includes(user.email));
+    if (!isAdmin) {
+      const plan = normalizePlan(profile?.plan);
+      if (!canAccessFeature(plan, "exercise")) {
+        redirect("/pricing?from=/exercise&required=exercise");
+      }
+    }
+  }
+
   const [settings, initialState] = await Promise.all([
     getSiteSettings(),
     loadExerciseState(),

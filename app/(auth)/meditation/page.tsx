@@ -1,11 +1,15 @@
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { canAccessFeature, normalizePlan } from "@/lib/auth/plan";
 import { MeditationOnboardingModal } from "@/components/meditation-onboarding-modal";
 import { MeditationPlayer, type Track } from "./meditation-player";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { getSiteSettings } from "@/lib/site-settings";
 import { QuickNav } from "@/components/quick-nav";
+
+const ADMIN_EMAILS = ["mindtheater00@gmail.com"];
 
 // 마이그레이션 미적용 시 fallback (기존 코드 박힘 12개)
 const FALLBACK_TRACKS: Track[] = [
@@ -145,6 +149,28 @@ export const revalidate = 300;
 
 export default async function MeditationPage() {
   const supabase = await createSupabaseServerClient();
+
+  // 2차 가드 — 명상은 pro 차단(light/premium만). 운영자 면제.
+  const {
+    data: { user: gateUser },
+  } = await supabase.auth.getUser();
+  if (gateUser) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("plan, role")
+      .eq("id", gateUser.id)
+      .single();
+    const isAdmin =
+      profile?.role === "admin" ||
+      (gateUser.email && ADMIN_EMAILS.includes(gateUser.email));
+    if (!isAdmin) {
+      const plan = normalizePlan(profile?.plan);
+      if (!canAccessFeature(plan, "meditation")) {
+        redirect("/pricing?from=/meditation&required=meditation");
+      }
+    }
+  }
+
   const { data, error } = await supabase
     .from("meditations")
     .select(

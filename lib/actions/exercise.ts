@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
 import { autoCheckRoutine } from "./dashboard";
 import type {
   ExerciseLogPayload,
@@ -30,6 +31,12 @@ export async function logExercise({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
 
+  // 플랜 한도 사전 검사 — light 5회/일, pro 명시 차단(0), premium 무제한.
+  const usage = await checkUsageOnly(supabase, user.id, "exercise");
+  if (!usage.ok) {
+    return { ok: false as const, error: usage.reason ?? "한도를 초과했어요" };
+  }
+
   const noteJson = JSON.stringify(payload);
 
   const { error } = await supabase.from("exercise_logs").insert({
@@ -40,6 +47,9 @@ export async function logExercise({
     note: noteJson,
   });
   if (error) return { ok: false as const, error: error.message };
+
+  // 한도 카운트 (insert 성공 시점)
+  await incrementUsage(supabase, user.id, "exercise");
 
   // 라우틴 자동 체크는 항상 "courage" 키로 — 어떤 모드든 1점 인정.
   await autoCheckRoutine(supabase, user.id, "courage");
