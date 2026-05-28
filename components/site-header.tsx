@@ -33,6 +33,14 @@ export function SiteHeader() {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
       if (data.user) {
+        // 운영자 이메일 화이트리스트 — 세션 토큰·RLS 이슈와 무관하게 즉시 admin 인식
+        const ADMIN_EMAILS = [
+          "mindtheater00@gmail.com",
+        ];
+        if (data.user.email && ADMIN_EMAILS.includes(data.user.email)) {
+          setIsAdmin(true);
+          return;
+        }
         const { data: profile } = await supabase
           .from("users")
           .select("role")

@@ -3,6 +3,14 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 /**
+ * 운영자 이메일 화이트리스트 — 세션 토큰·RLS 이슈와 무관하게 admin 인식 보장.
+ * DB의 role='admin'과 별개의 안전망.
+ */
+const ADMIN_EMAILS = [
+  "mindtheater00@gmail.com",
+];
+
+/**
  * 관리자 권한 가드 (server component / server action 공용).
  * 미인증 → /login, 권한 없음 → /
  */
@@ -10,6 +18,11 @@ export async function requireAdmin() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  // 이메일 화이트리스트 1차 통과
+  if (user.email && ADMIN_EMAILS.includes(user.email)) {
+    return { supabase, user };
+  }
 
   const { data: u } = await supabase
     .from("users")
@@ -33,6 +46,11 @@ export async function requireCoachOrAdmin() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  // 운영자 이메일 화이트리스트는 admin으로 즉시 통과
+  if (user.email && ADMIN_EMAILS.includes(user.email)) {
+    return { supabase, user, role: "admin" };
+  }
 
   const { data: u } = await supabase
     .from("users")

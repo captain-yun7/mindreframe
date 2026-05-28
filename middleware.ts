@@ -93,8 +93,13 @@ export async function middleware(request: NextRequest) {
 
       // ADMIN_BYPASS — admin role은 onboarding/nickname/plan 가드 모두 면제.
       // 운영자가 본인 계정으로 모든 페이지를 점검할 수 있도록 함.
+      // 이메일 화이트리스트는 DB role과 무관하게 admin 인식 보장 (세션/RLS 안전망)
+      const ADMIN_EMAILS = ["mindtheater00@gmail.com"];
       const userRole = (profile as { role?: string } | null)?.role;
-      if (userRole === "admin") {
+      if (
+        userRole === "admin" ||
+        (user.email && ADMIN_EMAILS.includes(user.email))
+      ) {
         return response;
       }
 
