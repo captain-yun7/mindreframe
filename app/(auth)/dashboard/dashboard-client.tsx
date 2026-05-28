@@ -290,10 +290,11 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                         onCheck={
                           item.key === "gratitude"
                             ? () => {
-                                gratitudeRef.current?.focus();
-                                gratitudeRef.current?.scrollIntoView({
-                                  behavior: "smooth",
-                                });
+                                // F126: 카드 자체로 스크롤 + focus는 preventScroll
+                                document
+                                  .getElementById("gratitudeCard")
+                                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                gratitudeRef.current?.focus({ preventScroll: true });
                               }
                             : item.key === "mood" || item.key === "daily_video"
                               ? () => {
@@ -311,10 +312,11 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                         actionOnClick={
                           item.key === "gratitude"
                             ? () => {
-                                gratitudeRef.current?.focus();
-                                gratitudeRef.current?.scrollIntoView({
-                                  behavior: "smooth",
-                                });
+                                // F126: 카드 자체로 스크롤 + focus는 preventScroll
+                                document
+                                  .getElementById("gratitudeCard")
+                                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                gratitudeRef.current?.focus({ preventScroll: true });
                               }
                             : undefined
                         }

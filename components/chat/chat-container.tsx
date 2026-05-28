@@ -25,10 +25,13 @@ export function ChatContainer({
   headerTag,
 }: ChatContainerProps) {
   const [input, setInput] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // F127/F132: 페이지 자체 스크롤이 아닌 내부 컨테이너만 끝으로 이동
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   function handleSend() {
@@ -51,7 +54,7 @@ export function ChatContainer({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 bg-gs-surface-mid">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-3 bg-gs-surface-mid">
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -83,7 +86,6 @@ export function ChatContainer({
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { PageTitle } from "@/components/page-layout";
 import { Card } from "@/components/card";
 import { logMeditation } from "@/lib/actions/meditation";
 import { useToast } from "@/components/ui/toast";
@@ -96,25 +95,7 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
 
   return (
     <>
-      {/* 가이드 */}
-      <div className="text-center mb-6">
-        <PageTitle className="text-center text-2xl md:text-3xl">
-          지금 어디에 초점을 맞추고 싶나요?
-        </PageTitle>
-        <div className="mt-4 text-sm text-gs-text-soft leading-[1.8] max-w-[600px] mx-auto">
-          <p>① <b>원하는 것을 하나 선택해 보세요.</b></p>
-          <p className="text-gs-muted text-[13px] mb-2">
-            소리, 호흡, 설거지할 때 손에 닿는 물의 감각, 한가지 생각, 어떤 것이든 하나면 충분합니다.
-          </p>
-          <p>② <b>선택한 곳에 잠시 초점을 두어봅니다.</b></p>
-          <p className="text-gs-muted text-[13px] mb-2">잘하려고 애쓰지 않아도 괜찮습니다.</p>
-          <p>③ <b>중간에 초점이 흩어져도 괜찮습니다.</b></p>
-          <p className="text-gs-muted text-[13px] mb-2">
-            알아차렸다면, 다시 원하는 곳으로 돌아오면 됩니다.
-          </p>
-          <p className="font-bold mt-2">최소 3분 이상 해봐요!</p>
-        </div>
-      </div>
+      {/* F138: 중복 가이드 블록 제거 — 동일 내용 팝업(popup_meditation_intro)으로 노출 */}
 
       {/* 카테고리 큰 카드 (F110: 작은 탭 제거, 큰 카드 클릭 시 트랙 목록으로 자동 스크롤) */}
       <div className="grid grid-cols-3 gap-4 mb-6 max-sm:grid-cols-1">
