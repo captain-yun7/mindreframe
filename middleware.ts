@@ -1,11 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import {
   getRoutePlanRequirement,
   isPlanGateEnabled,
   normalizePlan,
   planAtLeast,
 } from "@/lib/auth/plan";
+
+/**
+ * middleware의 supabase 클라이언트는 anon key + 세션 쿠키 기반 → RLS 적용.
+ * 세션 토큰 만료·sync 실패 시 본인 row select 차단 → profile null → plan 인식 못함.
+ * 해결: profile fetch만 service role로 (auth.getUser는 그대로 anon — JWT decode).
+ */
+function createServiceRoleClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) return null;
+  return createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -66,7 +81,11 @@ export async function middleware(request: NextRequest) {
       pathname === "/" ||
       pathname.startsWith("/study");
     if (!onboardingExempt) {
-      const { data: profile, error: profileError } = await supabase
+      // RLS 우회 — service role로 본인 row fetch. 세션·쿠키 sync 이슈에 무관 안전.
+      // service role 미설정 환경에서는 기존 anon 클라이언트로 fallback.
+      const adminClient = createServiceRoleClient();
+      const fetchClient = adminClient ?? supabase;
+      const { data: profile, error: profileError } = await fetchClient
         .from("users")
         .select("onboarding_completed, nickname_set, plan, role, deleted_at")
         .eq("id", user.id)
