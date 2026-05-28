@@ -257,3 +257,29 @@
   max-width: 100%;
   height: auto;
 }
+
+/* AI 응답 대기 라벨 — 부드러운 좌→우 shimmer */
+@keyframes ai-thinking-shimmer {
+  0% {
+    background-position: -160% center;
+  }
+  100% {
+    background-position: 260% center;
+  }
+}
+.ai-thinking-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-gs-muted-light) 0%,
+    var(--color-gs-muted-light) 35%,
+    var(--color-gs-navy-bright) 50%,
+    var(--color-gs-muted-light) 65%,
+    var(--color-gs-muted-light) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: ai-thinking-shimmer 2.4s ease-in-out infinite;
+}

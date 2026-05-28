@@ -311,6 +311,7 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
                 messages={messages}
                 onSend={handleSend}
                 isLoading={isLoading}
+                loadingLabel="신중히 생각중입니다"
                 placeholder={placeholder}
                 headerTitle="가짜생각 분석기"
                 headerTag="인지왜곡 분석 · 대안사고"

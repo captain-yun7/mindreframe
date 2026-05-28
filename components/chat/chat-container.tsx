@@ -11,6 +11,7 @@ interface ChatContainerProps {
   messages: ChatMessage[];
   onSend: (message: string) => void;
   isLoading?: boolean;
+  loadingLabel?: string;
   placeholder?: string;
   headerTitle: string;
   headerTag?: string;
@@ -30,6 +31,7 @@ export function ChatContainer({
   messages,
   onSend,
   isLoading,
+  loadingLabel,
   placeholder = "메시지를 입력하세요...",
   headerTitle,
   headerTag,
@@ -135,7 +137,12 @@ export function ChatContainer({
           ))}
           {isLoading && (
             <div className="mb-2 flex flex-col items-start">
-              <div className="bg-white border border-gs-line-soft px-3 py-2 rounded-[14px]">
+              <div className="bg-white border border-gs-line-soft px-3 py-2 rounded-[14px] flex items-center gap-2">
+                {loadingLabel && (
+                  <span className="ai-thinking-text text-sm font-medium">
+                    {loadingLabel}
+                  </span>
+                )}
                 <TypingDots />
               </div>
             </div>
