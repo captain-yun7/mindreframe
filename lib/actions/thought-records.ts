@@ -159,7 +159,6 @@ export async function sendTrashMessage({
       body: JSON.stringify({
         model: OPENAI_MODEL,
         messages,
-        temperature: 0.8,
         max_completion_tokens: 700,
       }),
     });

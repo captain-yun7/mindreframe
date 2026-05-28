@@ -110,7 +110,6 @@ export async function analyzeUserInput({ content }: { content: string }) {
       { role: "system", content: ANALYSIS_PROMPT },
       { role: "user", content: trimmed },
     ],
-    temperature: 0.7,
     response_format: { type: "json_object" },
     max_completion_tokens: 700,
   });
@@ -218,7 +217,6 @@ export async function startTherapy({
   const r = await openaiCall({
     model: OPENAI_MODEL,
     messages: [{ role: "system", content: therapySystem }],
-    temperature: 0.8,
     max_completion_tokens: 500,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
@@ -309,7 +307,6 @@ export async function continueTherapy({
   const r = await openaiCall({
     model: OPENAI_MODEL,
     messages,
-    temperature: 0.8,
     max_completion_tokens: 500,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
@@ -414,7 +411,6 @@ export async function finalizeAndSave({
       { role: "user", content: inputMaterial },
       ...convo.map((m) => ({ role: m.role, content: m.content })),
     ],
-    temperature: 0,
     response_format: { type: "json_object" },
     max_completion_tokens: 700,
   });
