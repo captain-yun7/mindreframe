@@ -5,6 +5,9 @@ import { STUDY_CORE, STUDY_GROUPS } from "@/lib/study-content"; // fallback
 import type { StudyGroup, StudyItem } from "@/lib/study-content";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
+import { RoutineVideoGrid } from "@/components/study/routine-video-grid";
+import { getRoutineVideosBatch } from "@/lib/actions/study-videos";
+import { normalizePlan, planAtLeast, type Plan } from "@/lib/auth/plan";
 
 const GROUP_TITLES: Record<string, string> = {
   distortion: "인지왜곡(통일 명칭)",
@@ -20,7 +23,8 @@ const GROUP_KEYS: Array<"distortion" | "body" | "avoidance" | "rumination"> = [
   "rumination",
 ];
 
-export const revalidate = 300;
+// user plan을 cookie 기반으로 매번 조회하므로 동적 렌더링.
+export const dynamic = "force-dynamic";
 
 export default async function StudyPage() {
   const supabase = await createSupabaseServerClient();
@@ -28,6 +32,24 @@ export default async function StudyPage() {
     .from("study_articles")
     .select("slug, category, title, sub, body_html, order_index")
     .order("order_index", { ascending: true });
+
+  // 현재 사용자 plan — 필수영상 1·2 잠금 여부 결정용
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let currentPlan: Plan = "free";
+  if (user) {
+    const { data: u } = await supabase
+      .from("users")
+      .select("plan")
+      .eq("id", user.id)
+      .single();
+    currentPlan = normalizePlan((u as { plan?: string } | null)?.plan);
+  }
+  const introUnlocked = planAtLeast(currentPlan, "light");
+
+  // 100일 루틴 영상 초기 batch
+  const initialRoutineBatch = await getRoutineVideosBatch(0, 20);
 
   let core: StudyItem[];
   let groups: StudyGroup[];
@@ -73,8 +95,9 @@ export default async function StudyPage() {
               </h1>
               <p className="mt-4 md:mt-5 text-base md:text-lg text-gs-muted-soft leading-relaxed">
                 알아야 바뀝니다.
-                <br className="hidden md:block" />
-                우울·불안의 원리부터 인지왜곡, 회피, 반추까지 —{" "}
+                <br />
+                우울·불안의 원리부터 인지왜곡, 회피, 반추까지 —
+                <br />
                 <b className="text-gs-text-strong">100일 훈련에 필요한 모든 개념</b>을 한 곳에서.
               </p>
             </FadeIn>
@@ -94,7 +117,28 @@ export default async function StudyPage() {
 
       <main className="max-w-[960px] mx-auto px-4 pt-8 md:pt-10 pb-24">
         <FadeIn>
-          <StudyList core={core} groups={groups} />
+          <StudyList
+            core={core}
+            groups={groups}
+            introUnlocked={introUnlocked}
+          />
+        </FadeIn>
+
+        <FadeIn>
+          <section className="mt-14">
+            <header className="mb-4">
+              <h2 className="text-2xl font-extrabold tracking-[-0.03em]">
+                100일 루틴 3분 영상
+              </h2>
+              <p className="text-[13px] text-gs-muted mt-1">
+                매일 3분, 1일차부터 100일차까지 — 누구나 시청할 수 있어요
+              </p>
+            </header>
+            <RoutineVideoGrid
+              initialItems={initialRoutineBatch.items}
+              initialNextOffset={initialRoutineBatch.nextOffset}
+            />
+          </section>
         </FadeIn>
       </main>
     </PageFade>
