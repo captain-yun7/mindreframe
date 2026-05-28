@@ -111,7 +111,7 @@ export async function analyzeUserInput({ content }: { content: string }) {
       { role: "user", content: trimmed },
     ],
     response_format: { type: "json_object" },
-    max_completion_tokens: 700,
+    max_completion_tokens: 4000,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -217,7 +217,7 @@ export async function startTherapy({
   const r = await openaiCall({
     model: OPENAI_MODEL,
     messages: [{ role: "system", content: therapySystem }],
-    max_completion_tokens: 500,
+    max_completion_tokens: 4000,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -307,7 +307,7 @@ export async function continueTherapy({
   const r = await openaiCall({
     model: OPENAI_MODEL,
     messages,
-    max_completion_tokens: 500,
+    max_completion_tokens: 4000,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -412,7 +412,7 @@ export async function finalizeAndSave({
       ...convo.map((m) => ({ role: m.role, content: m.content })),
     ],
     response_format: { type: "json_object" },
-    max_completion_tokens: 700,
+    max_completion_tokens: 4000,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 

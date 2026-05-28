@@ -159,7 +159,7 @@ export async function sendTrashMessage({
       body: JSON.stringify({
         model: OPENAI_MODEL,
         messages,
-        max_completion_tokens: 700,
+        max_completion_tokens: 4000,
       }),
     });
     const json = await resp.json();

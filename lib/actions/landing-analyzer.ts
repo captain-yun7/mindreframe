@@ -139,7 +139,7 @@ export async function analyzeAnonymous({
           { role: "user", content: trimmed },
         ],
         response_format: { type: "json_object" },
-        max_completion_tokens: 600,
+        max_completion_tokens: 4000,
       }),
     });
     const json = await resp.json();
