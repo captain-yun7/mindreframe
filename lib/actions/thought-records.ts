@@ -160,7 +160,7 @@ export async function sendTrashMessage({
         model: OPENAI_MODEL,
         messages,
         temperature: 0.8,
-        max_tokens: 700,
+        max_completion_tokens: 700,
       }),
     });
     const json = await resp.json();

@@ -112,7 +112,7 @@ export async function analyzeUserInput({ content }: { content: string }) {
     ],
     temperature: 0.7,
     response_format: { type: "json_object" },
-    max_tokens: 700,
+    max_completion_tokens: 700,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -219,7 +219,7 @@ export async function startTherapy({
     model: OPENAI_MODEL,
     messages: [{ role: "system", content: therapySystem }],
     temperature: 0.8,
-    max_tokens: 500,
+    max_completion_tokens: 500,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -310,7 +310,7 @@ export async function continueTherapy({
     model: OPENAI_MODEL,
     messages,
     temperature: 0.8,
-    max_tokens: 500,
+    max_completion_tokens: 500,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -416,7 +416,7 @@ export async function finalizeAndSave({
     ],
     temperature: 0,
     response_format: { type: "json_object" },
-    max_tokens: 700,
+    max_completion_tokens: 700,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 

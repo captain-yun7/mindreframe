@@ -140,7 +140,7 @@ export async function analyzeAnonymous({
         ],
         temperature: 0.7,
         response_format: { type: "json_object" },
-        max_tokens: 600,
+        max_completion_tokens: 600,
       }),
     });
     const json = await resp.json();
