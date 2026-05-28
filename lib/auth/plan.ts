@@ -19,29 +19,65 @@ const PLAN_RANK: Record<Plan, number> = {
 
 /**
  * 플랜별 기능 한도 (일일).
- * - analyzer: 가짜생각 분석기 finalize 완료 횟수 (= chat_analyses alternative_thought 업데이트 시점)
- * - trash: 생각쓰레기통 JSON 추출 + thought_records INSERT 완료 횟수
+ * - analyzer:   가짜생각 분석기 finalize 완료 횟수 (= chat_analyses alternative_thought 업데이트 시점)
+ * - trash:      생각쓰레기통 JSON 추출 + thought_records INSERT 완료 횟수
+ * - exercise:   행동연습장 4단계 완료(logExercise) 횟수
+ * - meditation: 명상 트랙 재생 완료(logMeditation) 횟수
  *
- * H2 정책 (사용자 결정 해석A):
- *   free     0 / 0
- *   light    5 / 5
- *   pro      7 / 7
- *   premium  무제한
+ * 명세 (F99 / 4차 피드백):
+ *   free     0 / 0 / 0 / 0          (모두 차단)
+ *   light    5 / 5 / 5 / 5
+ *   pro      7 / 7 / 0 / 0          (행동연습장·명상 명시적 차단)
+ *   premium  무제한                  (UNLIMITED sentinel)
+ *
+ * NOTE: 단순 위계(`planAtLeast`)로는 "light OK / pro ❌ / premium OK"를 표현하지 못하므로
+ * 페이지/server action 단에서 `canAccessFeature` + `PLAN_FEATURE_LIMITS`를 직접 사용해야 함.
  */
-export type UsageFeature = "analyzer" | "trash";
+export type UsageFeature = "analyzer" | "trash" | "exercise" | "meditation";
+
+/** 한도 미상한 sentinel — 모든 비교 코드(`used >= limit`)에서 통과되어야 함. */
+export const UNLIMITED = Number.MAX_SAFE_INTEGER;
 
 export const PLAN_FEATURE_LIMITS: Record<Plan, Record<UsageFeature, number>> = {
-  free: { analyzer: 0, trash: 0 },
-  light: { analyzer: 5, trash: 5 },
-  pro: { analyzer: 7, trash: 7 },
+  free: { analyzer: 0, trash: 0, exercise: 0, meditation: 0 },
+  light: { analyzer: 5, trash: 5, exercise: 5, meditation: 5 },
+  pro: { analyzer: 7, trash: 7, exercise: 0, meditation: 0 },
   premium: {
-    analyzer: Number.MAX_SAFE_INTEGER,
-    trash: Number.MAX_SAFE_INTEGER,
+    analyzer: UNLIMITED,
+    trash: UNLIMITED,
+    exercise: UNLIMITED,
+    meditation: UNLIMITED,
   },
 };
 
 export function getPlanFeatureLimit(plan: Plan, feature: UsageFeature): number {
   return PLAN_FEATURE_LIMITS[plan][feature];
+}
+
+/**
+ * 플랜 × 기능 접근 매트릭스.
+ *
+ * `analyzer/trash/exercise/meditation`은 `PLAN_FEATURE_LIMITS > 0` 와 동치지만
+ * `coach`는 한도 함수가 별도(`getCoachWeeklyLimit`)이므로 매트릭스로 통합.
+ *
+ * 페이지 server component / server action 진입 가드에서 사용.
+ */
+export type FeatureKey = "analyzer" | "trash" | "exercise" | "meditation" | "coach";
+
+export const PLAN_FEATURE_ACCESS: Record<Plan, Record<FeatureKey, boolean>> = {
+  free: { analyzer: false, trash: false, exercise: false, meditation: false, coach: false },
+  light: { analyzer: true, trash: true, exercise: true, meditation: true, coach: true },
+  pro: { analyzer: true, trash: true, exercise: false, meditation: false, coach: true },
+  premium: { analyzer: true, trash: true, exercise: true, meditation: true, coach: true },
+};
+
+/** 페이지/server action 가드. 'ai' 같은 옛 키나 null도 안전 처리. */
+export function canAccessFeature(
+  plan: Plan | string | null | undefined,
+  feature: FeatureKey,
+): boolean {
+  const p = normalizePlan(plan as string | null | undefined);
+  return PLAN_FEATURE_ACCESS[p][feature];
 }
 
 /** DB에 저장된 raw 값을 표준 Plan 키로 정규화. */
@@ -64,19 +100,21 @@ export function planAtLeast(current: Plan, required: Plan): boolean {
 }
 
 /**
- * 라우트 prefix별 최소 요구 plan.
+ * 라우트 prefix별 최소 요구 plan — middleware 1차 가드.
  * 정의되지 않은 prefix는 free 허용 (또는 인증만 통과하면 됨).
+ *
+ * NOTE: 단순 위계 모델로는 "light OK / pro ❌ / premium OK" (행동연습장·명상)를
+ * 표현할 수 없음. middleware는 light 통과시키는 1차 가드만 담당하고, 정확한
+ * "프로 차단" 분기는 페이지 server component의 `canAccessFeature`로 처리.
  */
 export const ROUTE_PLAN_REQUIREMENT: Array<{ prefix: string; required: Plan }> = [
-  // 라이트 이상
+  // 모두 라이트 이상 — 프로 차단(행동연습장/명상)은 페이지에서 처리.
   { prefix: "/dashboard", required: "light" },
   { prefix: "/trash", required: "light" },
   { prefix: "/chat", required: "light" },
   { prefix: "/progress", required: "light" },
-  // 프로 이상 (행동연습장 + 명상)
-  { prefix: "/exercise", required: "pro" },
-  { prefix: "/meditation", required: "pro" },
-  // 라이트 이상 (1:1 코칭 — 라이트도 주1회 사용 가능)
+  { prefix: "/exercise", required: "light" },
+  { prefix: "/meditation", required: "light" },
   { prefix: "/coach", required: "light" },
 ];
 
