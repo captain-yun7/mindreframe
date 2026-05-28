@@ -58,6 +58,14 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+
+  // F141 — `/admin/login`은 운영자 로그인 페이지. 누구나 접근 가능해야 하므로
+  // 모든 가드(인증/온보딩/플랜) 면제. PROTECTED_PREFIXES에 `/admin`이 추가될
+  // 미래 변경에도 안전하도록 가장 먼저 분기.
+  if (pathname === "/admin/login") {
+    return response;
+  }
+
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (isProtected && !user) {
