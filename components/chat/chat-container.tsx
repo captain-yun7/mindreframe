@@ -26,6 +26,7 @@ export function ChatContainer({
 }: ChatContainerProps) {
   const [input, setInput] = useState("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // F127/F132: 페이지 자체 스크롤이 아닌 내부 컨테이너만 끝으로 이동
@@ -41,8 +42,15 @@ export function ChatContainer({
     setInput("");
   }
 
+  // F128/F133: iOS Safari 키보드 노출 시 입력창이 화면 밖으로 밀려나지 않도록 보조 스크롤
+  function handleInputFocus() {
+    setTimeout(() => {
+      inputRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 300);
+  }
+
   return (
-    <div className="w-full h-[min(62vh,520px)] max-md:h-[72vh] max-md:max-h-none bg-gs-surface-muted rounded-[14px] shadow-[inset_0_0_0_1px_var(--color-gs-line-soft)] flex flex-col overflow-hidden">
+    <div className="w-full h-[min(62dvh,520px)] max-md:h-[72dvh] max-md:max-h-none bg-gs-surface-muted rounded-[14px] shadow-[inset_0_0_0_1px_var(--color-gs-line-soft)] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="px-3 py-2 border-b border-gs-line-soft bg-gs-surface-muted text-xs text-gs-muted-soft flex justify-between items-center shrink-0">
         <span>{headerTitle}</span>
@@ -88,16 +96,18 @@ export function ChatContainer({
         )}
       </div>
 
-      {/* Input */}
-      <div className="sticky bottom-0 z-10 border-t border-gs-line-soft bg-white flex p-2 gap-2 shrink-0">
+      {/* Input — F128/F133: safe-area-inset-bottom 으로 home indicator 영역 보호 */}
+      <div className="sticky bottom-0 z-10 border-t border-gs-line-soft bg-white flex p-2 gap-2 shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <input
+          ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onFocus={handleInputFocus}
           placeholder={placeholder}
           disabled={isLoading}
-          className="flex-1 px-3 py-2 border border-gs-line-soft rounded-xl text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 disabled:opacity-50"
+          className="flex-1 min-w-0 px-3 py-2 border border-gs-line-soft rounded-xl text-base md:text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 disabled:opacity-50"
         />
         <button
           type="button"

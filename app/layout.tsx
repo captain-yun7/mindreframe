@@ -30,6 +30,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: "#0e1430",
+  // F128/F133 — iOS Safari 노치/홈 indicator safe-area 활용
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
