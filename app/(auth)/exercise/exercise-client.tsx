@@ -28,6 +28,7 @@ import { DepressPlanTable } from "./depress-plan-table";
 import { ExampleAccordion } from "./example-accordion";
 import { GamePopup } from "@/components/game-popup";
 import { CelebrationModal } from "@/components/celebration-modal";
+import { QuickNav } from "@/components/quick-nav";
 
 const labelInputClass =
   "w-full px-3 py-2 border border-gs-line-soft rounded-toss-button text-sm outline-none focus:border-gs-navy-bright focus:ring-2 focus:ring-gs-navy-bright/20 transition-colors";
@@ -566,6 +567,7 @@ export function ExerciseClient({
               </button>
             </StaggerItem>
           </StaggerList>
+          <QuickNav />
         </main>
       </PageFade>
     );
@@ -958,6 +960,7 @@ export function ExerciseClient({
             ) : null}
           </Card>
         )}
+        <QuickNav />
       </main>
     </PageFade>
   );

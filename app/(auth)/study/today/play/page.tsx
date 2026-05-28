@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getTodayDailyVideo } from "@/lib/actions/daily-video";
 import { DailyVideoPlayer } from "@/components/daily-video-player";
+import { QuickNav } from "@/components/quick-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,7 @@ export default async function StudyTodayPlayPage({
         <p className="mt-4 text-xs text-gs-muted text-center">
           영상을 70% 이상 시청하면 오늘의 루틴에 자동으로 체크돼요
         </p>
+        <QuickNav />
       </div>
     </div>
   );

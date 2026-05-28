@@ -17,6 +17,7 @@ import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { DISTORTIONS, type AnalysisResult } from "@/lib/cbt/prompts";
 import { GamePopup } from "@/components/game-popup";
+import { QuickNav } from "@/components/quick-nav";
 
 type Phase = "analysis" | "selection" | "therapy" | "done";
 
@@ -391,6 +392,7 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
             </div>
           </div>
         </FadeIn>
+        <QuickNav />
       </main>
     </PageFade>
   );

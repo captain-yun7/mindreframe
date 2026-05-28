@@ -5,6 +5,7 @@ import { MeditationPlayer, type Track } from "./meditation-player";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { getSiteSettings } from "@/lib/site-settings";
+import { QuickNav } from "@/components/quick-nav";
 
 // 마이그레이션 미적용 시 fallback (기존 코드 박힘 12개)
 const FALLBACK_TRACKS: Track[] = [
@@ -224,6 +225,7 @@ export default async function MeditationPage() {
           daysSinceJoin={daysSinceJoin}
           popupJson={popupMeditationFocus}
         />
+        <QuickNav />
       </main>
     </PageFade>
   );

@@ -13,6 +13,7 @@ import { getMyCoachThread } from "@/lib/actions/coach-chat";
 import { CoachThreadClient } from "./coach-thread-client";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
+import { QuickNav } from "@/components/quick-nav";
 
 export default async function CoachPage() {
   const supabase = await createSupabaseServerClient();
@@ -108,6 +109,7 @@ export default async function CoachPage() {
           activeSession={thread.activeSession}
           canStartNew={used < limit}
         />
+        <QuickNav />
       </main>
     </PageFade>
   );

@@ -11,6 +11,7 @@ import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 import { PageFade } from "@/components/motion/page-fade";
 import { getSiteSettings } from "@/lib/site-settings";
 import { AlternativeThoughtCard } from "@/components/alternative-thought-card";
+import { QuickNav } from "@/components/quick-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -504,6 +505,7 @@ export default async function ProgressPage() {
             )}
           </Card>
         </FadeIn>
+        <QuickNav />
       </main>
     </PageFade>
   );

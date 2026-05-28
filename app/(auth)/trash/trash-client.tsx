@@ -10,6 +10,7 @@ import { detectCrisis } from "@/lib/cbt/crisis-detection";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { GamePopup } from "@/components/game-popup";
+import { QuickNav } from "@/components/quick-nav";
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
@@ -175,6 +176,7 @@ export function TrashClient({ heroSubtitle, popup }: TrashClientProps) {
             </div>
           </div>
         </FadeIn>
+        <QuickNav />
       </main>
     </PageFade>
   );
