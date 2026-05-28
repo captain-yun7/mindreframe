@@ -19,7 +19,7 @@ export function LoadingScreen({
 }) {
   return (
     <motion.div
-      className="min-h-[60vh] flex items-center justify-center px-4 py-20"
+      className="min-h-screen flex items-center justify-center px-4 py-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
