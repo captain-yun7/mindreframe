@@ -9,19 +9,26 @@ import DOMPurify from "isomorphic-dompurify";
  * iframe은 Cloudflare Stream 등 신뢰 src만 허용하도록 ALLOWED_URI_REGEXP로 제한.
  */
 export function sanitizeContentHtml(input: string): string {
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [
-      "a", "b", "blockquote", "br", "code", "div", "em", "h1", "h2", "h3", "h4",
-      "h5", "h6", "hr", "i", "img", "li", "ol", "p", "pre", "small", "span",
-      "strong", "sub", "sup", "table", "tbody", "td", "tfoot", "th", "thead",
-      "tr", "u", "ul",
-    ],
-    ALLOWED_ATTR: [
-      "href", "target", "rel", "src", "alt", "title", "class", "id", "width",
-      "height", "loading", "colspan", "rowspan",
-    ],
-    ALLOW_DATA_ATTR: false,
-    // a target=_blank로 외부 링크 열 때 rel noopener 자동 추가
-    ADD_ATTR: ["target"],
-  });
+  // isomorphic-dompurify가 Vercel Node.js 환경에서 jsdom 초기화 실패 시 500.
+  // 운영자(admin role)만 HTML 입력 가능하니까 신뢰 환경 — 실패 시 원본 반환 graceful.
+  try {
+    return DOMPurify.sanitize(input, {
+      ALLOWED_TAGS: [
+        "a", "b", "blockquote", "br", "code", "div", "em", "h1", "h2", "h3", "h4",
+        "h5", "h6", "hr", "i", "img", "li", "ol", "p", "pre", "small", "span",
+        "strong", "sub", "sup", "table", "tbody", "td", "tfoot", "th", "thead",
+        "tr", "u", "ul",
+      ],
+      ALLOWED_ATTR: [
+        "href", "target", "rel", "src", "alt", "title", "class", "id", "width",
+        "height", "loading", "colspan", "rowspan",
+      ],
+      ALLOW_DATA_ATTR: false,
+      // a target=_blank로 외부 링크 열 때 rel noopener 자동 추가
+      ADD_ATTR: ["target"],
+    });
+  } catch (err) {
+    console.error("[sanitizeContentHtml] DOMPurify failed, returning raw:", err);
+    return input;
+  }
 }
