@@ -19,9 +19,10 @@ interface ChatContainerProps {
 /**
  * 가짜생각 분석기 / 생각쓰레기통 공통 채팅 UI.
  *
- * 카톡식 UX:
- *   - 메시지는 컨테이너 하단에 정렬(콘텐츠 적을 때 빈 위쪽 공간) → `justify-end + min-h-full`
- *   - 새 메시지/스트리밍/typing dots 등장 시 항상 하단으로 자동 스크롤
+ * UX:
+ *   - 메시지는 컨테이너 상단부터 쌓임(위→아래) — 빈 공간은 아래에 둔다
+ *   - 새 메시지/스트리밍/typing dots 등장 시 항상 컨테이너 내부만 끝으로 스크롤
+ *     (페이지 자체는 스크롤하지 않음 — 입력 focus 시 대화가 가려지지 않도록)
  *   - 입력창은 textarea로 자동 확장(1~5줄), Enter=전송 / Shift+Enter=줄바꿈
  *   - IME(한글 조합) 중 Enter 무시 — 입력 도중 잘못 전송 방지
  */
@@ -81,10 +82,12 @@ export function ChatContainer({
     }
   }
 
-  // F128/F133: iOS Safari 키보드 노출 시 입력창 보호. block을 nearest로 두어 페이지 점프 최소화.
+  // 입력 focus 시 페이지 자체를 스크롤하면 대화 상단이 가려진다 — 페이지는 그대로 두고,
+  // 채팅 컨테이너 내부만 마지막 메시지가 보이도록 끝으로 스크롤.
   function handleInputFocus() {
     setTimeout(() => {
-      inputRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      const el = messagesContainerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
     }, 300);
   }
 
@@ -100,12 +103,12 @@ export function ChatContainer({
         )}
       </div>
 
-      {/* Messages — 카톡식 하단 정렬 */}
+      {/* Messages — 위에서 아래로 자연 정렬 */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto bg-gs-surface-mid"
+        className="flex-1 overflow-y-auto bg-gs-surface-mid p-3"
       >
-        <div className="flex flex-col justify-end min-h-full p-3">
+        <div className="flex flex-col">
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -151,7 +154,7 @@ export function ChatContainer({
           onFocus={handleInputFocus}
           placeholder={placeholder}
           disabled={isLoading}
-          className="flex-1 min-w-0 px-3 py-2 border border-gs-line-soft rounded-xl text-base md:text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 disabled:opacity-50 resize-none leading-6 max-h-[120px]"
+          className="flex-1 min-w-0 px-3 py-2 border border-gs-line-soft rounded-xl text-base md:text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 disabled:opacity-50 resize-none leading-6 max-h-[120px] placeholder:text-[12px] placeholder:text-gs-muted"
         />
         <button
           type="button"
