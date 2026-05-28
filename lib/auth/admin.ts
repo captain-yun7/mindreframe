@@ -1,14 +1,16 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { ADMIN_EMAIL_WHITELIST } from "@/lib/auth/plan";
 
 /**
  * 운영자 이메일 화이트리스트 — 세션 토큰·RLS 이슈와 무관하게 admin 인식 보장.
  * DB의 role='admin'과 별개의 안전망.
+ *
+ * `lib/auth/plan.ts`의 `ADMIN_EMAIL_WHITELIST`를 단일 출처로 사용. 새 운영자 추가는
+ * 그쪽 한 군데만 수정하면 page 가드 / server action 한도 면제까지 모두 자동 반영.
  */
-const ADMIN_EMAILS = [
-  "mindtheater00@gmail.com",
-];
+const ADMIN_EMAILS = ADMIN_EMAIL_WHITELIST;
 
 /**
  * 관리자 권한 가드 (server component / server action 공용).

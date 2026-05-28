@@ -80,6 +80,25 @@ export function canAccessFeature(
   return PLAN_FEATURE_ACCESS[p][feature];
 }
 
+/**
+ * 운영자 이메일 화이트리스트 — 페이지 가드 / server action 한도 면제 공용.
+ * `lib/auth/admin.ts`의 ADMIN_EMAILS와 동일해야 함 (admin.ts는 server-only라
+ * client/usage 모듈에서 import 불가하므로 plan.ts에 중복 정의).
+ *
+ * 새 운영자 추가 시 양쪽 모두 수정 — 또는 한 쪽을 single source로 묶는 후속 작업.
+ */
+export const ADMIN_EMAIL_WHITELIST: readonly string[] = ["mindtheater00@gmail.com"];
+
+/** 운영자 면제 판정 — admin role 또는 이메일 화이트리스트. */
+export function isAdminUser(
+  email: string | null | undefined,
+  role: string | null | undefined,
+): boolean {
+  if (role === "admin") return true;
+  if (email && ADMIN_EMAIL_WHITELIST.includes(email)) return true;
+  return false;
+}
+
 /** DB에 저장된 raw 값을 표준 Plan 키로 정규화. */
 export function normalizePlan(raw: string | null | undefined): Plan {
   switch (raw) {

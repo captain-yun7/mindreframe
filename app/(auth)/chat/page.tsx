@@ -1,12 +1,10 @@
 import { redirect } from "next/navigation";
 import { getSiteSettings, parseSettingJson, type PopupContent } from "@/lib/site-settings";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { canAccessFeature, normalizePlan } from "@/lib/auth/plan";
+import { canAccessFeature, isAdminUser, normalizePlan } from "@/lib/auth/plan";
 import { ChatClient } from "./chat-client";
 
 export const dynamic = "force-dynamic";
-
-const ADMIN_EMAILS = ["mindtheater00@gmail.com"];
 
 export default async function ChatPage() {
   // 2차 가드 — 가짜생각 분석기는 light 이상(free 차단). 운영자 면제.
@@ -20,10 +18,7 @@ export default async function ChatPage() {
       .select("plan, role")
       .eq("id", user.id)
       .single();
-    const isAdmin =
-      profile?.role === "admin" ||
-      (user.email && ADMIN_EMAILS.includes(user.email));
-    if (!isAdmin) {
+    if (!isAdminUser(user.email, (profile as { role?: string } | null)?.role)) {
       const plan = normalizePlan(profile?.plan);
       if (!canAccessFeature(plan, "analyzer")) {
         redirect("/pricing?from=/chat&required=analyzer");

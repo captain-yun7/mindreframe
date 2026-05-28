@@ -23,6 +23,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  isAdminUser,
   normalizePlan,
   PLAN_FEATURE_LIMITS,
   type Plan,
@@ -66,6 +67,24 @@ async function loadUserPlan(
   return normalizePlan(profile?.plan as string | null | undefined);
 }
 
+/**
+ * 운영자(admin role / 이메일 화이트리스트) 여부 — 한도 면제 판단용.
+ * 명세상 "운영자는 모든 페이지·기능 통과" — 한도 검사도 면제.
+ */
+async function isAdminContext(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role, email")
+    .eq("id", userId)
+    .single();
+  const email = (profile as { email?: string | null } | null)?.email;
+  const role = (profile as { role?: string | null } | null)?.role;
+  return isAdminUser(email, role);
+}
+
 function featureLabel(feature: UsageFeature): string {
   switch (feature) {
     case "analyzer":
@@ -90,6 +109,11 @@ export async function checkUsageOnly(
 ): Promise<UsageCheckResult> {
   if (process.env.AI_USAGE_LIMITS_DISABLED === "true") {
     return { ok: true, used: 0, limit: Number.MAX_SAFE_INTEGER, plan: "free" };
+  }
+
+  // 운영자 면제 — admin role / 이메일 화이트리스트는 한도 무관 통과.
+  if (await isAdminContext(supabase, userId)) {
+    return { ok: true, used: 0, limit: Number.MAX_SAFE_INTEGER, plan: "premium" };
   }
 
   const plan = await loadUserPlan(supabase, userId);
@@ -137,6 +161,11 @@ export async function incrementUsage(
 ): Promise<UsageCheckResult> {
   if (process.env.AI_USAGE_LIMITS_DISABLED === "true") {
     return { ok: true, used: 0, limit: Number.MAX_SAFE_INTEGER, plan: "free" };
+  }
+
+  // 운영자는 한도 카운팅 안 함 — ai_usage 통계 오염 방지.
+  if (await isAdminContext(supabase, userId)) {
+    return { ok: true, used: 0, limit: Number.MAX_SAFE_INTEGER, plan: "premium" };
   }
 
   const plan = await loadUserPlan(supabase, userId);

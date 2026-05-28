@@ -6,12 +6,10 @@ import {
 } from "@/lib/site-settings";
 import { loadExerciseState } from "@/lib/actions/exercise-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { canAccessFeature, normalizePlan } from "@/lib/auth/plan";
+import { canAccessFeature, isAdminUser, normalizePlan } from "@/lib/auth/plan";
 import { ExerciseClient } from "./exercise-client";
 
 export const dynamic = "force-dynamic";
-
-const ADMIN_EMAILS = ["mindtheater00@gmail.com"];
 
 export default async function ExercisePage() {
   // 2차 가드 — middleware는 light 이상만 통과시키지만 행동연습장은 pro 차단이라
@@ -26,10 +24,7 @@ export default async function ExercisePage() {
       .select("plan, role")
       .eq("id", user.id)
       .single();
-    const isAdmin =
-      profile?.role === "admin" ||
-      (user.email && ADMIN_EMAILS.includes(user.email));
-    if (!isAdmin) {
+    if (!isAdminUser(user.email, (profile as { role?: string } | null)?.role)) {
       const plan = normalizePlan(profile?.plan);
       if (!canAccessFeature(plan, "exercise")) {
         redirect("/pricing?from=/exercise&required=exercise");

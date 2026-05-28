@@ -1,12 +1,10 @@
 import { redirect } from "next/navigation";
 import { getSiteSettings, parseSettingJson, type PopupContent } from "@/lib/site-settings";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { canAccessFeature, normalizePlan } from "@/lib/auth/plan";
+import { canAccessFeature, isAdminUser, normalizePlan } from "@/lib/auth/plan";
 import { TrashClient } from "./trash-client";
 
 export const dynamic = "force-dynamic";
-
-const ADMIN_EMAILS = ["mindtheater00@gmail.com"];
 
 export default async function TrashPage() {
   // 2차 가드 — 생각쓰레기통은 light 이상(free 차단). 운영자 면제.
@@ -20,10 +18,7 @@ export default async function TrashPage() {
       .select("plan, role")
       .eq("id", user.id)
       .single();
-    const isAdmin =
-      profile?.role === "admin" ||
-      (user.email && ADMIN_EMAILS.includes(user.email));
-    if (!isAdmin) {
+    if (!isAdminUser(user.email, (profile as { role?: string } | null)?.role)) {
       const plan = normalizePlan(profile?.plan);
       if (!canAccessFeature(plan, "trash")) {
         redirect("/pricing?from=/trash&required=trash");

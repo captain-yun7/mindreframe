@@ -1,15 +1,13 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { canAccessFeature, normalizePlan } from "@/lib/auth/plan";
+import { canAccessFeature, isAdminUser, normalizePlan } from "@/lib/auth/plan";
 import { MeditationOnboardingModal } from "@/components/meditation-onboarding-modal";
 import { MeditationPlayer, type Track } from "./meditation-player";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { getSiteSettings } from "@/lib/site-settings";
 import { QuickNav } from "@/components/quick-nav";
-
-const ADMIN_EMAILS = ["mindtheater00@gmail.com"];
 
 // 마이그레이션 미적용 시 fallback (기존 코드 박힘 12개)
 const FALLBACK_TRACKS: Track[] = [
@@ -160,10 +158,7 @@ export default async function MeditationPage() {
       .select("plan, role")
       .eq("id", gateUser.id)
       .single();
-    const isAdmin =
-      profile?.role === "admin" ||
-      (gateUser.email && ADMIN_EMAILS.includes(gateUser.email));
-    if (!isAdmin) {
+    if (!isAdminUser(gateUser.email, (profile as { role?: string } | null)?.role)) {
       const plan = normalizePlan(profile?.plan);
       if (!canAccessFeature(plan, "meditation")) {
         redirect("/pricing?from=/meditation&required=meditation");
