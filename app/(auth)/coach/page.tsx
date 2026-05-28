@@ -9,6 +9,7 @@ import {
   isAdminUser,
   normalizePlan,
 } from "@/lib/auth/plan";
+import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
 import { getMyCoachThread } from "@/lib/actions/coach-chat";
 import { CoachThreadClient } from "./coach-thread-client";
 import { PageFade } from "@/components/motion/page-fade";
@@ -20,15 +21,15 @@ export default async function CoachPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // plan / 주간 사용량 / 전체 스레드 병렬 로드 (role도 함께 조회해 운영자 면제 판단)
-  const [userRowRes, usedRes, threadRes] = await Promise.all([
-    supabase.from("users").select("plan, role").eq("id", user.id).single(),
+  // plan / 주간 사용량 / 전체 스레드 병렬 로드 (RLS 우회 — service role helper로 본인 row fetch)
+  const [profileRow, usedRes, threadRes] = await Promise.all([
+    getUserProfileForGuard(user.id),
     supabase.rpc("count_coach_sessions_this_week", { p_user_id: user.id }),
     getMyCoachThread(),
   ]);
 
-  const plan = normalizePlan(userRowRes.data?.plan);
-  const isAdmin = isAdminUser(user.email, (userRowRes.data as { role?: string } | null)?.role);
+  const plan = normalizePlan(profileRow?.plan);
+  const isAdmin = isAdminUser(user.email, profileRow?.role ?? null);
 
   // 플랜 가드 — coach는 라이트 이상. ENV 토글에 의존하지 않는 다층 방어.
   // 운영자(admin role / 이메일 화이트리스트)는 다른 4개 페이지와 동일하게 면제.

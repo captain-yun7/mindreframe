@@ -2,6 +2,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { canAccessFeature, isAdminUser, normalizePlan } from "@/lib/auth/plan";
+import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
 import { MeditationOnboardingModal } from "@/components/meditation-onboarding-modal";
 import { MeditationPlayer, type Track } from "./meditation-player";
 import { PageFade } from "@/components/motion/page-fade";
@@ -153,12 +154,8 @@ export default async function MeditationPage() {
     data: { user: gateUser },
   } = await supabase.auth.getUser();
   if (gateUser) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("plan, role")
-      .eq("id", gateUser.id)
-      .single();
-    if (!isAdminUser(gateUser.email, (profile as { role?: string } | null)?.role)) {
+    const profile = await getUserProfileForGuard(gateUser.id);
+    if (!isAdminUser(gateUser.email, profile?.role ?? null)) {
       const plan = normalizePlan(profile?.plan);
       if (!canAccessFeature(plan, "meditation")) {
         redirect("/pricing?from=/meditation&required=meditation");

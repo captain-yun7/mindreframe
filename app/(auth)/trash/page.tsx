@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSiteSettings, parseSettingJson, type PopupContent } from "@/lib/site-settings";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { canAccessFeature, isAdminUser, normalizePlan } from "@/lib/auth/plan";
+import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
 import { TrashClient } from "./trash-client";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,7 @@ export default async function TrashPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("plan, role")
-      .eq("id", user.id)
-      .single();
+    const profile = await getUserProfileForGuard(user.id);
     if (!isAdminUser(user.email, (profile as { role?: string } | null)?.role)) {
       const plan = normalizePlan(profile?.plan);
       if (!canAccessFeature(plan, "trash")) {

@@ -7,6 +7,7 @@ import {
 import { loadExerciseState } from "@/lib/actions/exercise-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { canAccessFeature, isAdminUser, normalizePlan } from "@/lib/auth/plan";
+import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
 import { ExerciseClient } from "./exercise-client";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +20,7 @@ export default async function ExercisePage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("plan, role")
-      .eq("id", user.id)
-      .single();
+    const profile = await getUserProfileForGuard(user.id);
     if (!isAdminUser(user.email, (profile as { role?: string } | null)?.role)) {
       const plan = normalizePlan(profile?.plan);
       if (!canAccessFeature(plan, "exercise")) {
