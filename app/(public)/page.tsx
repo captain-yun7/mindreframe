@@ -2,6 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { ReviewCard } from "@/components/review-card";
 import { LandingAnalyzerPreview } from "@/components/landing-analyzer-preview";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
+import { normalizePlan } from "@/lib/auth/plan";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
@@ -103,6 +106,18 @@ function renderHeroTitle(raw: string): React.ReactNode {
 export default async function LandingPage() {
   const settings = await getSiteSettings();
 
+  // K3·F159·F160 — 로그인 상태 / 플랜 분기
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let landingUserMode: "anon" | "free" | "paid" = "anon";
+  if (user) {
+    const profile = await getUserProfileForGuard(user.id);
+    const plan = normalizePlan(profile?.plan ?? null);
+    landingUserMode = plan === "free" ? "free" : "paid";
+  }
+
   const heroTitleRaw =
     settings.landing_hero_title ?? "우울·불안은 <gold>생각습관</gold>이에요.\n훈련으로만 바뀝니다 🌱";
   const heroSubtitleRaw =
@@ -166,15 +181,15 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ── Features 그리드 ── */}
+      {/* ── Features 그리드 ── K2·F158 카피 ── */}
       <Section tone="light">
         <FadeIn>
           <div className="text-center mb-10 md:mb-14">
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-text-strong">
-              이런 도구들이 함께해요
+              강력한 생각 초점 이동 도구
             </h2>
             <p className="mt-4 text-base md:text-lg text-gs-muted-soft">
-              하루 5~10분, 6가지 도구를 골고루 써보세요.
+              짧게, 매일, 쉽게, 6가지 도구를 쓰세요.
             </p>
           </div>
         </FadeIn>
@@ -202,7 +217,7 @@ export default async function LandingPage() {
             </h2>
           </div>
           <div className="bg-white rounded-toss-card px-6 py-7 shadow-toss-card max-w-[880px] mx-auto">
-            <LandingAnalyzerPreview />
+            <LandingAnalyzerPreview userMode={landingUserMode} />
           </div>
         </FadeIn>
       </Section>

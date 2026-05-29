@@ -21,13 +21,25 @@ const INITIAL_MESSAGE: ChatMessage = {
 export interface TrashClientProps {
   heroSubtitle?: string;
   popup: { title: string; body: string; cta?: string } | null;
+  /** K3·F184 — 진입 시 오늘 사용량 (서버에서 fetch) */
+  initialUsage?: { used: number; limit: number; isUnlimited: boolean };
 }
 
-export function TrashClient({ heroSubtitle, popup }: TrashClientProps) {
+export function TrashClient({
+  heroSubtitle,
+  popup,
+  initialUsage,
+}: TrashClientProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [done, setDone] = useState(false);
+  const [usedCount, setUsedCount] = useState(initialUsage?.used ?? 0);
+  const dailyLimit = initialUsage?.limit ?? 0;
+  const isUnlimited = initialUsage?.isUnlimited ?? false;
+  const remaining = isUnlimited
+    ? null
+    : Math.max(0, dailyLimit - usedCount);
   const toast = useToast();
 
   async function handleSend(content: string) {
@@ -87,6 +99,8 @@ export function TrashClient({ heroSubtitle, popup }: TrashClientProps) {
       ]);
       toast.show("성장방에 저장되었어요", "success");
       setDone(true);
+      // K3·F184: 정리 저장 = 카운트 1 증가 (서버 incrementUsage와 동기 동기화)
+      setUsedCount((prev) => prev + 1);
     }
   }
 
@@ -113,8 +127,21 @@ export function TrashClient({ heroSubtitle, popup }: TrashClientProps) {
         <div className="mx-auto w-full max-w-[1120px] px-4">
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
             <FadeIn delay={0} y={16}>
-              <div className="text-sm font-bold tracking-[-0.01em] text-gs-navy-bright mb-3">
-                생각쓰레기통
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <div className="text-sm font-bold tracking-[-0.01em] text-gs-navy-bright">
+                  생각쓰레기통
+                </div>
+                {/* K3·F184 — 오늘 사용 횟수 / 한도 */}
+                {dailyLimit > 0 ? (
+                  <span
+                    data-testid="trash-usage-badge"
+                    className="inline-flex items-center gap-1 rounded-full bg-white border border-gs-gold-border px-2.5 py-1 text-[11px] font-extrabold text-gs-navy shadow-toss-card"
+                  >
+                    {isUnlimited
+                      ? `오늘 ${usedCount}회 사용`
+                      : `${usedCount}/${dailyLimit} 사용 · ${remaining}회 남음`}
+                  </span>
+                ) : null}
               </div>
               <h1 className="text-3xl md:text-5xl font-extrabold tracking-[-0.03em] text-gs-navy leading-[1.15]">
                 마음을 비워봐요 ✨

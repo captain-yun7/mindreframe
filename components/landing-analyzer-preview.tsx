@@ -10,6 +10,12 @@ import type { AnalysisResult } from "@/lib/cbt/prompts";
  * 비로그인 사용자가 1회 무료 분석 → 결과 카드 → 결제 유도(/pricing).
  *
  * 추적: localStorage[landing_analyzer_anon_id] + server에서 IP+UUID+content_hash 검증.
+ *
+ * K3·F159·F160 변경:
+ *  - userMode prop ("anon" | "free" | "paid")
+ *    - anon: 익명 ID 기반 1회 무료, 인지왜곡 클릭 → /pricing (기존)
+ *    - free: 로그인 무료. 1회 사용 후 "이미 무료 1회 사용하셨습니다." 모달, 인지왜곡 → /pricing
+ *    - paid: 정상 사용 (이전 결과 캐시 안 함, 새 분석), 인지왜곡 클릭 → /chat 새 세션
  */
 
 const STORAGE_KEY = "landing_analyzer_anon_id";
@@ -26,13 +32,21 @@ function getOrCreateAnonymousId(): string {
   }
 }
 
-export function LandingAnalyzerPreview() {
+export interface LandingAnalyzerPreviewProps {
+  userMode?: "anon" | "free" | "paid";
+}
+
+export function LandingAnalyzerPreview({
+  userMode = "anon",
+}: LandingAnalyzerPreviewProps) {
   const [anonId, setAnonId] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [alreadyUsed, setAlreadyUsed] = useState(false);
+  // K3·F159 — free 사용자가 1회 사용 후 띄울 모달
+  const [showFreeExhaustModal, setShowFreeExhaustModal] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -62,6 +76,18 @@ export function LandingAnalyzerPreview() {
       );
       return;
     }
+
+    // K3·F159 — 무료 사용자가 이미 사용한 경우 모달
+    if (r.alreadyUsed && userMode === "free") {
+      setShowFreeExhaustModal(true);
+      return;
+    }
+    // 유료 사용자는 alreadyUsed 무시하고 새 분석으로 진행
+    if (r.alreadyUsed && userMode === "paid") {
+      // 캐시는 무시 (anonymous_id 캐시는 비로그인 흐름 — 유료는 /chat으로 안내)
+      window.location.href = "/chat";
+      return;
+    }
     if (r.alreadyUsed) {
       setAlreadyUsed(true);
     }
@@ -69,6 +95,12 @@ export function LandingAnalyzerPreview() {
       setResult(r.result);
     }
   }
+
+  // 인지왜곡 카드 클릭 — K3·F160 분기
+  //   anon: /pricing (기존)
+  //   free: /pricing (가입했지만 무료라 결제 유도)
+  //   paid: /chat 신규 세션으로 이동해 합리적 대안 보기
+  const distortionHref = userMode === "paid" ? "/chat" : "/pricing";
 
   // 결과 카드 — 인지왜곡 선택 시 결제 유도
   if (result) {
@@ -105,7 +137,7 @@ export function LandingAnalyzerPreview() {
                 {result.distortions.map((d, i) => (
                   <Link
                     key={`${d.name}-${i}`}
-                    href="/pricing"
+                    href={distortionHref}
                     className="text-left p-3 rounded-toss-card border-2 border-gs-gold-border bg-[#fffaf3] hover:bg-white hover:-translate-y-0.5 hover:shadow-toss-card-hover transition-all"
                   >
                     <div className="text-[13px] font-bold text-gs-navy">
@@ -141,6 +173,46 @@ export function LandingAnalyzerPreview() {
 
   return (
     <div className="w-full">
+      {/* K3·F159 — 무료 1회 소진 모달 */}
+      {showFreeExhaustModal ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-gs-navy/55 backdrop-blur-sm px-4"
+          onClick={() => setShowFreeExhaustModal(false)}
+        >
+          <div
+            className="w-full max-w-[420px] rounded-3xl bg-white border-2 border-gs-gold-border shadow-toss-deep overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 pt-8 pb-6 text-center">
+              <div className="text-3xl mb-3">✨</div>
+              <div className="text-xl font-extrabold tracking-[-0.02em] text-gs-navy leading-[1.3]">
+                이미 무료 1회 사용하셨습니다
+              </div>
+              <p className="mt-4 text-[14px] text-gs-muted-soft leading-relaxed">
+                계속 분석을 이용하시려면 100일 프로그램을 시작해주세요.
+              </p>
+              <div className="mt-7 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowFreeExhaustModal(false)}
+                  className="flex-1 py-3 rounded-toss-button border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft hover:bg-gs-navy-50"
+                >
+                  닫기
+                </button>
+                <Link
+                  href="/pricing"
+                  className="flex-1 py-3 rounded-toss-button bg-gs-navy-bright text-white text-sm font-bold text-center hover:shadow-toss-card-hover"
+                >
+                  요금제 보기
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="rounded-[18px] overflow-hidden border-2 border-gs-gold-border bg-[#fff5ec] p-1">
         <div className="bg-white rounded-[16px] p-4">
           <div className="flex items-center justify-between mb-3">
@@ -148,7 +220,7 @@ export function LandingAnalyzerPreview() {
               <div className="w-2 h-2 rounded-full bg-gs-success" />
               <span className="text-[13px] font-bold">가짜생각 분석기</span>
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#fffaf3] border border-gs-gold-border text-gs-navy">
-                무료 1회 체험
+                {userMode === "paid" ? "내 분석 시작" : "무료 1회 체험"}
               </span>
             </div>
             <span className="text-[11px] text-gs-muted">CBT 인지왜곡 분석</span>

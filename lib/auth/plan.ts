@@ -38,10 +38,15 @@ export type UsageFeature = "analyzer" | "trash" | "exercise" | "meditation";
 /** 한도 미상한 sentinel — 모든 비교 코드(`used >= limit`)에서 통과되어야 함. */
 export const UNLIMITED = Number.MAX_SAFE_INTEGER;
 
+/**
+ * K3·F161 — 행동연습장·명상은 모든 유료 플랜 공통 (5종 공통).
+ * free는 모두 0(차단), 유료(light/pro/premium)는 UNLIMITED.
+ * 분석기·쓰레기통만 플랜별 한도 분기.
+ */
 export const PLAN_FEATURE_LIMITS: Record<Plan, Record<UsageFeature, number>> = {
   free: { analyzer: 0, trash: 0, exercise: 0, meditation: 0 },
-  light: { analyzer: 5, trash: 5, exercise: 5, meditation: 5 },
-  pro: { analyzer: 7, trash: 7, exercise: 0, meditation: 0 },
+  light: { analyzer: 5, trash: 5, exercise: UNLIMITED, meditation: UNLIMITED },
+  pro: { analyzer: 7, trash: 7, exercise: UNLIMITED, meditation: UNLIMITED },
   premium: {
     analyzer: UNLIMITED,
     trash: UNLIMITED,
@@ -64,10 +69,11 @@ export function getPlanFeatureLimit(plan: Plan, feature: UsageFeature): number {
  */
 export type FeatureKey = "analyzer" | "trash" | "exercise" | "meditation" | "coach";
 
+// K3·F161 — 행동연습장·명상은 모든 유료 플랜에서 사용 가능 (공통 5종)
 export const PLAN_FEATURE_ACCESS: Record<Plan, Record<FeatureKey, boolean>> = {
   free: { analyzer: false, trash: false, exercise: false, meditation: false, coach: false },
   light: { analyzer: true, trash: true, exercise: true, meditation: true, coach: true },
-  pro: { analyzer: true, trash: true, exercise: false, meditation: false, coach: true },
+  pro: { analyzer: true, trash: true, exercise: true, meditation: true, coach: true },
   premium: { analyzer: true, trash: true, exercise: true, meditation: true, coach: true },
 };
 

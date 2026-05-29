@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { getSiteSettings, parseSettingJson, type PopupContent } from "@/lib/site-settings";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { canAccessFeature, isAdminUser, normalizePlan } from "@/lib/auth/plan";
+import { canAccessFeature, isAdminUser, normalizePlan, UNLIMITED } from "@/lib/auth/plan";
 import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
+import { checkUsageOnly } from "@/lib/ai/usage";
 import { TrashClient } from "./trash-client";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,8 @@ export default async function TrashPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  let initialUsage: { used: number; limit: number; isUnlimited: boolean } | null = null;
   if (user) {
     const profile = await getUserProfileForGuard(user.id);
     if (!isAdminUser(user.email, (profile as { role?: string } | null)?.role)) {
@@ -21,6 +24,13 @@ export default async function TrashPage() {
         redirect("/pricing?from=/trash&required=trash");
       }
     }
+    // K3·F184 — 진입 시 현재 사용량 fetch (운영자/플랜 차단은 위에서 처리)
+    const usage = await checkUsageOnly(supabase, user.id, "trash");
+    initialUsage = {
+      used: usage.used,
+      limit: usage.limit,
+      isUnlimited: usage.limit >= UNLIMITED,
+    };
   }
 
   const settings = await getSiteSettings();
@@ -30,5 +40,11 @@ export default async function TrashPage() {
     '{"title":"왜 생각을 나눌까요?","body":"","cta":"시작하기"}',
   );
 
-  return <TrashClient heroSubtitle={heroSubtitle} popup={popup} />;
+  return (
+    <TrashClient
+      heroSubtitle={heroSubtitle}
+      popup={popup}
+      initialUsage={initialUsage ?? { used: 0, limit: 0, isUnlimited: false }}
+    />
+  );
 }
