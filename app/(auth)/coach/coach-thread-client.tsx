@@ -159,6 +159,7 @@ export function CoachThreadClient({
                     className={`text-[10px] mt-1 ${item.m.sender_role === "user" ? "text-white/70" : "text-gs-muted"}`}
                   >
                     {new Date(item.m.created_at).toLocaleString("ko-KR", {
+                      timeZone: "Asia/Seoul",
                       month: "2-digit",
                       day: "2-digit",
                       hour: "2-digit",

@@ -13,6 +13,11 @@ import {
   getPrompts,
   buildTherapyPromptViaDb,
 } from "@/lib/cbt/prompts-loader";
+import { callOpenAIChat } from "@/lib/ai/openai-client";
+import {
+  isLikelyPlainSpeech,
+  REPHRASE_TO_POLITE_INSTRUCTION,
+} from "@/lib/cbt/tone-check";
 
 /**
  * 가짜생각 분석기 — 원본 1203토닥챗최신버전.index.html의 3-phase state machine 복원.
@@ -20,43 +25,38 @@ import {
  *   selection → 사용자가 인지왜곡 카드 선택 (UI에서)
  *   therapy   → startTherapy() → continueTherapy() 반복
  *   finalize  → finalizeAndSave() (감정점수 후 응답 → 자동 트리거)
+ *
+ * K1 (F189/F190): 모든 OpenAI 호출은 lib/ai/openai-client의 callOpenAIChat 사용 →
+ *   timeout 45s + 일시적 에러 1회 retry + 통일된 에러 메시지.
+ * K5 (F183): 응답 후 반말 감지 → 1회 자동 재요청.
  */
 
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 function isCrisis(text: string) {
   return detectCrisis(text).level === "warn";
 }
 
-async function openaiCall(
-  body: Record<string, unknown>,
-): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) return { ok: false, error: "OPENAI_API_KEY 미설정" };
-
-  try {
-    const resp = await fetch(OPENAI_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-    const json = await resp.json();
-    if (!resp.ok) {
-      return { ok: false, error: `OpenAI: ${json.error?.message ?? resp.status}` };
-    }
-    const text = json.choices?.[0]?.message?.content?.trim() ?? "";
-    if (!text) return { ok: false, error: "응답이 비어있어요" };
-    return { ok: true, text };
-  } catch (e) {
-    return {
-      ok: false,
-      error: `OpenAI 호출 실패: ${e instanceof Error ? e.message : String(e)}`,
-    };
-  }
+/**
+ * 분석기 chat 응답 — 반말 감지되면 1회 재요청(존댓말 강제).
+ * 사용자 발화는 그대로 두고 직전 system + 어시스턴트 응답을 다시 풀어 폴리시.
+ */
+async function callChatWithPolitenessCheck(
+  baseMessages: Array<{ role: string; content: string }>,
+  rawText: string,
+): Promise<string> {
+  if (!isLikelyPlainSpeech(rawText)) return rawText;
+  const rephrased = await callOpenAIChat({
+    model: OPENAI_MODEL,
+    messages: [
+      ...baseMessages,
+      { role: "assistant", content: rawText },
+      { role: "system", content: REPHRASE_TO_POLITE_INSTRUCTION },
+      { role: "user", content: "위 안내대로 다시 작성해 주세요." },
+    ],
+    max_completion_tokens: 4000,
+  });
+  return rephrased.ok ? rephrased.text : rawText;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ export async function analyzeUserInput({ content }: { content: string }) {
 
   // 분석 호출 — site_settings prompt fallback
   const prompts = await getPrompts();
-  const r = await openaiCall({
+  const r = await callOpenAIChat({
     model: OPENAI_MODEL,
     messages: [
       { role: "system", content: prompts.analyzerMain },
@@ -214,22 +214,26 @@ export async function startTherapy({
     };
   }
 
-  const r = await openaiCall({
+  const baseMessages = [{ role: "system", content: therapySystem }];
+  const r = await callOpenAIChat({
     model: OPENAI_MODEL,
-    messages: [{ role: "system", content: therapySystem }],
+    messages: baseMessages,
     max_completion_tokens: 4000,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
+
+  // K5·F183: 반말 응답이면 1회 자동 재요청
+  const finalText = await callChatWithPolitenessCheck(baseMessages, r.text);
 
   // therapy system + 첫 assistant 응답을 chat_messages에 저장.
   // system 메시지도 보존해야 continueTherapy()에서 분기 가능.
   await supabase.from("chat_messages").insert([
     { session_id: sessionId, role: "system", content: therapySystem },
-    { session_id: sessionId, role: "assistant", content: r.text },
+    { session_id: sessionId, role: "assistant", content: finalText },
   ]);
 
   revalidatePath("/chat");
-  return { ok: true as const, reply: r.text };
+  return { ok: true as const, reply: finalText };
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -304,14 +308,15 @@ export async function continueTherapy({
     { role: "user", content: trimmed },
   ];
 
-  const r = await openaiCall({
+  const r = await callOpenAIChat({
     model: OPENAI_MODEL,
     messages,
     max_completion_tokens: 4000,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
-  let replyText = r.text;
+  // K5·F183: 반말 감지 시 1회 재요청
+  let replyText = await callChatWithPolitenessCheck(messages, r.text);
   let replyCrisis = false;
   if (isCrisis(replyText)) {
     replyCrisis = true;
@@ -405,7 +410,7 @@ export async function finalizeAndSave({
   ].join("\n");
 
   const prompts = await getPrompts();
-  const r = await openaiCall({
+  const r = await callOpenAIChat({
     model: OPENAI_MODEL,
     messages: [
       { role: "system", content: prompts.analyzerFinalize },

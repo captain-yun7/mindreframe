@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { detectCrisis, CRISIS_GUIDE_MESSAGE } from "@/lib/cbt/crisis-detection";
 import { type AnalysisResult } from "@/lib/cbt/prompts";
 import { getPrompts } from "@/lib/cbt/prompts-loader";
+import { callOpenAIChat } from "@/lib/ai/openai-client";
 
 /**
  * H6/F122 — 랜딩 비로그인 분석기.
@@ -20,7 +21,6 @@ import { getPrompts } from "@/lib/cbt/prompts-loader";
  */
 
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
 const DAILY_CAP = Number(process.env.LANDING_ANALYZER_DAILY_CAP ?? 100);
 const IP_DAILY_LIMIT = 5;
@@ -121,40 +121,34 @@ export async function analyzeAnonymous({
     };
   }
 
-  // 4) OpenAI 호출
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) return { ok: false, error: "분석 서비스 임시 점검 중" };
-
+  // 4) OpenAI 호출 — K1·F189 timeout/retry 통일 helper
+  const prompts = await getPrompts();
+  const callResult = await callOpenAIChat({
+    model: OPENAI_MODEL,
+    messages: [
+      { role: "system", content: prompts.analyzerMain },
+      { role: "user", content: trimmed },
+    ],
+    response_format: { type: "json_object" },
+    max_completion_tokens: 4000,
+  });
+  if (!callResult.ok) {
+    return { ok: false, error: callResult.error };
+  }
   let parsed: AnalysisResult;
   try {
-    const prompts = await getPrompts();
-    const resp = await fetch(OPENAI_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: [
-          { role: "system", content: prompts.analyzerMain },
-          { role: "user", content: trimmed },
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 4000,
-      }),
-    });
-    const json = await resp.json();
-    if (!resp.ok) {
-      return { ok: false, error: "분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요." };
-    }
-    const text = json.choices?.[0]?.message?.content?.trim() ?? "";
-    parsed = JSON.parse(text) as AnalysisResult;
+    parsed = JSON.parse(callResult.text) as AnalysisResult;
     if (!parsed || !Array.isArray(parsed.distortions)) {
-      return { ok: false, error: "분석 결과를 만들지 못했어요. 좀 더 구체적으로 적어주세요." };
+      return {
+        ok: false,
+        error: "분석 결과를 만들지 못했어요. 좀 더 구체적으로 적어주세요.",
+      };
     }
   } catch {
-    return { ok: false, error: "분석 호출 실패. 잠시 후 다시 시도해주세요." };
+    return {
+      ok: false,
+      error: "분석 결과 파싱 실패. 잠시 후 다시 시도해주세요.",
+    };
   }
 
   // 5) 사용 row 저장

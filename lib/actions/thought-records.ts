@@ -9,6 +9,11 @@ import {
 } from "@/lib/cbt/crisis-detection";
 import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
 import { getPrompts } from "@/lib/cbt/prompts-loader";
+import { callOpenAIChat } from "@/lib/ai/openai-client";
+import {
+  isLikelyPlainSpeech,
+  REPHRASE_TO_POLITE_INSTRUCTION,
+} from "@/lib/cbt/tone-check";
 
 type ThoughtInput = {
   situation: string;
@@ -139,9 +144,6 @@ export async function sendTrashMessage({
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) return { ok: false as const, error: "OPENAI_API_KEY 미설정" };
-
   const prompts = await getPrompts();
   const messages = [
     { role: "system", content: prompts.trashMain },
@@ -149,33 +151,30 @@ export async function sendTrashMessage({
     { role: "user", content: trimmed },
   ];
 
-  let raw = "";
-  try {
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages,
-        max_completion_tokens: 4000,
-      }),
+  // K1·F182: timeout 45s + 일시적 에러 1회 retry (callOpenAIChat 내장)
+  const callResult = await callOpenAIChat({
+    model: OPENAI_MODEL,
+    messages,
+    max_completion_tokens: 4000,
+  });
+  if (!callResult.ok) {
+    return { ok: false as const, error: callResult.error };
+  }
+  let raw = callResult.text;
+
+  // K5·F183: 반말 응답이면 1회 자동 재요청 (존댓말 강제)
+  if (isLikelyPlainSpeech(raw)) {
+    const rephrased = await callOpenAIChat({
+      model: OPENAI_MODEL,
+      messages: [
+        ...messages,
+        { role: "assistant", content: raw },
+        { role: "system", content: REPHRASE_TO_POLITE_INSTRUCTION },
+        { role: "user", content: "위 안내대로 다시 작성해 주세요." },
+      ],
+      max_completion_tokens: 4000,
     });
-    const json = await resp.json();
-    if (!resp.ok) {
-      return {
-        ok: false as const,
-        error: `OpenAI: ${json.error?.message ?? resp.status}`,
-      };
-    }
-    raw = json.choices?.[0]?.message?.content?.trim() ?? "";
-  } catch (e) {
-    return {
-      ok: false as const,
-      error: `OpenAI 호출 실패: ${e instanceof Error ? e.message : String(e)}`,
-    };
+    if (rephrased.ok) raw = rephrased.text;
   }
 
   // 응답 내부 위기 감지

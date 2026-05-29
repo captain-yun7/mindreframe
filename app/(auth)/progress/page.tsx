@@ -12,6 +12,7 @@ import { PageFade } from "@/components/motion/page-fade";
 import { getSiteSettings } from "@/lib/site-settings";
 import { AlternativeThoughtCard } from "@/components/alternative-thought-card";
 import { QuickNav } from "@/components/quick-nav";
+import { formatDateTimeKst } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -337,7 +338,7 @@ export default async function ProgressPage() {
                     className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
                   >
                     <div className="text-gs-muted-soft text-[11px] mb-1">
-                      {new Date(t.created_at).toLocaleString("ko-KR")}
+                      {formatDateTimeKst(t.created_at)}
                     </div>
                     <div className="font-bold">{t.situation}</div>
                     {t.thought && <div className="text-gs-text-soft mt-0.5">생각 · {t.thought}</div>}
@@ -409,7 +410,7 @@ export default async function ProgressPage() {
                       <div className="text-gs-muted-soft text-[11px] mb-1 flex items-center justify-between flex-wrap gap-1">
                         <span>
                           {modeLabel} ·{" "}
-                          {new Date(e.completed_at).toLocaleString("ko-KR")}
+                          {formatDateTimeKst(e.completed_at)}
                         </span>
                         {courageLevel != null && courageLevel > 0 ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
@@ -521,7 +522,7 @@ export default async function ProgressPage() {
                     <div>
                       <div className="font-bold">{m.track_title}</div>
                       <div className="text-gs-muted-soft text-[11px] mt-0.5">
-                        {new Date(m.completed_at).toLocaleString("ko-KR")}
+                        {formatDateTimeKst(m.completed_at)}
                       </div>
                     </div>
                     <div className="text-gs-muted-soft text-xs self-center">
