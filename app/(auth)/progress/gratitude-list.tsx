@@ -9,7 +9,18 @@ type Gratitude = {
   content: string;
   recorded_at: string;
   created_at: string;
+  /** RPC v5 — 오래된 순 카운트 (없으면 row별 레벨 표시 생략) */
+  sequence_no?: number | null;
 };
+
+// K6·F212 — 감사 레벨 산식 (RPC v5와 동일)
+function gratitudeLevelOf(seqNo: number): number {
+  if (seqNo < 1) return 0;
+  if (seqNo < 10) return 1;
+  if (seqNo < 30) return 2;
+  if (seqNo < 60) return 3;
+  return 4 + Math.floor((seqNo - 60) / 30);
+}
 
 export function GratitudeList({ initial }: { initial: Gratitude[] }) {
   const [items, setItems] = useState<Gratitude[]>(initial);
@@ -43,15 +54,26 @@ export function GratitudeList({ initial }: { initial: Gratitude[] }) {
   return (
     <>
       <ul className="mt-4 space-y-2" data-testid="recent-gratitudes">
-        {items.map((g) => (
-          <li
-            key={g.id}
-            className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
-          >
-            <div className="text-gs-muted-soft text-[11px] mb-1">{g.recorded_at}</div>
-            <div>{g.content}</div>
-          </li>
-        ))}
+        {items.map((g) => {
+          const seqNo = g.sequence_no ?? 0;
+          const level = gratitudeLevelOf(seqNo);
+          return (
+            <li
+              key={g.id}
+              className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
+            >
+              <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
+                <div className="text-gs-muted-soft text-[11px]">{g.recorded_at}</div>
+                {level > 0 ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
+                    🙏 감사 레벨 {level}
+                  </span>
+                ) : null}
+              </div>
+              <div>{g.content}</div>
+            </li>
+          );
+        })}
       </ul>
       {hasMore && (
         <button

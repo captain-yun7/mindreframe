@@ -607,14 +607,14 @@ export function ExerciseClient({
         />
       ) : null}
 
-      {/* F115: 4단계 완성 칭찬 모달 */}
+      {/* F115·K4·F199·F204: 4단계 완성 칭찬 모달 — "성장방 이동"은 행동연습장 기록 위치로 스크롤 */}
       <CelebrationModal
         open={celebrateOpen}
         onOpenChange={setCelebrateOpen}
         title={popups.step4Praise?.title ?? "용기 레벨 1 획득 🏆"}
         body={popups.step4Praise?.body}
         ctaLabel={popups.step4Praise?.cta ?? "성장방에서 확인하기"}
-        ctaHref="/progress"
+        ctaHref="/progress#exercises-list"
         autoCloseMs={0}
       />
 

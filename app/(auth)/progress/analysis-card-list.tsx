@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { supabase } from "@/lib/supabase";
 import { parseAlternativeThought } from "@/lib/cbt/analysis-format";
+import { loadMoreAnalyses } from "@/lib/actions/dashboard";
+import { useToast } from "@/components/ui/toast";
 
 export interface AnalysisItem {
   id: string;
@@ -21,10 +23,14 @@ interface ChatMsg {
   created_at: string;
 }
 
-export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
+export function AnalysisCardList({ items: initialItems }: { items: AnalysisItem[] }) {
+  const [items, setItems] = useState<AnalysisItem[]>(initialItems);
+  const [hasMore, setHasMore] = useState(initialItems.length >= 5);
+  const [pending, startTransition] = useTransition();
   const [openSessionId, setOpenSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   async function open(sessionId: string) {
     setOpenSessionId(sessionId);
@@ -44,6 +50,20 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
   function close() {
     setOpenSessionId(null);
     setMessages([]);
+  }
+
+  function handleLoadMore() {
+    const cursor = items[items.length - 1]?.created_at;
+    if (!cursor) return;
+    startTransition(async () => {
+      const r = await loadMoreAnalyses(cursor, 20);
+      if (!r.ok) {
+        toast.show(r.error, "error");
+        return;
+      }
+      setItems((prev) => [...prev, ...(r.entries as AnalysisItem[])]);
+      setHasMore(r.hasMore);
+    });
   }
 
   return (
@@ -68,18 +88,7 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
               <span className="text-gs-muted-soft font-bold">대안사고 · </span>
               {altView.text || "—"}
             </div>
-            {Array.isArray(a.distortion_types) && a.distortion_types.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {a.distortion_types.map((d) => (
-                  <span
-                    key={d}
-                    className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gs-gold-50 text-gs-gold-700 border border-gs-gold/30"
-                  >
-                    #{d}
-                  </span>
-                ))}
-              </div>
-            )}
+            {/* K6·F209: 인지왜곡 태그(#점쟁이예언 등) 전체 삭제 */}
             <button
               type="button"
               onClick={() => open(a.session_id)}
@@ -91,6 +100,17 @@ export function AnalysisCardList({ items }: { items: AnalysisItem[] }) {
           );
         })}
       </ul>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={handleLoadMore}
+          disabled={pending}
+          data-testid="analyses-load-more"
+          className="mt-4 w-full py-3 rounded-full border border-gs-line-soft bg-white text-sm font-bold text-gs-text-strong hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
+        >
+          {pending ? "불러오는 중…" : "더 보기"}
+        </button>
+      )}
 
       {openSessionId && (
         <div

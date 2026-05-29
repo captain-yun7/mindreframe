@@ -146,6 +146,116 @@ export async function loadMoreGratitudes(beforeCursor: string, pageSize: number 
   };
 }
 
+/* ─────────────────────────────────────────────
+ * K6·F208 — 성장방 "더 보기" pagination helpers.
+ *   created_at descending + cursor 기반 (gratitudes와 동일 패턴)
+ *   pageSize 기본 20개, 최대 50개.
+ * ───────────────────────────────────────────── */
+
+export async function loadMoreAnalyses(beforeCursor: string, pageSize: number = 20) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
+
+  const safeSize = Math.min(Math.max(1, pageSize), 50);
+  const { data, error } = await supabase
+    .from("chat_analyses")
+    .select(
+      "id, session_id, situation, automatic_thought, alternative_thought, distortion_types, created_at",
+    )
+    .eq("user_id", user.id)
+    .lt("created_at", beforeCursor)
+    .order("created_at", { ascending: false })
+    .limit(safeSize + 1);
+  if (error) return { ok: false as const, error: error.message };
+
+  const hasMore = (data?.length ?? 0) > safeSize;
+  const entries = (data ?? []).slice(0, safeSize);
+  return {
+    ok: true as const,
+    entries,
+    hasMore,
+    nextCursor: entries.length > 0 ? entries[entries.length - 1].created_at : null,
+  };
+}
+
+export async function loadMoreThoughts(beforeCursor: string, pageSize: number = 20) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
+
+  const safeSize = Math.min(Math.max(1, pageSize), 50);
+  const { data, error } = await supabase
+    .from("thought_records")
+    .select("id, situation, thought, emotion, body_reaction, behavior, created_at")
+    .eq("user_id", user.id)
+    .lt("created_at", beforeCursor)
+    .order("created_at", { ascending: false })
+    .limit(safeSize + 1);
+  if (error) return { ok: false as const, error: error.message };
+
+  const hasMore = (data?.length ?? 0) > safeSize;
+  const entries = (data ?? []).slice(0, safeSize);
+  return {
+    ok: true as const,
+    entries,
+    hasMore,
+    nextCursor: entries.length > 0 ? entries[entries.length - 1].created_at : null,
+  };
+}
+
+export async function loadMoreExercises(beforeCursor: string, pageSize: number = 20) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
+
+  const safeSize = Math.min(Math.max(1, pageSize), 50);
+  const { data, error } = await supabase
+    .from("exercise_logs")
+    .select(
+      "id, exercise_key, exercise_title, note, completed_at, courage_level",
+    )
+    .eq("user_id", user.id)
+    .lt("completed_at", beforeCursor)
+    .order("completed_at", { ascending: false })
+    .limit(safeSize + 1);
+  if (error) return { ok: false as const, error: error.message };
+
+  const hasMore = (data?.length ?? 0) > safeSize;
+  const entries = (data ?? []).slice(0, safeSize);
+  return {
+    ok: true as const,
+    entries,
+    hasMore,
+    nextCursor: entries.length > 0 ? entries[entries.length - 1].completed_at : null,
+  };
+}
+
+export async function loadMoreMeditations(beforeCursor: string, pageSize: number = 20) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
+
+  const safeSize = Math.min(Math.max(1, pageSize), 50);
+  const { data, error } = await supabase
+    .from("meditation_logs")
+    .select("id, track_title, duration, completed_at")
+    .eq("user_id", user.id)
+    .lt("completed_at", beforeCursor)
+    .order("completed_at", { ascending: false })
+    .limit(safeSize + 1);
+  if (error) return { ok: false as const, error: error.message };
+
+  const hasMore = (data?.length ?? 0) > safeSize;
+  const entries = (data ?? []).slice(0, safeSize);
+  return {
+    ok: true as const,
+    entries,
+    hasMore,
+    nextCursor: entries.length > 0 ? entries[entries.length - 1].completed_at : null,
+  };
+}
+
 export async function toggleRoutineCheck(itemKey: string, checked: boolean) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();

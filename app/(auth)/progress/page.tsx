@@ -2,17 +2,18 @@ import Image from "next/image";
 import { Card, CardTitle, CardDescription } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { AnalysisCardList, type AnalysisItem } from "./analysis-card-list";
-import { parseExerciseNote } from "@/lib/exercise-payload";
 import { parseAlternativeThought } from "@/lib/cbt/analysis-format";
 import { EmotionChart } from "./emotion-chart";
 import { GratitudeList } from "./gratitude-list";
+import { ThoughtsList } from "./thoughts-list";
+import { ExercisesList } from "./exercises-list";
+import { MeditationsList } from "./meditations-list";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 import { PageFade } from "@/components/motion/page-fade";
 import { getSiteSettings } from "@/lib/site-settings";
 import { AlternativeThoughtCard } from "@/components/alternative-thought-card";
 import { QuickNav } from "@/components/quick-nav";
-import { formatDateTimeKst } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,7 @@ interface ProgressStats {
     content: string;
     recorded_at: string;
     created_at: string;
+    sequence_no?: number | null;
   }[];
   recentExercises: {
     id: string;
@@ -62,12 +64,14 @@ interface ProgressStats {
     note: string | null;
     completed_at: string;
     courage_level?: number | null;
+    sequence_no?: number | null;
   }[];
   recentMeditations: {
     id: string;
     track_title: string;
     duration: number | null;
     completed_at: string;
+    sequence_no?: number | null;
   }[];
   emotionPoints: { score: number; recorded_at: string }[];
   courageLevel?: number | null;
@@ -284,23 +288,33 @@ export default async function ProgressPage() {
             <CardDescription>가짜생각 분석기에서 찾은 대안적 사고들이 모입니다.</CardDescription>
             {stats && stats.recentAlternatives.length > 0 ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {stats.recentAlternatives.map((r) => {
-                  // J4 / F145: 인지왜곡 prefix 제거, "합리적 사고"만 노출
-                  const parsed = parseAlternativeThought(r.alternative_thought);
-                  const rationalOnly =
-                    parsed.pairs.length > 0
-                      ? parsed.pairs
-                          .map((p) => p.rational)
-                          .filter(Boolean)
-                          .join("\n")
-                      : parsed.text;
-                  return (
+                {/* K6·F207: 인지왜곡 1개당 카드 1장 분리 + 게임형 보상 톤 (행동연습장 4단계 톤) */}
+                {(() => {
+                  type Card = { key: string; text: string };
+                  const cards: Card[] = [];
+                  for (const r of stats.recentAlternatives) {
+                    const parsed = parseAlternativeThought(r.alternative_thought);
+                    if (parsed.pairs.length > 0) {
+                      for (let i = 0; i < parsed.pairs.length; i++) {
+                        const rational = parsed.pairs[i].rational?.trim();
+                        if (!rational) continue;
+                        cards.push({
+                          key: `${r.id}_${i}`,
+                          text: rational,
+                        });
+                      }
+                    } else if (parsed.text) {
+                      cards.push({ key: r.id, text: parsed.text });
+                    }
+                  }
+                  return cards.map((c, idx) => (
                     <AlternativeThoughtCard
-                      key={r.id}
-                      text={rationalOnly || "—"}
+                      key={c.key}
+                      text={c.text}
+                      index={idx + 1}
                     />
-                  );
-                })}
+                  ));
+                })()}
               </div>
             ) : (
               <div className="mt-4 text-center text-gs-muted-soft text-[13px] py-8">
@@ -330,212 +344,34 @@ export default async function ProgressPage() {
           <Card className="mt-4 shadow-toss-card">
             <CardTitle>생각쓰레기통 기록</CardTitle>
             <CardDescription>상황·생각·감정·신체반응·행동으로 분리된 기록.</CardDescription>
-            {stats && stats.recentThoughts.length > 0 ? (
-              <ul className="mt-4 space-y-2" data-testid="recent-thoughts">
-                {stats.recentThoughts.map((t) => (
-                  <li
-                    key={t.id}
-                    className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
-                  >
-                    <div className="text-gs-muted-soft text-[11px] mb-1">
-                      {formatDateTimeKst(t.created_at)}
-                    </div>
-                    <div className="font-bold">{t.situation}</div>
-                    {t.thought && <div className="text-gs-text-soft mt-0.5">생각 · {t.thought}</div>}
-                    {t.emotion && <div className="text-gs-text-soft">감정 · {t.emotion}</div>}
-                    {t.body_reaction && (
-                      <div className="text-gs-text-soft">신체반응 · {t.body_reaction}</div>
-                    )}
-                    {t.behavior && <div className="text-gs-text-soft">행동 · {t.behavior}</div>}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="mt-4 text-center text-gs-muted-soft text-[13px] py-6">
-                생각쓰레기통에 기록을 남기면 여기에 모입니다.
-              </div>
-            )}
+            <ThoughtsList initial={stats?.recentThoughts ?? []} />
           </Card>
         </FadeIn>
 
         <FadeIn>
+          {/* K6·F212: 합산 감사 레벨 배지 제거 — row별 표시는 GratitudeList 내부에서 */}
           <Card className="mt-4 shadow-toss-card">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <CardTitle>감사일기</CardTitle>
-              {(stats?.gratitudeLevel ?? 0) > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2.5 py-1 text-[11px] font-extrabold text-gs-navy">
-                  🙏 감사 레벨 {stats?.gratitudeLevel}
-                </span>
-              )}
-            </div>
+            <CardTitle>감사일기</CardTitle>
             <CardDescription>오늘 감사했던 한 줄을 모았어요.</CardDescription>
             <GratitudeList initial={stats?.recentGratitudes ?? []} />
           </Card>
         </FadeIn>
 
         <FadeIn>
-          <Card className="mt-4 shadow-toss-card">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <CardTitle>행동연습장 기록</CardTitle>
-              {(stats?.courageLevel ?? 0) > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2.5 py-1 text-[11px] font-extrabold text-gs-navy">
-                  🏆 용기 레벨 {stats?.courageLevel}
-                </span>
-              )}
-            </div>
+          {/* K6·F212·F210: 합산 용기 레벨 배지 제거 — row별 카운트는 ExercisesList 내부 */}
+          <Card className="mt-4 shadow-toss-card scroll-mt-28" id="exercises-list">
+            <CardTitle>행동연습장 기록</CardTitle>
             <CardDescription>계획 → 실행 → 회고 순서로 정리된 기록.</CardDescription>
-            {stats && stats.recentExercises.length > 0 ? (
-              <ul className="mt-4 space-y-2" data-testid="recent-exercises">
-                {stats.recentExercises.map((e) => {
-                  const parsed = parseExerciseNote(e.note as string | null);
-                  const isNew =
-                    "type" in parsed &&
-                    (parsed.type === "anxiety_exposure" ||
-                      parsed.type === "depress_activity");
-                  const isLegacy = !isNew && "plan" in parsed;
-                  const modeLabel =
-                    isNew && parsed.type === "anxiety_exposure"
-                      ? "불안 줄이기"
-                      : isNew && parsed.type === "depress_activity"
-                        ? "우울 벗어나기"
-                        : e.exercise_key === "courage"
-                          ? "용기있는 행동"
-                          : "불안노출";
-                  const courageLevel = e.courage_level ?? null;
-                  return (
-                    <li
-                      key={e.id}
-                      className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
-                    >
-                      <div className="text-gs-muted-soft text-[11px] mb-1 flex items-center justify-between flex-wrap gap-1">
-                        <span>
-                          {modeLabel} ·{" "}
-                          {formatDateTimeKst(e.completed_at)}
-                        </span>
-                        {courageLevel != null && courageLevel > 0 ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
-                            🏆 용기 레벨 {courageLevel}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="font-bold">{e.exercise_title}</div>
-                      {isNew && parsed.type === "anxiety_exposure" && (
-                        <div className="mt-1 space-y-0.5 text-gs-text-soft">
-                          <div>
-                            {parsed.did === "did" ? "✓ 도전함" : "✕ 못 함"}
-                            {parsed.actualBefore != null && parsed.actualAfter != null && (
-                              <> {" · "}불안 {parsed.actualBefore} → {parsed.actualAfter}</>
-                            )}
-                          </div>
-                          {parsed.learnedLine && (
-                            <div className="text-gs-muted-soft text-[12px]">
-                              💭 {parsed.learnedLine}
-                            </div>
-                          )}
-                          {parsed.unexpectedThought && (
-                            <div className="text-gs-muted-soft text-[12px] italic">
-                              🤔 예상치 못한 생각 · {parsed.unexpectedThought}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {isNew && parsed.type === "depress_activity" && (
-                        <div className="mt-1 space-y-0.5 text-gs-text-soft">
-                          <div>
-                            {parsed.did === "did" ? "✓ 실행함" : "✕ 못 함"}
-                            {parsed.actualAfter != null && (
-                              <> {" · "}활동 후 기분 {parsed.actualAfter}</>
-                            )}
-                          </div>
-                          {parsed.learnedLine && (
-                            <div className="text-gs-muted-soft text-[12px]">
-                              💭 {parsed.learnedLine}
-                            </div>
-                          )}
-                          {parsed.unexpectedThought && (
-                            <div className="text-gs-muted-soft text-[12px] italic">
-                              🤔 예상치 못한 생각 · {parsed.unexpectedThought}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {isLegacy && (
-                        <div className="mt-1 space-y-0.5 text-gs-text-soft">
-                          {parsed.plan.when && <div>📅 {parsed.plan.when}</div>}
-                          {parsed.plan.whereWho && <div>📍 {parsed.plan.whereWho}</div>}
-                          {parsed.execution && (
-                            <div>
-                              {parsed.execution.did ? "✓ 실행함" : "✕ 못 함"}
-                              {parsed.execution.before != null &&
-                                parsed.execution.after != null && (
-                                  <>
-                                    {" · "}
-                                    {e.exercise_key === "courage" ? "기분" : "불안"}{" "}
-                                    {parsed.execution.before} → {parsed.execution.after}
-                                  </>
-                                )}
-                            </div>
-                          )}
-                          {parsed.reflection && (
-                            <div className="mt-1 text-gs-muted-soft text-[12px]">
-                              💭 {parsed.reflection}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {!isNew &&
-                        !isLegacy &&
-                        "plain" in parsed &&
-                        parsed.plain && (
-                          <div className="text-gs-text-soft mt-0.5">{parsed.plain}</div>
-                        )}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <div className="mt-4 text-center text-gs-muted-soft text-[13px] py-6">
-                행동연습장에서 기록을 저장하면 여기에 모입니다.
-              </div>
-            )}
+            <ExercisesList initial={stats?.recentExercises ?? []} />
           </Card>
         </FadeIn>
 
         <FadeIn>
+          {/* K6·F212·F213: 합산 명상 레벨 배지 제거 + 0분 표기 제거는 MeditationsList 내부 */}
           <Card className="mt-4 shadow-toss-card">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <CardTitle>명상 기록</CardTitle>
-              {(stats?.meditationLevel ?? 0) > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2.5 py-1 text-[11px] font-extrabold text-gs-navy">
-                  🧘 명상 레벨 {stats?.meditationLevel}
-                </span>
-              )}
-            </div>
+            <CardTitle>명상 기록</CardTitle>
             <CardDescription>명상 트랙 재생 기록.</CardDescription>
-            {stats && stats.recentMeditations.length > 0 ? (
-              <ul className="mt-4 space-y-2" data-testid="recent-meditations">
-                {stats.recentMeditations.map((m) => (
-                  <li
-                    key={m.id}
-                    className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px] flex justify-between"
-                  >
-                    <div>
-                      <div className="font-bold">{m.track_title}</div>
-                      <div className="text-gs-muted-soft text-[11px] mt-0.5">
-                        {formatDateTimeKst(m.completed_at)}
-                      </div>
-                    </div>
-                    <div className="text-gs-muted-soft text-xs self-center">
-                      {Math.round((m.duration ?? 0) / 60)}분
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="mt-4 text-center text-gs-muted-soft text-[13px] py-6">
-                명상 트랙을 재생/완료하면 여기에 모입니다.
-              </div>
-            )}
+            <MeditationsList initial={stats?.recentMeditations ?? []} />
           </Card>
         </FadeIn>
         <QuickNav />
