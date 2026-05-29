@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
  * 토스 톤 Loading 컴포넌트.
  *
  * - 부드러운 페이드 진입 + 미니멀 spinner (gs-gold 톤 원형)
+ * - K2·F175: showSprout=true 시 새싹 아이콘 표시 (페이지 이동 안내 통일 톤)
  * - 카피: 기본 "잠시만요" + 선택 hint
  * - 중앙 정렬, py-20 padding
  */
@@ -13,9 +14,12 @@ import { motion } from "framer-motion";
 export function LoadingScreen({
   message = "잠시만요",
   hint,
+  showSprout = false,
 }: {
   message?: string;
   hint?: string;
+  /** K2·F175 — 페이지 이동 안내 메시지 통일 톤 (새싹 아이콘) */
+  showSprout?: boolean;
 }) {
   return (
     <motion.div
@@ -25,7 +29,13 @@ export function LoadingScreen({
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="flex flex-col items-center text-center max-w-[420px] w-full">
-        <Spinner />
+        {showSprout ? (
+          <div className="text-5xl mb-4" aria-hidden>
+            🌱
+          </div>
+        ) : (
+          <Spinner />
+        )}
         <p className="mt-6 text-[15px] font-bold text-gs-text-strong tracking-[-0.02em]">
           {message}
         </p>

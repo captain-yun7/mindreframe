@@ -5,7 +5,8 @@ interface SidebarProps {
   completionRate: string;
   streak: number;
   totalDays: number;
-  hint: string;
+  /** K2·F170 — 안내 hint는 옵셔널 (미전달 시 비표시) */
+  hint?: string;
 }
 
 export function RoutineSidebar({
@@ -56,9 +57,11 @@ export function RoutineSidebar({
         </span>
       </div>
 
-      <p className="mt-5 text-gs-muted-soft text-xs font-medium leading-relaxed tracking-[-0.01em]">
-        {hint}
-      </p>
+      {hint ? (
+        <p className="mt-5 text-gs-muted-soft text-xs font-medium leading-relaxed tracking-[-0.01em]">
+          {hint}
+        </p>
+      ) : null}
 
       <div className="mt-5">
         <Link

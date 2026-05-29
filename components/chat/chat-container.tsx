@@ -139,12 +139,14 @@ export function ChatContainer({
           {isLoading && (
             <div className="mb-2 flex flex-col items-start">
               <div className="bg-white border border-gs-line-soft px-3 py-2 rounded-[14px] flex items-center gap-2">
-                {loadingLabel && (
+                {loadingLabel ? (
+                  // K5·F188 — label 있을 때 점점점 dots 제거. 부드러운 pulse 텍스트만.
                   <span className="ai-thinking-text text-sm font-medium">
                     {loadingLabel}
                   </span>
+                ) : (
+                  <TypingDots bare />
                 )}
-                <TypingDots bare />
               </div>
             </div>
           )}

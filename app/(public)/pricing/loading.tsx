@@ -2,5 +2,5 @@ import { LoadingScreen } from "@/components/loading-screen";
 
 // K2·F175 — 페이지 이동 안내 통일
 export default function Loading() {
-  return <LoadingScreen message="오늘의 루틴을 시작합니다" showSprout />;
+  return <LoadingScreen message="요금제 변경을 시작합니다" showSprout />;
 }

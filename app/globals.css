@@ -267,19 +267,17 @@
     background-position: 260% center;
   }
 }
+/* K5·F188 — 반짝거리는 shimmer 효과 제거. 부드러운 opacity pulse만 유지. */
 .ai-thinking-text {
-  background-image: linear-gradient(
-    90deg,
-    var(--color-gs-muted-light) 0%,
-    var(--color-gs-muted-light) 35%,
-    var(--color-gs-navy-bright) 50%,
-    var(--color-gs-muted-light) 65%,
-    var(--color-gs-muted-light) 100%
-  );
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  animation: ai-thinking-shimmer 2.4s ease-in-out infinite;
+  color: var(--color-gs-navy-bright);
+  animation: ai-thinking-pulse 1.6s ease-in-out infinite;
+}
+@keyframes ai-thinking-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }

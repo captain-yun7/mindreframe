@@ -45,14 +45,14 @@ const checklistItems = [
   {
     key: "analysis",
     label: "가짜생각 분석 1회",
-    description: "자동사고 → 인지왜곡 → 한 문장 정리.",
+    description: "자동사고 → 인지왜곡 → 대안사고 완성.",
     actionLabel: "분석",
     actionHref: "/chat",
   },
   {
     key: "focus3",
     label: "3분 집중",
-    description: "호흡/소리/한 문장에 주의 옮기기.",
+    description: "호흡/소리/원하는 곳에 주의 옮기기.",
     actionLabel: "명상",
     actionHref: "/meditation",
   },
@@ -391,12 +391,12 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
           </div>
 
           <FadeIn>
+            {/* K2·F170 — "혼합형 하나만 선택" 안내 문구 삭제 */}
             <RoutineSidebar
               moodScore={moodScore}
               completionRate={completionRate}
               streak={initial.streak}
               totalDays={initial.totalDays}
-              hint="혼합형은 '하나만 선택'이 승리예요. 오늘은 1개만 해도 OK."
             />
           </FadeIn>
         </div>

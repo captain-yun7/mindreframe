@@ -27,19 +27,13 @@ const INITIAL_MESSAGE: ChatMessage = {
     "어떤 일이 있었는지, 그리고 어떤 생각이 들었는지 구체적으로 적어주세요. 그리고 감정을 0~100점으로 측정해주세요.\n\n예시: \"회의에서 발표를 해야 하는데, 떨려서 실수할 것 같고 사람들이 나를 이상하게 볼 것 같아요. 80점\"",
 };
 
+// K5·F192 — "1단계 분석" 표기 삭제. selection/therapy/done 라벨만 유지.
 const PHASE_LABEL: Record<Phase, string> = {
-  analysis: "1단계 · 분석",
-  selection: "2단계 · 왜곡 선택",
-  therapy: "3단계 · 합리적 사고 만들기",
+  analysis: "",
+  selection: "왜곡 선택",
+  therapy: "합리적 사고 만들기",
   done: "정리 완료",
 };
-
-// F103: 11가지 인지왜곡 리스트 (페이지 하단 표시용)
-const DISTORTION_LIST = Object.entries(DISTORTIONS).map(([name, info]) => ({
-  name,
-  description: info.advice,
-  goal: info.goal,
-}));
 
 export interface ChatClientProps {
   heroSubtitle?: string;
@@ -222,16 +216,6 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
     await runStartTherapy(sessionId, analysis, name);
   }
 
-  async function handleManualFinalize() {
-    if (!sessionId) {
-      toast.show("아직 대화가 없어요", "error");
-      return;
-    }
-    setIsLoading(true);
-    await runFinalize(sessionId, 0);
-    setIsLoading(false);
-  }
-
   const placeholder =
     phase === "analysis"
       ? "자동사고와 감정 점수를 적어주세요..."
@@ -296,22 +280,25 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
         <FadeIn>
           <div className="rounded-toss-card border-2 border-gs-gold-border bg-[#fff5ec] p-1">
             <Card className="shadow-toss-card !rounded-[18px]">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-bold text-gs-navy-bright px-2 py-0.5 rounded-full bg-gs-navy-50">
-                  {PHASE_LABEL[phase]}
-                </span>
-                {phase === "therapy" && (
-                  <span className="text-[11px] text-gs-muted-light">
-                    치료 대화 진행 중
+              {/* K5·F192 — phase 라벨은 비어있지 않을 때만 표시 */}
+              {PHASE_LABEL[phase] ? (
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-bold text-gs-navy-bright px-2 py-0.5 rounded-full bg-gs-navy-50">
+                    {PHASE_LABEL[phase]}
                   </span>
-                )}
-              </div>
+                  {phase === "therapy" && (
+                    <span className="text-[11px] text-gs-muted-light">
+                      치료 대화 진행 중
+                    </span>
+                  )}
+                </div>
+              ) : null}
 
               <ChatContainer
                 messages={messages}
                 onSend={handleSend}
                 isLoading={isLoading}
-                loadingLabel="신중히 생각중입니다"
+                loadingLabel="신중히 생각 중이에요"
                 placeholder={placeholder}
                 headerTitle="가짜생각 분석기"
                 headerTag="인지왜곡 분석 · 대안사고"
@@ -353,46 +340,12 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
                 </div>
               )}
 
-              {phase === "therapy" && (
-                <button
-                  type="button"
-                  onClick={handleManualFinalize}
-                  disabled={isLoading || !sessionId}
-                  className="mt-4 w-full py-3 rounded-toss-button bg-gs-navy-50 border border-gs-navy-bright/25 text-gs-navy-bright text-sm font-bold cursor-pointer hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? "분석 정리 중..." : "이 대화 정리하고 저장"}
-                </button>
-              )}
+              {/* K5·F191 — "이 대화 정리하고 저장" 버튼 제거 (감정점수(후) 응답 후 자동 finalize) */}
             </Card>
           </div>
         </FadeIn>
 
-        {/* F103: 11가지 인지왜곡 리스트 (페이지 하단) */}
-        <FadeIn>
-          <div className="mt-10">
-            <h2 className="text-base font-bold text-gs-text-strong mb-3">
-              11가지 인지왜곡
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {DISTORTION_LIST.map((d) => (
-                <div
-                  key={d.name}
-                  className="p-3 rounded-toss-card bg-white border border-gs-line-soft shadow-toss-card"
-                >
-                  <div className="text-[12.5px] font-bold text-gs-navy-bright mb-1">
-                    #{d.name}
-                  </div>
-                  <div className="text-[11px] text-gs-navy mb-1">
-                    {d.goal}
-                  </div>
-                  <div className="text-[11.5px] text-gs-muted leading-[1.5]">
-                    {d.description}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </FadeIn>
+        {/* K5·F187 — 11가지 인지왜곡 카드 섹션 삭제 (분석 결과에 충분히 노출됨) */}
         <QuickNav />
       </main>
     </PageFade>

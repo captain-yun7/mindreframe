@@ -178,6 +178,7 @@ export function TrashClient({
                 messages={messages}
                 onSend={handleSend}
                 isLoading={isLoading}
+                loadingLabel="신중히 생각 중이에요"
                 placeholder={
                   done
                     ? "정리가 완료되었어요. 다른 사건은 아래 버튼으로."
