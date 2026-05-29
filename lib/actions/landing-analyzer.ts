@@ -4,7 +4,8 @@ import { headers } from "next/headers";
 import { createHash } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { detectCrisis, CRISIS_GUIDE_MESSAGE } from "@/lib/cbt/crisis-detection";
-import { ANALYSIS_PROMPT, type AnalysisResult } from "@/lib/cbt/prompts";
+import { type AnalysisResult } from "@/lib/cbt/prompts";
+import { getPrompts } from "@/lib/cbt/prompts-loader";
 
 /**
  * H6/F122 — 랜딩 비로그인 분석기.
@@ -126,6 +127,7 @@ export async function analyzeAnonymous({
 
   let parsed: AnalysisResult;
   try {
+    const prompts = await getPrompts();
     const resp = await fetch(OPENAI_URL, {
       method: "POST",
       headers: {
@@ -135,7 +137,7 @@ export async function analyzeAnonymous({
       body: JSON.stringify({
         model: OPENAI_MODEL,
         messages: [
-          { role: "system", content: ANALYSIS_PROMPT },
+          { role: "system", content: prompts.analyzerMain },
           { role: "user", content: trimmed },
         ],
         response_format: { type: "json_object" },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { TypingDots } from "./typing-dots";
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -143,7 +144,7 @@ export function ChatContainer({
                     {loadingLabel}
                   </span>
                 )}
-                <TypingDots />
+                <TypingDots bare />
               </div>
             </div>
           )}
@@ -176,16 +177,3 @@ export function ChatContainer({
   );
 }
 
-function TypingDots() {
-  return (
-    <span
-      className="inline-flex gap-1 items-center h-[1.2em]"
-      aria-label="입력 중"
-      role="status"
-    >
-      <span className="w-1.5 h-1.5 rounded-full bg-gs-muted-soft/70 animate-bounce [animation-delay:-0.32s]" />
-      <span className="w-1.5 h-1.5 rounded-full bg-gs-muted-soft/70 animate-bounce [animation-delay:-0.16s]" />
-      <span className="w-1.5 h-1.5 rounded-full bg-gs-muted-soft/70 animate-bounce" />
-    </span>
-  );
-}

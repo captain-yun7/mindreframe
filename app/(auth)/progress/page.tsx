@@ -71,6 +71,8 @@ interface ProgressStats {
   emotionPoints: { score: number; recorded_at: string }[];
   courageLevel?: number | null;
   totalExercises?: number | null;
+  meditationLevel?: number | null;
+  gratitudeLevel?: number | null;
 }
 
 async function loadStats() {
@@ -112,6 +114,8 @@ async function loadStats() {
     recentAnalyses: stats.recentAnalyses,
     courageLevel: stats.courageLevel ?? 0,
     totalExercises: stats.totalExercises ?? 0,
+    meditationLevel: stats.meditationLevel ?? 0,
+    gratitudeLevel: stats.gratitudeLevel ?? 0,
     emotionPoints: stats.emotionPoints.map((p) => ({
       date: p.recorded_at,
       score: p.score,
@@ -280,12 +284,19 @@ export default async function ProgressPage() {
             {stats && stats.recentAlternatives.length > 0 ? (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 {stats.recentAlternatives.map((r) => {
+                  // J4 / F145: 인지왜곡 prefix 제거, "합리적 사고"만 노출
                   const parsed = parseAlternativeThought(r.alternative_thought);
+                  const rationalOnly =
+                    parsed.pairs.length > 0
+                      ? parsed.pairs
+                          .map((p) => p.rational)
+                          .filter(Boolean)
+                          .join("\n")
+                      : parsed.text;
                   return (
                     <AlternativeThoughtCard
                       key={r.id}
-                      text={parsed.text || "—"}
-                      createdAt={r.created_at}
+                      text={rationalOnly || "—"}
                     />
                   );
                 })}
@@ -348,7 +359,14 @@ export default async function ProgressPage() {
 
         <FadeIn>
           <Card className="mt-4 shadow-toss-card">
-            <CardTitle>감사일기</CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle>감사일기</CardTitle>
+              {(stats?.gratitudeLevel ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2.5 py-1 text-[11px] font-extrabold text-gs-navy">
+                  🙏 감사 레벨 {stats?.gratitudeLevel}
+                </span>
+              )}
+            </div>
             <CardDescription>오늘 감사했던 한 줄을 모았어요.</CardDescription>
             <GratitudeList initial={stats?.recentGratitudes ?? []} />
           </Card>
@@ -356,7 +374,14 @@ export default async function ProgressPage() {
 
         <FadeIn>
           <Card className="mt-4 shadow-toss-card">
-            <CardTitle>행동연습장 기록</CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle>행동연습장 기록</CardTitle>
+              {(stats?.courageLevel ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2.5 py-1 text-[11px] font-extrabold text-gs-navy">
+                  🏆 용기 레벨 {stats?.courageLevel}
+                </span>
+              )}
+            </div>
             <CardDescription>계획 → 실행 → 회고 순서로 정리된 기록.</CardDescription>
             {stats && stats.recentExercises.length > 0 ? (
               <ul className="mt-4 space-y-2" data-testid="recent-exercises">
@@ -477,7 +502,14 @@ export default async function ProgressPage() {
 
         <FadeIn>
           <Card className="mt-4 shadow-toss-card">
-            <CardTitle>명상 기록</CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle>명상 기록</CardTitle>
+              {(stats?.meditationLevel ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2.5 py-1 text-[11px] font-extrabold text-gs-navy">
+                  🧘 명상 레벨 {stats?.meditationLevel}
+                </span>
+              )}
+            </div>
             <CardDescription>명상 트랙 재생 기록.</CardDescription>
             {stats && stats.recentMeditations.length > 0 ? (
               <ul className="mt-4 space-y-2" data-testid="recent-meditations">

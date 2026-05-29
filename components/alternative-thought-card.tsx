@@ -4,28 +4,29 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 /**
- * H6/F119 — 성장방 대안적 사고 카드.
- * 게임 카드 톤: 살색 배경 + 금색 보더 + 그림자.
- * 본문이 길면 2줄로 잘라 표시, "더보기"로 펼치고 "닫기"로 접는다.
+ * J4 / F145 — 성장방 대안적 사고 카드 (포커·타로 톤 리뉴얼).
+ *
+ * 변경:
+ *   - 날짜 표시 제거
+ *   - 폰트 18~20px로 ↑
+ *   - rounded-3xl + gs-gold border-2 + shadow-xl
+ *   - 인지왜곡 prefix 없이 "합리적 사고"만 노출 (호출부에서 rational만 전달)
  */
 
 interface Props {
   text: string;
-  createdAt: string;
 }
 
-export function AlternativeThoughtCard({ text, createdAt }: Props) {
+export function AlternativeThoughtCard({ text }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const isLong = text.length > 90 || text.includes("\n");
+  const trimmed = text?.trim() ?? "";
+  const isLong = trimmed.length > 110 || trimmed.includes("\n");
 
   return (
-    <div className="p-3.5 rounded-[14px] border-2 border-gs-gold-border bg-[#fff5ec] shadow-toss-card">
-      <div className="text-[10.5px] text-gs-navy/70 font-bold mb-1.5">
-        {new Date(createdAt).toLocaleDateString("ko-KR")}
-      </div>
+    <div className="p-5 rounded-3xl border-2 border-gs-gold bg-gradient-to-br from-gs-gold-50 to-[#fff5ec] shadow-xl transition-transform hover:-translate-y-0.5">
       {!isLong ? (
-        <div className="text-[13px] text-gs-text-strong whitespace-pre-wrap leading-[1.55]">
-          {text || "—"}
+        <div className="text-[18px] md:text-[20px] font-bold text-gs-navy whitespace-pre-wrap leading-[1.55] tracking-[-0.01em]">
+          {trimmed || "—"}
         </div>
       ) : (
         <>
@@ -39,8 +40,8 @@ export function AlternativeThoughtCard({ text, createdAt }: Props) {
                 transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                 className="overflow-hidden"
               >
-                <div className="text-[13px] text-gs-text-strong whitespace-pre-wrap leading-[1.55]">
-                  {text}
+                <div className="text-[18px] md:text-[20px] font-bold text-gs-navy whitespace-pre-wrap leading-[1.55] tracking-[-0.01em]">
+                  {trimmed}
                 </div>
               </motion.div>
             ) : (
@@ -50,16 +51,16 @@ export function AlternativeThoughtCard({ text, createdAt }: Props) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="text-[13px] text-gs-text-strong leading-[1.55] line-clamp-2"
+                className="text-[18px] md:text-[20px] font-bold text-gs-navy leading-[1.55] tracking-[-0.01em] line-clamp-3"
               >
-                {text}
+                {trimmed}
               </motion.div>
             )}
           </AnimatePresence>
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="mt-2 text-[11.5px] font-bold text-gs-navy hover:underline"
+            className="mt-3 text-[13px] font-extrabold text-gs-navy hover:underline"
           >
             {expanded ? "닫기" : "더보기"}
           </button>

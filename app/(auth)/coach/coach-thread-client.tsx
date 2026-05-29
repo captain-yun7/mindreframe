@@ -10,8 +10,10 @@ import {
   sendCoachMessage,
 } from "@/lib/actions/coach-chat";
 import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
+import { useTypingIndicator } from "@/lib/hooks/use-typing-indicator";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
 import { RealtimeStatusDot } from "@/components/realtime-status-dot";
+import { TypingDots } from "@/components/chat/typing-dots";
 
 interface Props {
   sessions: CoachSessionSummary[];
@@ -38,9 +40,15 @@ export function CoachThreadClient({
   const toast = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // J5 / F154 — 사용자 측: coach의 typing 감지 + 자기 입력 시 broadcast
+  const { othersTyping, notifyTyping } = useTypingIndicator(
+    activeSession?.id ?? null,
+    "user",
+  );
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, othersTyping]);
 
   const rendered = renderWithSeparators(sessions, messages);
 
@@ -162,14 +170,22 @@ export function CoachThreadClient({
             ),
           )
         )}
+        {activeSession && othersTyping && (
+          <div className="flex justify-start">
+            <TypingDots label="코치 입력 중" />
+          </div>
+        )}
       </div>
 
       {activeSession ? (
-        <div className="border-t border-gs-line-soft p-3 flex gap-2">
+        <div className="border-t border-gs-line-soft p-3 flex gap-2 items-center">
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              notifyTyping();
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -178,13 +194,13 @@ export function CoachThreadClient({
             }}
             placeholder="메시지를 입력하세요..."
             disabled={pending}
-            className="flex-1 px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
+            className="flex-1 min-w-0 px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={pending || !input.trim()}
-            className="px-4 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold disabled:opacity-50"
+            className="shrink-0 whitespace-nowrap px-4 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold disabled:opacity-50"
           >
             전송
           </button>

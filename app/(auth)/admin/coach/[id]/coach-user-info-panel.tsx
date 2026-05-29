@@ -14,6 +14,8 @@ interface Props {
   planExpiresAt: string | null;
   createdAt: string | null;
   notificationsStartedAt: string | null;
+  phoneNumber: string | null;
+  notificationHour: number | null;
   dayNumber: number | null;
   usedThisWeek: number;
   weeklyLimit: number;
@@ -82,6 +84,18 @@ export function CoachUserInfoPanel(p: Props) {
         label="100일 차수"
         value={p.dayNumber !== null ? `${p.dayNumber}/100` : "미시작"}
       />
+      <Row
+        label="휴대폰"
+        value={p.phoneNumber ? formatPhone(p.phoneNumber) : "미등록"}
+      />
+      <Row
+        label="알림 시간"
+        value={
+          p.notificationHour !== null
+            ? `${p.notificationHour.toString().padStart(2, "0")}:00`
+            : "미설정"
+        }
+      />
 
       <hr className="border-gs-line-soft" />
 
@@ -125,4 +139,13 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="flex items-center">{value}</span>
     </div>
   );
+}
+
+function formatPhone(phone: string): string {
+  // 010-1234-5678 형태로 보정 (저장이 raw 숫자만이거나 하이픈 포함 모두 대응)
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("010")) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  }
+  return phone;
 }

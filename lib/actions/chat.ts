@@ -8,12 +8,11 @@ import {
   CRISIS_GUIDE_MESSAGE,
 } from "@/lib/cbt/crisis-detection";
 import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
+import { type AnalysisResult } from "@/lib/cbt/prompts";
 import {
-  ANALYSIS_PROMPT,
-  FINALIZE_PROMPT_KO,
-  buildTherapyPrompt,
-  type AnalysisResult,
-} from "@/lib/cbt/prompts";
+  getPrompts,
+  buildTherapyPromptViaDb,
+} from "@/lib/cbt/prompts-loader";
 
 /**
  * 가짜생각 분석기 — 원본 1203토닥챗최신버전.index.html의 3-phase state machine 복원.
@@ -103,11 +102,12 @@ export async function analyzeUserInput({ content }: { content: string }) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
-  // 분석 호출
+  // 분석 호출 — site_settings prompt fallback
+  const prompts = await getPrompts();
   const r = await openaiCall({
     model: OPENAI_MODEL,
     messages: [
-      { role: "system", content: ANALYSIS_PROMPT },
+      { role: "system", content: prompts.analyzerMain },
       { role: "user", content: trimmed },
     ],
     response_format: { type: "json_object" },
@@ -206,7 +206,7 @@ export async function startTherapy({
 
   let therapySystem: string;
   try {
-    therapySystem = buildTherapyPrompt(analysis, selectedDistortion);
+    therapySystem = await buildTherapyPromptViaDb(analysis, selectedDistortion);
   } catch (e) {
     return {
       ok: false as const,
@@ -404,10 +404,11 @@ export async function finalizeAndSave({
     `대화(참고용):`,
   ].join("\n");
 
+  const prompts = await getPrompts();
   const r = await openaiCall({
     model: OPENAI_MODEL,
     messages: [
-      { role: "system", content: FINALIZE_PROMPT_KO },
+      { role: "system", content: prompts.analyzerFinalize },
       { role: "user", content: inputMaterial },
       ...convo.map((m) => ({ role: m.role, content: m.content })),
     ],

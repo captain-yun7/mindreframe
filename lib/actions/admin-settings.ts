@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { invalidatePromptsCache } from "@/lib/cbt/prompts-loader";
 
 async function ensureAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
@@ -81,5 +82,38 @@ export async function adminUpdateSiteSetting(key: string, value: string) {
   revalidatePath("/exercise");
   revalidatePath("/meditation");
   revalidatePath("/", "layout");
+  return { ok: true as const };
+}
+
+/**
+ * J3 / F144 — 분석기 프롬프트 4종 (prompt_*) 전용 저장.
+ * adminUpdateSiteSetting과 거의 동일하지만 audit 로그 분리 + cache 무효화.
+ */
+const PROMPT_KEYS = new Set([
+  "prompt_analyzer_main",
+  "prompt_analyzer_therapy",
+  "prompt_analyzer_finalize",
+  "prompt_trash_main",
+]);
+
+export async function adminUpdatePrompt(key: string, value: string) {
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+
+  if (!PROMPT_KEYS.has(key)) {
+    return { ok: false as const, error: "허용되지 않은 prompt key" };
+  }
+  if (typeof value !== "string") return { ok: false as const, error: "value 타입 오류" };
+  if (value.length > 200_000) return { ok: false as const, error: "값은 200,000자 이내" };
+
+  const { error } = await supabaseAdmin.from("site_settings").upsert({
+    key,
+    value,
+    updated_by: guard.userId,
+  });
+  if (error) return { ok: false as const, error: error.message };
+
+  invalidatePromptsCache();
+  revalidatePath("/admin/prompts");
   return { ok: true as const };
 }

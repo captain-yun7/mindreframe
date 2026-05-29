@@ -8,7 +8,7 @@ import {
   CRISIS_GUIDE_MESSAGE,
 } from "@/lib/cbt/crisis-detection";
 import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
-import { TRASH_SYSTEM_PROMPT } from "@/lib/cbt/prompts";
+import { getPrompts } from "@/lib/cbt/prompts-loader";
 
 type ThoughtInput = {
   situation: string;
@@ -142,8 +142,9 @@ export async function sendTrashMessage({
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) return { ok: false as const, error: "OPENAI_API_KEY 미설정" };
 
+  const prompts = await getPrompts();
   const messages = [
-    { role: "system", content: TRASH_SYSTEM_PROMPT },
+    { role: "system", content: prompts.trashMain },
     ...history.map((m) => ({ role: m.role, content: m.content })),
     { role: "user", content: trimmed },
   ];

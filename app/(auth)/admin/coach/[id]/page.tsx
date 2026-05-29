@@ -37,9 +37,11 @@ export default async function CoachAdminSessionPage({
   if (u?.role !== "coach" && u?.role !== "admin") redirect("/admin/coach");
 
   // 세션 + 사용자 부가 정보 (deleted_at / coach_session_adjustment / notifications_started_at fallback)
+  // J5 / F152: phone_number, notification_hour 추가
   const baseSelect =
     "id, status, started_at, ended_at, user_id, " +
     "users:user_id (id, nickname, email, plan, plan_expires_at, " +
+    "phone_number, notification_hour, " +
     "notifications_started_at, coach_session_adjustment, created_at)";
   type SessionUserRow = {
     id?: string;
@@ -47,6 +49,8 @@ export default async function CoachAdminSessionPage({
     email?: string | null;
     plan?: string | null;
     plan_expires_at?: string | null;
+    phone_number?: string | null;
+    notification_hour?: number | null;
     notifications_started_at?: string | null;
     coach_session_adjustment?: number | null;
     created_at?: string | null;
@@ -69,7 +73,7 @@ export default async function CoachAdminSessionPage({
     if (
       res.error &&
       (res.error.code === "42703" ||
-        /coach_session_adjustment|notifications_started_at|plan_expires_at|email/.test(
+        /coach_session_adjustment|notifications_started_at|plan_expires_at|email|phone_number|notification_hour/.test(
           res.error.message,
         ))
     ) {
@@ -134,6 +138,8 @@ export default async function CoachAdminSessionPage({
             planExpiresAt={su?.plan_expires_at ?? null}
             createdAt={su?.created_at ?? null}
             notificationsStartedAt={su?.notifications_started_at ?? null}
+            phoneNumber={su?.phone_number ?? null}
+            notificationHour={su?.notification_hour ?? null}
             dayNumber={dayNumber}
             usedThisWeek={used}
             weeklyLimit={limit}

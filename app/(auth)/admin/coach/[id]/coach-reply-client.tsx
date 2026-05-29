@@ -10,8 +10,10 @@ import {
   sendCoachReply,
 } from "@/lib/actions/coach-chat";
 import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
+import { useTypingIndicator } from "@/lib/hooks/use-typing-indicator";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
 import { RealtimeStatusDot } from "@/components/realtime-status-dot";
+import { TypingDots } from "@/components/chat/typing-dots";
 
 interface Props {
   sessionId: string;
@@ -38,9 +40,15 @@ export function CoachReplyClient({
   const toast = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // J5 / F154 — 어드민 측: user의 typing 감지 + 자기 입력 시 broadcast
+  const { othersTyping, notifyTyping } = useTypingIndicator(
+    activeSession?.id ?? null,
+    "coach",
+  );
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, othersTyping]);
 
   // 진입한 [id]가 현재 활성 세션인 경우에만 종료 버튼 + 입력창 노출
   const canEnd = activeSession?.id === sessionId;
@@ -169,14 +177,22 @@ export function CoachReplyClient({
             ),
           )
         )}
+        {activeSession && othersTyping && (
+          <div className="flex justify-start">
+            <TypingDots label="사용자 입력 중" />
+          </div>
+        )}
       </div>
 
       {activeSession && (
-        <div className="border-t border-gs-line-soft p-3 flex gap-2">
+        <div className="border-t border-gs-line-soft p-3 flex gap-2 items-center">
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              notifyTyping();
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -185,13 +201,13 @@ export function CoachReplyClient({
             }}
             placeholder="답변을 입력하세요..."
             disabled={pending}
-            className="flex-1 px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
+            className="flex-1 min-w-0 px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
           />
           <button
             type="button"
             onClick={handleSend}
             disabled={pending || !input.trim()}
-            className="px-4 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold disabled:opacity-50"
+            className="shrink-0 whitespace-nowrap px-4 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold disabled:opacity-50"
           >
             답변 전송
           </button>
