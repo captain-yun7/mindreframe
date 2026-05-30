@@ -5,6 +5,7 @@ import { STUDY_CORE, STUDY_GROUPS } from "@/lib/study-content"; // fallback
 import type { StudyGroup, StudyItem } from "@/lib/study-content";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
+import { QuickNav } from "@/components/quick-nav";
 import { RoutineVideoGrid } from "@/components/study/routine-video-grid";
 import { getRoutineVideosBatch } from "@/lib/actions/study-videos";
 import { normalizePlan, planAtLeast, type Plan } from "@/lib/auth/plan";
@@ -140,6 +141,9 @@ export default async function StudyPage() {
             />
           </section>
         </FadeIn>
+
+        {/* K4·F172 — 페이지 푸터 "이동할 곳을 선택해주세요" */}
+        <QuickNav />
       </main>
     </PageFade>
   );

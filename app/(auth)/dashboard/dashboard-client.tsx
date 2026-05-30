@@ -18,6 +18,8 @@ import {
 } from "@/lib/actions/dashboard";
 import type { TodayDailyVideo } from "@/lib/actions/daily-video";
 import { useToast } from "@/components/ui/toast";
+import { CelebrationModal } from "@/components/celebration-modal";
+import { QuickNav } from "@/components/quick-nav";
 
 const checklistItems = [
   {
@@ -100,6 +102,9 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
   const [savedGratitude, setSavedGratitude] = useState<string>(initial.gratitudeContent);
   const gratitudeRef = useRef<HTMLTextAreaElement>(null);
   const moodDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // K4·F174 — 감사일기 저장 사전 안내 + 저장 후 응원 모달
+  const [gratitudePrepareOpen, setGratitudePrepareOpen] = useState(false);
+  const [gratitudePraiseOpen, setGratitudePraiseOpen] = useState(false);
   const toast = useToast();
 
   function handleCheck(key: string, checked: boolean) {
@@ -145,8 +150,45 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
   const dayLabel = initial.totalDays > 0 ? `${initial.totalDays}일차` : "첫 날";
   const greetName = initial.nickname ? `${initial.nickname}님, ` : "";
 
+  // K4·F174 — 감사일기 사전 안내 → 저장 → 응원 모달 흐름
+  async function performGratitudeSave() {
+    const trimmed = gratitudeText.trim();
+    if (!trimmed) return;
+    const r = await saveGratitudeEntry(trimmed);
+    if (!r.ok) {
+      toast.show(r.error, "error");
+      return;
+    }
+    setChecks((prev) => ({ ...prev, gratitude: true }));
+    setSavedGratitude(trimmed);
+    setGratitudeText("");
+    setGratitudePraiseOpen(true);
+  }
+
   return (
     <PageFade>
+      {/* K4·F174 — 저장 시작 안내 모달 */}
+      <CelebrationModal
+        open={gratitudePrepareOpen}
+        onOpenChange={setGratitudePrepareOpen}
+        title="저장을 시작합니다 ✨"
+        body="감사 한 줄이 성장방에 차곡차곡 쌓여요."
+        ctaLabel="저장하기"
+        onCta={() => {
+          void performGratitudeSave();
+        }}
+        autoCloseMs={0}
+      />
+      {/* K4·F174 — 저장 완료 응원 모달 (폭죽 톤) */}
+      <CelebrationModal
+        open={gratitudePraiseOpen}
+        onOpenChange={setGratitudePraiseOpen}
+        title="감사일기 저장 완료 🙏"
+        body="오늘의 감사 한 줄, 성장방에 잘 들어갔어요."
+        ctaLabel="확인"
+        autoCloseMs={0}
+      />
+
       {/* ── HERO (오늘의 루틴 친근 인사) ── */}
       <section className="bg-gs-navy-50 py-12 md:py-16">
         <div className="mx-auto w-full max-w-[1120px] px-4">
@@ -324,14 +366,7 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                   ))}
                 </StaggerList>
 
-                <div className="mt-4 flex gap-2 flex-wrap">
-                  <a
-                    href="/progress"
-                    className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
-                  >
-                    → 나의성장방에서 보기
-                  </a>
-                </div>
+                {/* K4·F169 — "나의 성장방에서 보기" 버튼 제거 (사이드바·QuickNav와 중복) */}
               </Card>
             </FadeIn>
 
@@ -368,18 +403,11 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                 <div className="mt-4 flex gap-2 flex-wrap">
                   <button
                     type="button"
-                    onClick={async () => {
+                    onClick={() => {
                       const trimmed = gratitudeText.trim();
                       if (!trimmed) return;
-                      const r = await saveGratitudeEntry(trimmed);
-                      if (!r.ok) {
-                        toast.show(r.error, "error");
-                        return;
-                      }
-                      setChecks((prev) => ({ ...prev, gratitude: true }));
-                      setSavedGratitude(trimmed);
-                      setGratitudeText("");
-                      toast.show("감사일기가 저장되었습니다", "success");
+                      // K4·F174 — 저장 시작 사전 안내 모달
+                      setGratitudePrepareOpen(true);
                     }}
                     className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
                   >
@@ -400,6 +428,9 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
             />
           </FadeIn>
         </div>
+
+        {/* K4·F172 — 페이지 푸터 "이동할 곳을 선택해주세요" */}
+        <QuickNav />
       </main>
     </PageFade>
   );

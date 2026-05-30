@@ -148,34 +148,25 @@ export function SiteHeader() {
           </nav>
         </div>
 
-        {/* 햄버거 (모바일) — Framer Motion 3선 → X 변환 */}
-        <button
-          className="hidden max-lg:flex w-10 h-10 items-center justify-center bg-transparent border-none cursor-pointer relative shrink-0"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="메뉴"
-          aria-expanded={menuOpen}
-          type="button"
-        >
-          <span className="relative block w-5 h-4">
-            <motion.span
-              className="absolute left-0 right-0 h-0.5 bg-gs-text-strong rounded-sm origin-center"
-              style={{ top: 0 }}
-              animate={menuOpen ? { y: 7, rotate: 45 } : { y: 0, rotate: 0 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            />
-            <motion.span
-              className="absolute left-0 right-0 h-0.5 bg-gs-text-strong rounded-sm origin-center top-1/2 -translate-y-1/2"
-              animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
-              transition={{ duration: 0.15 }}
-            />
-            <motion.span
-              className="absolute left-0 right-0 h-0.5 bg-gs-text-strong rounded-sm origin-center"
-              style={{ bottom: 0 }}
-              animate={menuOpen ? { y: -7, rotate: -45 } : { y: 0, rotate: 0 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </span>
-        </button>
+        {/* 햄버거 (모바일) — K4·F215 메뉴 열려있을 때는 숨김. X 닫기 버튼은 메뉴 패널 내부 좌상단(다른 좌표)에 별도 노출. */}
+        {!menuOpen ? (
+          <button
+            className="hidden max-lg:flex w-10 h-10 items-center justify-center bg-transparent border-none cursor-pointer relative shrink-0"
+            onClick={() => setMenuOpen(true)}
+            aria-label="메뉴 열기"
+            aria-expanded={false}
+            type="button"
+          >
+            <span className="relative block w-5 h-4">
+              <span className="absolute left-0 right-0 h-0.5 bg-gs-text-strong rounded-sm top-0" />
+              <span className="absolute left-0 right-0 h-0.5 bg-gs-text-strong rounded-sm top-1/2 -translate-y-1/2" />
+              <span className="absolute left-0 right-0 h-0.5 bg-gs-text-strong rounded-sm bottom-0" />
+            </span>
+          </button>
+        ) : (
+          // 메뉴 열려 있을 때 햄버거 자리는 빈 placeholder (레이아웃 안정)
+          <div className="hidden max-lg:block w-10 h-10 shrink-0" aria-hidden />
+        )}
 
         {/* 우측: 관리자/사용자 영역 */}
         <div className="flex items-center gap-2 max-lg:hidden shrink-0">
@@ -239,8 +230,19 @@ export function SiteHeader() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
+              {/* K4·F215 — 메뉴 패널 우상단 별도 X 버튼 (햄버거와 다른 좌표) */}
+              <div className="max-w-[1180px] mx-auto px-4 pt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(false)}
+                  aria-label="메뉴 닫기"
+                  className="w-9 h-9 flex items-center justify-center rounded-full text-gs-text-strong hover:bg-gs-surface-mid transition-colors"
+                >
+                  <span className="text-xl leading-none">×</span>
+                </button>
+              </div>
               <motion.nav
-                className="max-w-[1180px] mx-auto px-4 py-4 flex flex-col gap-0.5"
+                className="max-w-[1180px] mx-auto px-4 pb-4 flex flex-col gap-0.5"
                 initial="hidden"
                 animate="visible"
                 variants={{

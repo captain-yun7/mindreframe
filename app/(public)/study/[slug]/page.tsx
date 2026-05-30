@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { findStudyContext, STUDY_ALL } from "@/lib/study-content"; // fallback
 import { sanitizeContentHtml } from "@/lib/sanitize-html";
+import { StudyProgressLink } from "@/components/study/study-progress-modal";
+import { QuickNav } from "@/components/quick-nav";
 
 const CATEGORY_GROUP_TITLE: Record<string, string> = {
   core: "필수",
@@ -148,18 +150,25 @@ export default async function StudyDetailPage({
             <div className="flex-1" />
           )}
           {next ? (
-            <Link
+            // K4·F165·F166 — 다음 글 클릭 시 응원 카드 모달
+            <StudyProgressLink
               href={`/study/${next.slug}`}
-              className="flex-1 min-w-0 rounded-toss-button px-4 py-3 bg-gs-navy-50/60 hover:bg-gs-navy-50 border border-gs-line-soft text-right hover:-translate-y-0.5 hover:shadow-toss-card transition-all"
+              nextTitle={next.title}
+              className="flex-1 min-w-0 rounded-toss-button px-4 py-3 bg-gs-navy-50/60 hover:bg-gs-navy-50 border border-gs-line-soft text-right hover:-translate-y-0.5 hover:shadow-toss-card transition-all cursor-pointer"
             >
               <div className="text-[11px] text-gs-muted">다음 →</div>
               <div className="text-sm font-bold truncate">{next.title}</div>
-            </Link>
+            </StudyProgressLink>
           ) : (
             <div className="flex-1" />
           )}
         </nav>
       </article>
+
+      {/* K4·F172 — 페이지 푸터 "이동할 곳을 선택해주세요" */}
+      <div className="max-w-[800px] mx-auto">
+        <QuickNav />
+      </div>
     </div>
   );
 }

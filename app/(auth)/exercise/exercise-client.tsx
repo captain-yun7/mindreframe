@@ -154,6 +154,8 @@ export function ExerciseClient({
 
   const [saving, setSaving] = useState(false);
   const [celebrateOpen, setCelebrateOpen] = useState(false);
+  // K4·F198·F203 — "4단계 펼치기" 클릭 시 도전 확인 모달
+  const [challengeConfirmOpen, setChallengeConfirmOpen] = useState(false);
   const toast = useToast();
 
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -261,6 +263,18 @@ export function ExerciseClient({
     }
   }, [depRows, depSaved]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  // K4·F200 — 라디오 선택 즉시 3단계로 자동 스크롤
+  // K4·F197 — 진입 시 이미 선택된 상태면 mount 시 3단계 위치로 스크롤
+  const currentSelected =
+    mode === "anxiety" ? anxSelectedIdx : depSelectedIdx;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (currentSelected === null) return;
+    const el = document.getElementById("exercise-step3");
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [currentSelected]);
 
   // F114: DB 저장 (debounce 600ms) — 주요 상태 변경 시 전체 스냅샷 push
   useEffect(() => {
@@ -392,14 +406,29 @@ export function ExerciseClient({
   }
 
   function sortAndPersistDepPlan() {
-    const items = depRows.filter((r) => r.activity.trim());
+    // K4·F202 — 우울 활동 목록 저장 → 실행 난이도 점수가 높은 것부터 정렬
+    const items = depRows
+      .filter((r) => r.activity.trim())
+      .sort((a, b) => {
+        const da = parseInt(a.diff, 10);
+        const db = parseInt(b.diff, 10);
+        if (Number.isNaN(da) && Number.isNaN(db)) return 0;
+        if (Number.isNaN(da)) return 1;
+        if (Number.isNaN(db)) return -1;
+        return db - da; // 높은 점수부터
+      });
     if (items.length === 0) {
       toast.show("적어도 1개 활동은 입력해주세요", "error");
       return;
     }
+    const padded = buildDepRows();
+    items.slice(0, 10).forEach((it, i) => {
+      padded[i] = it;
+    });
+    setDepRows(padded);
     safeWrite(KEY_PLAN_D, { savedAt: new Date().toISOString(), items });
     setDepSaved(true);
-    toast.show("저장했어요", "success");
+    toast.show("난이도가 높은 순으로 정렬했어요", "success");
   }
 
   async function saveAnxRecord() {
@@ -596,16 +625,8 @@ export function ExerciseClient({
         />
       ) : null}
 
-      {/* F106: 3단계 진입 팝업 (planSaved 이후) */}
-      {popups.step3 && planSaved ? (
-        <GamePopup
-          storageKey={`popup_exercise_step3_dismissed_at_${mode}`}
-          title={popups.step3.title}
-          body={popups.step3.body}
-          ctaLabel={popups.step3.cta ?? "고를게요"}
-          variant="navy"
-        />
-      ) : null}
+      {/* K4·F197 — 단계별 진입: 라디오 선택 시 3단계 위치로 스크롤만 (팝업 X).
+          step3 GamePopup 제거. (F198·F203 별도 도전 확인 팝업은 selectedIdx 변경 시 별도 처리 — 아래) */}
 
       {/* F115·K4·F199·F204: 4단계 완성 칭찬 모달 — "성장방 이동"은 행동연습장 기록 위치로 스크롤 */}
       <CelebrationModal
@@ -618,18 +639,56 @@ export function ExerciseClient({
         autoCloseMs={0}
       />
 
+      {/* K4·F198·F203 — 4단계 펼치기 직전 도전 확인 모달 */}
+      <CelebrationModal
+        open={challengeConfirmOpen}
+        onOpenChange={setChallengeConfirmOpen}
+        title={
+          popups.step3?.title ??
+          (isAnxiety
+            ? "상황을 선택하고 도전하시겠습니까?"
+            : "활동을 선택하고 도전하시겠습니까?")
+        }
+        body={popups.step3?.body}
+        ctaLabel={popups.step3?.cta ?? "도전하기"}
+        onCta={() => setStep4Open(true)}
+        autoCloseMs={0}
+      />
+
       <main className="max-w-[1120px] mx-auto px-4 pt-8 md:pt-10 pb-24">
-        <div className="flex items-center gap-3 mb-4">
-          <button
-            type="button"
-            onClick={backToStep1}
-            className="text-gs-muted hover:text-gs-text-strong text-sm"
-          >
-            ← 뒤로
-          </button>
-          <h1 className="text-xl md:text-2xl font-extrabold tracking-[-0.02em] text-gs-navy">
-            {isAnxiety ? "불안 줄이기 연습" : "우울 벗어나기 연습"}
-          </h1>
+        {/* K4·F196 — "뒤로" → "1단계) 불안 줄이기 / 우울 벗어나기" 2버튼. 현재 페이지는 비활성 */}
+        <div className="mb-5">
+          <div className="text-[12px] font-bold text-gs-navy-bright mb-2 tracking-[-0.01em]">
+            1단계) 어떤 연습을 할까요?
+          </div>
+          <div className="grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+            <button
+              type="button"
+              onClick={isAnxiety ? undefined : backToStep1}
+              disabled={isAnxiety}
+              className={`px-4 py-3 rounded-toss-button text-sm font-extrabold tracking-[-0.01em] transition-all ${
+                isAnxiety
+                  ? "bg-gs-navy-50 text-gs-navy-bright border-2 border-gs-navy-bright/40 cursor-default"
+                  : "bg-white border border-gs-line-mid text-gs-text-soft hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card"
+              }`}
+              aria-pressed={isAnxiety}
+            >
+              불안 줄이기 연습
+            </button>
+            <button
+              type="button"
+              onClick={!isAnxiety ? undefined : backToStep1}
+              disabled={!isAnxiety}
+              className={`px-4 py-3 rounded-toss-button text-sm font-extrabold tracking-[-0.01em] transition-all ${
+                !isAnxiety
+                  ? "bg-gs-navy-50 text-gs-navy-bright border-2 border-gs-navy-bright/40 cursor-default"
+                  : "bg-white border border-gs-line-mid text-gs-text-soft hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card"
+              }`}
+              aria-pressed={!isAnxiety}
+            >
+              우울 벗어나기 연습
+            </button>
+          </div>
         </div>
 
         {/* 2단계 — 계획 표 */}
@@ -685,7 +744,7 @@ export function ExerciseClient({
 
         {/* 3단계 — 선택된 상황/활동 (F113: planSaved 자동 전환) */}
         {planSaved && (
-          <Card className="mt-4 shadow-toss-card">
+          <Card className="mt-4 shadow-toss-card scroll-mt-28" id="exercise-step3">
             <CardTitle>
               {isAnxiety ? "3단계) 오늘 도전할 상황 1개 선택" : "3단계) 오늘 할 활동 1개 선택"}
             </CardTitle>
@@ -763,7 +822,7 @@ export function ExerciseClient({
                   <div className="mt-4 text-center">
                     <button
                       type="button"
-                      onClick={() => setStep4Open(true)}
+                      onClick={() => setChallengeConfirmOpen(true)}
                       className="border border-gs-navy-bright/35 bg-gs-navy-bright text-white rounded-toss-button px-6 py-2.5 text-sm font-extrabold cursor-pointer hover:-translate-y-0.5 hover:shadow-toss-card-hover transition-all"
                     >
                       4단계 펼치기

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { StudyGroup, StudyItem } from "@/lib/study-content";
 import { IntroVideoCard } from "@/components/study/intro-video-card";
+import { StudyProgressLink } from "@/components/study/study-progress-modal";
 
 export function StudyList({
   core,
@@ -135,17 +136,18 @@ function match(it: StudyItem, term: string) {
 }
 
 function StudyCard({ item }: { item: StudyItem }) {
+  // K4·F165 — 코어 글 클릭 시 응원 카드 모달
   return (
-    <Link
+    <StudyProgressLink
       href={`/study/${item.slug}`}
-      data-testid={`study-card-${item.slug}`}
-      className="block bg-white rounded-toss-card p-5 shadow-toss-card border border-gs-line-soft hover:-translate-y-1 hover:shadow-toss-card-hover transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
+      nextTitle={item.title}
+      className="text-left block w-full bg-white rounded-toss-card p-5 shadow-toss-card border border-gs-line-soft hover:-translate-y-1 hover:shadow-toss-card-hover transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
     >
       <h3 className="text-base font-extrabold tracking-[-0.02em] leading-snug">
         {item.title}
       </h3>
       <p className="mt-2 text-[13px] text-gs-muted">{item.sub}</p>
-    </Link>
+    </StudyProgressLink>
   );
 }
 
