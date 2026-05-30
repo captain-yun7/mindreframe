@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { invalidatePromptsCache } from "@/lib/cbt/prompts-loader";
+import {
+  invalidatePromptsCache,
+  invalidateModelsCache,
+  ALLOWED_MODEL_VALUES,
+} from "@/lib/cbt/prompts-loader";
 
 async function ensureAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
@@ -114,6 +118,42 @@ export async function adminUpdatePrompt(key: string, value: string) {
   if (error) return { ok: false as const, error: error.message };
 
   invalidatePromptsCache();
+  revalidatePath("/admin/prompts");
+  return { ok: true as const };
+}
+
+/**
+ * F216 — AI 모델 선택 (model_analyzer / model_therapy / model_trash).
+ * 허용 모델 목록 외에는 거부. 빈값은 허용 (코드 default로 복귀).
+ */
+const MODEL_KEYS = new Set([
+  "model_analyzer",
+  "model_therapy",
+  "model_trash",
+]);
+
+export async function adminUpdateModel(key: string, value: string) {
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+
+  if (!MODEL_KEYS.has(key)) {
+    return { ok: false as const, error: "허용되지 않은 model key" };
+  }
+  if (typeof value !== "string") return { ok: false as const, error: "value 타입 오류" };
+
+  const trimmed = value.trim();
+  if (trimmed && !ALLOWED_MODEL_VALUES.has(trimmed as never)) {
+    return { ok: false as const, error: "허용되지 않은 모델명" };
+  }
+
+  const { error } = await supabaseAdmin.from("site_settings").upsert({
+    key,
+    value: trimmed,
+    updated_by: guard.userId,
+  });
+  if (error) return { ok: false as const, error: error.message };
+
+  invalidateModelsCache();
   revalidatePath("/admin/prompts");
   return { ok: true as const };
 }

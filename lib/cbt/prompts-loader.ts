@@ -158,3 +158,107 @@ export const KNOWN_TEMPLATE_PLACEHOLDERS = [
   "{{advice}}",
   "{{warning}}",
 ] as const;
+
+/* ────────────────────────────────────────────────────────────
+ * F216 — 어드민 AI 모델 선택
+ *   key:   model_analyzer / model_therapy / model_trash
+ *   value: 모델명 (gpt-4o-mini 등). 빈값일 때는 코드 default.
+ *
+ * 코드 default — ENV → 하드코딩 fallback 순.
+ * 어드민에서 site_settings에 모델명 입력 시 그 값이 최우선.
+ * ──────────────────────────────────────────────────────────── */
+
+export const MODEL_OPTIONS = [
+  { value: "gpt-4o-mini", label: "gpt-4o-mini (빠름·저렴·기본)" },
+  { value: "gpt-4o", label: "gpt-4o (균형)" },
+  { value: "gpt-4.1", label: "gpt-4.1 (안정·JSON)" },
+  { value: "gpt-5-mini", label: "gpt-5-mini (추론 강·느림·주의)" },
+] as const;
+
+export const ALLOWED_MODEL_VALUES = new Set(MODEL_OPTIONS.map((o) => o.value));
+
+const MODEL_KEYS = [
+  "model_analyzer",
+  "model_therapy",
+  "model_trash",
+] as const;
+
+type ModelKey = (typeof MODEL_KEYS)[number];
+
+const MODEL_DEFAULTS: Record<ModelKey, string> = {
+  model_analyzer: process.env.ANALYZER_MODEL ?? "gpt-4.1",
+  model_therapy: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+  model_trash: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+};
+
+export interface Models {
+  analyzer: string;
+  therapy: string;
+  trash: string;
+  source: Record<ModelKey, "db" | "default">;
+}
+
+let modelsCache: { value: Models; expiresAt: number } | null = null;
+
+async function fetchModelsFromDb(): Promise<Record<ModelKey, string>> {
+  const out: Record<ModelKey, string> = {
+    model_analyzer: "",
+    model_therapy: "",
+    model_trash: "",
+  };
+  try {
+    const sb = await createSupabaseServerClient();
+    const { data, error } = await sb
+      .from("site_settings")
+      .select("key, value")
+      .in("key", MODEL_KEYS as unknown as string[]);
+    if (error || !data) return out;
+    for (const row of data) {
+      const k = row.key as ModelKey;
+      if (MODEL_KEYS.includes(k) && typeof row.value === "string") {
+        out[k] = row.value;
+      }
+    }
+  } catch {
+    // fetch 실패 — default 사용
+  }
+  return out;
+}
+
+export async function getModels(): Promise<Models> {
+  const now = Date.now();
+  if (modelsCache && modelsCache.expiresAt > now) return modelsCache.value;
+
+  const db = await fetchModelsFromDb();
+
+  const pick = (
+    key: ModelKey,
+  ): { value: string; source: "db" | "default" } => {
+    const v = (db[key] ?? "").trim();
+    if (v && ALLOWED_MODEL_VALUES.has(v as never))
+      return { value: v, source: "db" };
+    return { value: MODEL_DEFAULTS[key], source: "default" };
+  };
+
+  const a = pick("model_analyzer");
+  const t = pick("model_therapy");
+  const tr = pick("model_trash");
+
+  const models: Models = {
+    analyzer: a.value,
+    therapy: t.value,
+    trash: tr.value,
+    source: {
+      model_analyzer: a.source,
+      model_therapy: t.source,
+      model_trash: tr.source,
+    },
+  };
+
+  modelsCache = { value: models, expiresAt: now + CACHE_MS };
+  return models;
+}
+
+export function invalidateModelsCache() {
+  modelsCache = null;
+}

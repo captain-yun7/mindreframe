@@ -9,8 +9,14 @@ import {
   DISTORTIONS,
   buildTherapyPrompt,
 } from "@/lib/cbt/prompts";
-import { getPrompts, KNOWN_TEMPLATE_PLACEHOLDERS } from "@/lib/cbt/prompts-loader";
+import {
+  getPrompts,
+  getModels,
+  KNOWN_TEMPLATE_PLACEHOLDERS,
+  MODEL_OPTIONS,
+} from "@/lib/cbt/prompts-loader";
 import { PromptsEditor } from "./prompts-editor";
+import { ModelsEditor } from "./models-editor";
 
 const SAMPLE_ANALYSIS = {
   situation: "회의에서 발표할 때 다들 나를 무시하는 것 같았어요",
@@ -27,8 +33,35 @@ const SAMPLE_ANALYSIS = {
 export default async function AdminPromptsPage() {
   await requireAdmin();
 
-  const prompts = await getPrompts();
+  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
   const therapyPreview = buildTherapyPrompt(SAMPLE_ANALYSIS, "재앙화");
+
+  const modelItems = [
+    {
+      key: "model_analyzer" as const,
+      label: "1단계 분석",
+      description: "사용자 입력 → 인지왜곡 JSON 추출.",
+      initialValue: models.source.model_analyzer === "db" ? models.analyzer : "",
+      source: models.source.model_analyzer,
+      defaultValue: models.analyzer,
+    },
+    {
+      key: "model_therapy" as const,
+      label: "치료·마무리",
+      description: "분석기 5단계 대화 + 저장용 JSON.",
+      initialValue: models.source.model_therapy === "db" ? models.therapy : "",
+      source: models.source.model_therapy,
+      defaultValue: models.therapy,
+    },
+    {
+      key: "model_trash" as const,
+      label: "생각쓰레기통",
+      description: "5요소 수집 대화.",
+      initialValue: models.source.model_trash === "db" ? models.trash : "",
+      source: models.source.model_trash,
+      defaultValue: models.trash,
+    },
+  ];
 
   const items = [
     {
@@ -88,7 +121,18 @@ export default async function AdminPromptsPage() {
           <li>잘못 수정하면 분석기 응답이 깨질 수 있어요. 항상 백업 후 수정하세요.</li>
           <li>치료 대화 템플릿의 placeholder는 정확히 표기해야 치환됩니다. 모르는 placeholder는 OpenAI에 그대로 전달됩니다.</li>
           <li>진행 중인 세션은 이미 저장된 system prompt로 계속됩니다. 새 세션부터 새 prompt가 적용돼요.</li>
+          <li>모델 변경은 즉시 다음 호출부터 반영됩니다. <b>gpt-5-mini</b>는 추론으로 응답이 느릴 수 있어요.</li>
         </ul>
+      </Card>
+
+      <Card className="mt-4">
+        <CardTitle>AI 모델 선택</CardTitle>
+        <CardDescription>
+          단계별로 다른 모델을 사용할 수 있어요. <code className="font-mono">(코드 default 사용)</code> 선택 시 ENV → 하드코딩 default로 복귀합니다.
+        </CardDescription>
+        <div className="mt-3">
+          <ModelsEditor items={modelItems} options={MODEL_OPTIONS} />
+        </div>
       </Card>
 
       <div className="mt-4">

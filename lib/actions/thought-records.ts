@@ -8,7 +8,7 @@ import {
   CRISIS_GUIDE_MESSAGE,
 } from "@/lib/cbt/crisis-detection";
 import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
-import { getPrompts } from "@/lib/cbt/prompts-loader";
+import { getPrompts, getModels } from "@/lib/cbt/prompts-loader";
 import { callOpenAIChat } from "@/lib/ai/openai-client";
 import {
   isLikelyPlainSpeech,
@@ -73,7 +73,7 @@ export async function listThoughtRecords() {
  *   2. 응답에서 ```json``` 코드블록 추출 시도 → 성공하면 thought_records INSERT
  *   3. 화면 표시용 텍스트는 JSON 블록을 strip 한 버전 반환
  * ────────────────────────────────────────────────────────── */
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+// F216 — 모델은 site_settings.model_trash → ENV → gpt-4o-mini default (getModels()에서 해석).
 
 export interface TrashMsg {
   role: "user" | "assistant";
@@ -144,7 +144,7 @@ export async function sendTrashMessage({
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
-  const prompts = await getPrompts();
+  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
   const messages = [
     { role: "system", content: prompts.trashMain },
     ...history.map((m) => ({ role: m.role, content: m.content })),
@@ -153,7 +153,7 @@ export async function sendTrashMessage({
 
   // K1·F182: timeout 45s + 일시적 에러 1회 retry (callOpenAIChat 내장)
   const callResult = await callOpenAIChat({
-    model: OPENAI_MODEL,
+    model: models.trash,
     messages,
     max_completion_tokens: 4000,
   });
@@ -165,7 +165,7 @@ export async function sendTrashMessage({
   // K5·F183: 반말 응답이면 1회 자동 재요청 (존댓말 강제)
   if (isLikelyPlainSpeech(raw)) {
     const rephrased = await callOpenAIChat({
-      model: OPENAI_MODEL,
+      model: models.trash,
       messages: [
         ...messages,
         { role: "assistant", content: raw },

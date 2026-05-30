@@ -11,6 +11,7 @@ import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
 import { type AnalysisResult } from "@/lib/cbt/prompts";
 import {
   getPrompts,
+  getModels,
   buildTherapyPromptViaDb,
 } from "@/lib/cbt/prompts-loader";
 import { callOpenAIChat } from "@/lib/ai/openai-client";
@@ -31,9 +32,8 @@ import {
  * K5 (F183): 응답 후 반말 감지 → 1회 자동 재요청.
  */
 
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-// 원본 토닥챗 — 1단계 인지왜곡 JSON 분석만 gpt-4.1 (안정적), 치료·마무리는 OPENAI_MODEL.
-const ANALYZER_MODEL = process.env.ANALYZER_MODEL ?? "gpt-4.1";
+// F216 — 모델은 site_settings.model_* → ENV → 코드 default 우선순위로 getModels()에서 해석.
+// 1단계 분석은 models.analyzer (default gpt-4.1), 치료·마무리는 models.therapy (default gpt-4o-mini).
 
 function isCrisis(text: string) {
   return detectCrisis(text).level === "warn";
@@ -46,10 +46,11 @@ function isCrisis(text: string) {
 async function callChatWithPolitenessCheck(
   baseMessages: Array<{ role: string; content: string }>,
   rawText: string,
+  model: string,
 ): Promise<string> {
   if (!isLikelyPlainSpeech(rawText)) return rawText;
   const rephrased = await callOpenAIChat({
-    model: OPENAI_MODEL,
+    model,
     messages: [
       ...baseMessages,
       { role: "assistant", content: rawText },
@@ -104,10 +105,10 @@ export async function analyzeUserInput({ content }: { content: string }) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
-  // 분석 호출 — site_settings prompt fallback. 모델은 원본대로 gpt-4.1 고정(ANALYZER_MODEL).
-  const prompts = await getPrompts();
+  // 분석 호출 — site_settings prompt + model fallback.
+  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
   const r = await callOpenAIChat({
-    model: ANALYZER_MODEL,
+    model: models.analyzer,
     messages: [
       { role: "system", content: prompts.analyzerMain },
       { role: "user", content: trimmed },
@@ -217,15 +218,16 @@ export async function startTherapy({
   }
 
   const baseMessages = [{ role: "system", content: therapySystem }];
+  const models = await getModels();
   const r = await callOpenAIChat({
-    model: OPENAI_MODEL,
+    model: models.therapy,
     messages: baseMessages,
     max_completion_tokens: 4000,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
   // K5·F183: 반말 응답이면 1회 자동 재요청
-  const finalText = await callChatWithPolitenessCheck(baseMessages, r.text);
+  const finalText = await callChatWithPolitenessCheck(baseMessages, r.text, models.therapy);
 
   // therapy system + 첫 assistant 응답을 chat_messages에 저장.
   // system 메시지도 보존해야 continueTherapy()에서 분기 가능.
@@ -310,15 +312,16 @@ export async function continueTherapy({
     { role: "user", content: trimmed },
   ];
 
+  const models = await getModels();
   const r = await callOpenAIChat({
-    model: OPENAI_MODEL,
+    model: models.therapy,
     messages,
     max_completion_tokens: 4000,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
   // K5·F183: 반말 감지 시 1회 재요청
-  let replyText = await callChatWithPolitenessCheck(messages, r.text);
+  let replyText = await callChatWithPolitenessCheck(messages, r.text, models.therapy);
   let replyCrisis = false;
   if (isCrisis(replyText)) {
     replyCrisis = true;
@@ -411,9 +414,9 @@ export async function finalizeAndSave({
     `대화(참고용):`,
   ].join("\n");
 
-  const prompts = await getPrompts();
+  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
   const r = await callOpenAIChat({
-    model: OPENAI_MODEL,
+    model: models.therapy,
     messages: [
       { role: "system", content: prompts.analyzerFinalize },
       { role: "user", content: inputMaterial },
