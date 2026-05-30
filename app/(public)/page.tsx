@@ -156,7 +156,7 @@ export default async function LandingPage() {
                 {heroSubtitleRaw}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <BigCTA href="/signup" variant="gold" size="xl">
+                <BigCTA href="/login" variant="gold" size="xl">
                   지금 시작하기
                 </BigCTA>
                 <BigCTA href="/study" variant="ghost" size="xl">
@@ -304,7 +304,7 @@ export default async function LandingPage() {
               {finalCta.subtitle}
             </p>
             <div className="mt-9 flex flex-wrap justify-center gap-3">
-              <BigCTA href="/signup" variant="gold" size="xl">
+              <BigCTA href="/login" variant="gold" size="xl">
                 무료로 시작하기
               </BigCTA>
               <Link
