@@ -138,6 +138,7 @@ export async function analyzeUserInput({ content }: { content: string }) {
     return { ok: false as const, error: sessErr?.message ?? "세션 생성 실패" };
   }
 
+  // F219 — 카드 선택 UI 제거. 분석 결과만 보여주고 바로 치료 시작 (다음 메시지에서).
   const summaryLines: string[] = [
     "📊 분석 결과",
     "",
@@ -150,11 +151,6 @@ export async function analyzeUserInput({ content }: { content: string }) {
       (d, i) => `${i + 1}. ${d.name}\n   → ${d.description}`,
     ),
   ];
-  if (parsed.distortions.length > 1) {
-    summaryLines.push("", "어떤 왜곡을 먼저 다뤄볼까요? 아래 카드를 골라주세요.");
-  } else if (parsed.distortions.length === 1) {
-    summaryLines.push("", "바로 이 왜곡을 다뤄볼게요.");
-  }
   const summary = summaryLines.join("\n");
 
   await supabase.from("chat_messages").insert([
