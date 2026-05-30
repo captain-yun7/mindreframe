@@ -167,6 +167,10 @@ export const FALLBACK_POPUP_CHAT_INTRO =
 export const FALLBACK_POPUP_MEDITATION_FOCUS =
   '{"title":"잠시 쉬어가요 🌙","body":"① 원하는 것을 하나 선택해 보세요. 소리, 호흡, 손에 닿는 물의 감각... 하나면 충분합니다.\\n② 선택한 곳에 잠시 초점을 두어봅니다. 잘하려고 애쓰지 않아도 괜찮습니다.\\n③ 중간에 초점이 흩어져도 괜찮습니다. 알아차렸다면, 다시 원하는 곳으로 돌아오면 됩니다.\\n\\n최소 3분 이상 해봐요!","cta":"오늘 시작하기"}';
 
+// F230 — 명상 인트로 팝업 (분석기·쓰레기통과 동일 GamePopup 패턴)
+export const FALLBACK_POPUP_MEDITATION_INTRO =
+  '{"title":"명상은 초점을 이동하는 훈련이에요","body":"사람의 가이드 음성으로 명상하기를 시작하세요.\\n명상의 방법을 안내합니다.\\n\\n명상 훈련을 시작하시겠습니까?","cta":"명상하기"}';
+
 // K2·F194 — 행동연습장 1단계 인트로
 export const FALLBACK_POPUP_EXERCISE_STEP1 =
   '{"title":"용기 한 걸음 🎯","body":"불안 줄이기 — 피해왔던 상황을 단계적으로 도전해요.\\n우울 벗어나기 — 작은 행동이 기분을 깨워줘요.","cta":"시작하기"}';
@@ -214,6 +218,7 @@ const FALLBACK_SETTINGS: Record<string, string> = {
   popup_trash_intro: FALLBACK_POPUP_TRASH_INTRO,
   popup_chat_intro: FALLBACK_POPUP_CHAT_INTRO,
   popup_meditation_focus: FALLBACK_POPUP_MEDITATION_FOCUS,
+  popup_meditation_intro: FALLBACK_POPUP_MEDITATION_INTRO,
   popup_exercise_step1: FALLBACK_POPUP_EXERCISE_STEP1,
   popup_exercise_step2: FALLBACK_POPUP_EXERCISE_STEP2,
   popup_exercise_step3: FALLBACK_POPUP_EXERCISE_STEP3,

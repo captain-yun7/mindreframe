@@ -109,7 +109,8 @@ export async function saveGratitudeEntry(content: string) {
 
   if (error) return { ok: false as const, error: error.message };
   await autoCheckRoutine(supabase, user.id, "gratitude");
-  revalidatePath("/dashboard");
+  // F229 — /dashboard revalidatePath 제거. 저장 후 페이지 자동 새로고침으로 scroll이 위로 가는 문제 fix.
+  // 새 데이터(sidebar stats)는 다음 진입 시 반영. 현재 페이지에서는 클라이언트 state로 충분.
   revalidatePath("/progress");
   return { ok: true as const, id: data.id };
 }

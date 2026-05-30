@@ -7,8 +7,13 @@ import { MeditationOnboardingModal } from "@/components/meditation-onboarding-mo
 import { MeditationPlayer, type Track } from "./meditation-player";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
-import { getSiteSettings } from "@/lib/site-settings";
+import {
+  getSiteSettings,
+  parseSettingJson,
+  type PopupContent,
+} from "@/lib/site-settings";
 import { QuickNav } from "@/components/quick-nav";
+import { GamePopup } from "@/components/game-popup";
 
 // 마이그레이션 미적용 시 fallback (기존 코드 박힘 12개)
 const FALLBACK_TRACKS: Track[] = [
@@ -203,9 +208,25 @@ export default async function MeditationPage() {
   const settings = await getSiteSettings();
   const heroSubtitle = settings.meditation_hero_subtitle;
   const popupMeditationFocus = settings.popup_meditation_focus;
+  // F230 — 명상 인트로 팝업 (분석기·쓰레기통과 동일 GamePopup 패턴)
+  const popupMeditationIntro = parseSettingJson<PopupContent>(
+    settings.popup_meditation_intro,
+    '{"title":"명상은 초점을 이동하는 훈련이에요","body":"","cta":"명상하기"}',
+  );
 
   return (
     <PageFade>
+      {/* F230 — 첫 진입 팝업 */}
+      {popupMeditationIntro ? (
+        <GamePopup
+          storageKey="popup_meditation_intro_dismissed_at"
+          title={popupMeditationIntro.title}
+          body={popupMeditationIntro.body}
+          ctaLabel={popupMeditationIntro.cta ?? "명상하기"}
+          variant="gold-border"
+        />
+      ) : null}
+
       {/* ── HERO ── */}
       <section className="bg-gs-navy-50 py-12 md:py-16">
         <div className="mx-auto w-full max-w-[1120px] px-4">

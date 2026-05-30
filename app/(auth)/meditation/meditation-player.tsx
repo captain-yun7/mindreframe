@@ -37,6 +37,8 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
   const [playing, setPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const playStartRef = useRef<number | null>(null);
+  // F227 — onEnded에서 audioRef.src 매칭 실패로 기록 누락 발생. 재생 중 트랙을 ref에 직접 보관.
+  const currentTrackRef = useRef<Track | null>(null);
   // H4·F110: 트랙 목록 ref → 카테고리 선택 시 자동 스크롤 대상
   const trackListRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
@@ -72,12 +74,13 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
     if (playing === track.audioUrl) {
       audioRef.current?.pause();
       setPlaying(null);
+      currentTrackRef.current = null;
       void recordCompletion(track);
       return;
     }
     // F121 — 다른 트랙 재생 중이면 기존 트랙 먼저 로깅 후 새 트랙으로 전환
     if (playing) {
-      const prev = tracks.find((t) => t.audioUrl === playing);
+      const prev = currentTrackRef.current ?? tracks.find((t) => t.audioUrl === playing);
       audioRef.current?.pause();
       if (prev) void recordCompletion(prev);
     }
@@ -86,6 +89,7 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
       audioRef.current.play().catch(() => {});
       // eslint-disable-next-line react-hooks/purity -- 이벤트 핸들러 안에서만 호출됨
       playStartRef.current = Date.now();
+      currentTrackRef.current = track;
       setPlaying(track.audioUrl);
     }
   }
@@ -170,9 +174,11 @@ export function MeditationPlayer({ tracks }: { tracks: Track[] }) {
       <audio
         ref={audioRef}
         onEnded={() => {
-          const currentSrc = audioRef.current?.src;
-          const track = tracks.find((t) => t.audioUrl === currentSrc);
+          // F227 — audioRef.src는 브라우저가 절대 URL로 정규화하므로 매칭 실패하던 문제.
+          // currentTrackRef로 직접 참조.
+          const track = currentTrackRef.current;
           setPlaying(null);
+          currentTrackRef.current = null;
           if (track) void recordCompletion(track);
         }}
         className="hidden"

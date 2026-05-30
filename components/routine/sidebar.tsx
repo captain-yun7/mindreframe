@@ -1,4 +1,3 @@
-import Link from "next/link";
 
 interface SidebarProps {
   moodScore: number | null;
@@ -63,19 +62,7 @@ export function RoutineSidebar({
         </p>
       ) : null}
 
-      {/* K4·F171 — 타 메뉴(QuickNav)와 톤 통일: white bg + border + hover translate */}
-      <div className="mt-5">
-        <Link
-          href="/progress"
-          className="group flex items-center justify-center gap-1.5 w-full px-4 py-3 rounded-toss-button border border-gs-line-soft bg-white text-sm font-bold text-gs-text-strong tracking-[-0.02em] transition-all hover:border-gs-navy-bright hover:-translate-y-0.5 hover:shadow-toss-card"
-        >
-          <span aria-hidden>🌱</span>
-          <span>나의 성장방 보기</span>
-          <span className="ml-1 transition-transform group-hover:translate-x-0.5" aria-hidden>
-            →
-          </span>
-        </Link>
-      </div>
+      {/* F228 — "나의 성장방 보기" 버튼 제거 (페이지 푸터 QuickNav와 중복) */}
     </aside>
   );
 }

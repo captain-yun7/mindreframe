@@ -102,8 +102,7 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
   const [savedGratitude, setSavedGratitude] = useState<string>(initial.gratitudeContent);
   const gratitudeRef = useRef<HTMLTextAreaElement>(null);
   const moodDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // K4·F174 — 감사일기 저장 사전 안내 + 저장 후 응원 모달
-  const [gratitudePrepareOpen, setGratitudePrepareOpen] = useState(false);
+  // F229 — "저장하시겠습니까" 사전 안내 모달 제거. 저장 완료 모달만 1번.
   const [gratitudePraiseOpen, setGratitudePraiseOpen] = useState(false);
   const toast = useToast();
 
@@ -167,19 +166,7 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
 
   return (
     <PageFade>
-      {/* K4·F174 — 저장 시작 안내 모달 */}
-      <CelebrationModal
-        open={gratitudePrepareOpen}
-        onOpenChange={setGratitudePrepareOpen}
-        title="저장을 시작합니다 ✨"
-        body="감사 한 줄이 성장방에 차곡차곡 쌓여요."
-        ctaLabel="저장하기"
-        onCta={() => {
-          void performGratitudeSave();
-        }}
-        autoCloseMs={0}
-      />
-      {/* K4·F174 — 저장 완료 응원 모달 (폭죽 톤) */}
+      {/* F229 — 저장 완료 응원 모달만 (사전 안내 제거) */}
       <CelebrationModal
         open={gratitudePraiseOpen}
         onOpenChange={setGratitudePraiseOpen}
@@ -406,8 +393,8 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                     onClick={() => {
                       const trimmed = gratitudeText.trim();
                       if (!trimmed) return;
-                      // K4·F174 — 저장 시작 사전 안내 모달
-                      setGratitudePrepareOpen(true);
+                      // F229 — 저장 즉시 (사전 안내 모달 제거)
+                      void performGratitudeSave();
                     }}
                     className="border border-gs-blue/35 bg-gs-blue-light text-gs-blue rounded-xl px-3 py-2 text-[13px] font-[950] cursor-pointer transition-transform hover:translate-y-[-1px] hover:shadow-gs-card"
                   >
