@@ -14,6 +14,7 @@ export interface AnalysisItem {
   alternative_thought: string | null;
   distortion_types: string[] | null;
   created_at: string;
+  sequence_no?: number | null;
 }
 
 interface ChatMsg {
@@ -53,15 +54,22 @@ export function AnalysisCardList({ items: initialItems }: { items: AnalysisItem[
   }
 
   function handleLoadMore() {
-    const cursor = items[items.length - 1]?.created_at;
+    const lastItem = items[items.length - 1];
+    const cursor = lastItem?.created_at;
     if (!cursor) return;
+    const lastSeq = lastItem?.sequence_no ?? null;
     startTransition(async () => {
       const r = await loadMoreAnalyses(cursor, 20);
       if (!r.ok) {
         toast.show(r.error, "error");
         return;
       }
-      setItems((prev) => [...prev, ...(r.entries as AnalysisItem[])]);
+      const enriched = (r.entries as AnalysisItem[]).map((e, i) => ({
+        ...e,
+        sequence_no:
+          lastSeq != null && lastSeq - 1 - i > 0 ? lastSeq - 1 - i : null,
+      }));
+      setItems((prev) => [...prev, ...enriched]);
       setHasMore(r.hasMore);
     });
   }
@@ -71,11 +79,19 @@ export function AnalysisCardList({ items: initialItems }: { items: AnalysisItem[
       <ul className="mt-4 space-y-3" data-testid="recent-analyses">
         {items.map((a) => {
           const altView = parseAlternativeThought(a.alternative_thought);
+          const seqNo = a.sequence_no ?? null;
           return (
           <li
             key={a.id}
             className="p-4 rounded-toss-card bg-white border border-gs-line-soft shadow-toss-card hover:shadow-toss-card-hover hover:-translate-y-0.5 transition-all text-[13px] space-y-1.5"
           >
+            {seqNo && seqNo > 0 ? (
+              <div className="flex justify-end -mb-1">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
+                  🧠 가짜생각 분석 레벨 UP {seqNo}
+                </span>
+              </div>
+            ) : null}
             <div>
               <span className="text-gs-muted-soft font-bold">상황 · </span>
               {a.situation || "—"}

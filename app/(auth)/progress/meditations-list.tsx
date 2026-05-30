@@ -20,15 +20,6 @@ export interface MeditationItem {
   sequence_no?: number | null;
 }
 
-// 명상 레벨 산식 — RPC v5 동일 (n < 1 → 0, n < 10 → 1, n < 30 → 2, n < 60 → 3, 이후 +30마다 +1)
-function meditationLevelOf(seqNo: number): number {
-  if (seqNo < 1) return 0;
-  if (seqNo < 10) return 1;
-  if (seqNo < 30) return 2;
-  if (seqNo < 60) return 3;
-  return 4 + Math.floor((seqNo - 60) / 30);
-}
-
 export function MeditationsList({ initial }: { initial: MeditationItem[] }) {
   const [items, setItems] = useState<MeditationItem[]>(initial);
   const [hasMore, setHasMore] = useState(initial.length >= 5);
@@ -44,15 +35,22 @@ export function MeditationsList({ initial }: { initial: MeditationItem[] }) {
   }
 
   const handleLoadMore = () => {
-    const cursor = items[items.length - 1]?.completed_at;
+    const lastItem = items[items.length - 1];
+    const cursor = lastItem?.completed_at;
     if (!cursor) return;
+    const lastSeq = lastItem?.sequence_no ?? null;
     startTransition(async () => {
       const r = await loadMoreMeditations(cursor, 20);
       if (!r.ok) {
         toast.show(r.error, "error");
         return;
       }
-      setItems((prev) => [...prev, ...(r.entries as MeditationItem[])]);
+      const enriched = (r.entries as MeditationItem[]).map((e, i) => ({
+        ...e,
+        sequence_no:
+          lastSeq != null && lastSeq - 1 - i > 0 ? lastSeq - 1 - i : null,
+      }));
+      setItems((prev) => [...prev, ...enriched]);
       setHasMore(r.hasMore);
     });
   };
@@ -62,31 +60,29 @@ export function MeditationsList({ initial }: { initial: MeditationItem[] }) {
       <ul className="mt-4 space-y-2" data-testid="recent-meditations">
         {items.map((m) => {
           const minutes = Math.round((m.duration ?? 0) / 60);
-          const seqNo = m.sequence_no ?? 0;
-          const level = meditationLevelOf(seqNo);
+          const seqNo = m.sequence_no ?? null;
           return (
             <li
               key={m.id}
-              className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px] flex justify-between gap-3"
+              className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
             >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center flex-wrap gap-1.5">
-                  <div className="font-bold truncate">{m.track_title}</div>
-                  {level > 0 ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
-                      🧘 명상 레벨 {level}
-                    </span>
-                  ) : null}
-                </div>
-                <div className="text-gs-muted-soft text-[11px] mt-0.5">
-                  {formatDateTimeKst(m.completed_at)}
-                </div>
+              {/* F225 — 배지 위치 다른 list와 통일: 일자 옆 (top row) */}
+              <div className="text-gs-muted-soft text-[11px] mb-1 flex items-center justify-between flex-wrap gap-1">
+                <span>{formatDateTimeKst(m.completed_at)}</span>
+                {seqNo && seqNo > 0 ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
+                    🧘 명상 레벨 UP {seqNo}
+                  </span>
+                ) : null}
               </div>
-              {minutes > 0 ? (
-                <div className="text-gs-muted-soft text-xs self-center shrink-0">
-                  {minutes}분
-                </div>
-              ) : null}
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-bold truncate flex-1">{m.track_title}</div>
+                {minutes > 0 ? (
+                  <div className="text-gs-muted-soft text-xs shrink-0">
+                    {minutes}분
+                  </div>
+                ) : null}
+              </div>
             </li>
           );
         })}

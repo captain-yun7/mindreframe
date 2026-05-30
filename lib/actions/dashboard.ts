@@ -210,10 +210,11 @@ export async function loadMoreExercises(beforeCursor: string, pageSize: number =
   if (!user) return { ok: false as const, error: "로그인이 필요합니다" };
 
   const safeSize = Math.min(Math.max(1, pageSize), 50);
+  // F225 — courage_level은 RPC 가상 컬럼. 일반 exercise_logs 테이블에는 없으므로 제외.
   const { data, error } = await supabase
     .from("exercise_logs")
     .select(
-      "id, exercise_key, exercise_title, note, completed_at, courage_level",
+      "id, exercise_key, exercise_title, note, completed_at",
     )
     .eq("user_id", user.id)
     .lt("completed_at", beforeCursor)

@@ -18,7 +18,6 @@ export interface ExerciseItem {
   exercise_title: string;
   note: string | null;
   completed_at: string;
-  courage_level?: number | null;
   sequence_no?: number | null;
 }
 
@@ -37,15 +36,23 @@ export function ExercisesList({ initial }: { initial: ExerciseItem[] }) {
   }
 
   const handleLoadMore = () => {
-    const cursor = items[items.length - 1]?.completed_at;
+    const lastItem = items[items.length - 1];
+    const cursor = lastItem?.completed_at;
     if (!cursor) return;
+    const lastSeq = lastItem?.sequence_no ?? null;
     startTransition(async () => {
       const r = await loadMoreExercises(cursor, 20);
       if (!r.ok) {
         toast.show(r.error, "error");
         return;
       }
-      setItems((prev) => [...prev, ...(r.entries as ExerciseItem[])]);
+      // F225 — descending 순서이므로 lastSeq - 1, -2 ...
+      const enriched = (r.entries as ExerciseItem[]).map((e, i) => ({
+        ...e,
+        sequence_no:
+          lastSeq != null && lastSeq - 1 - i > 0 ? lastSeq - 1 - i : null,
+      }));
+      setItems((prev) => [...prev, ...enriched]);
       setHasMore(r.hasMore);
     });
   };
@@ -69,7 +76,6 @@ export function ExercisesList({ initial }: { initial: ExerciseItem[] }) {
                 : e.exercise_key === "courage"
                   ? "용기있는 행동"
                   : "불안노출";
-          const courageLevel = e.courage_level ?? null;
           const seqNo = e.sequence_no ?? null;
           return (
             <li
@@ -80,10 +86,9 @@ export function ExercisesList({ initial }: { initial: ExerciseItem[] }) {
                 <span>
                   {modeLabel} · {formatDateTimeKst(e.completed_at)}
                 </span>
-                {courageLevel != null && courageLevel > 0 ? (
+                {seqNo && seqNo > 0 ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
-                    🏆 용기 레벨 {courageLevel}
-                    {seqNo ? ` · ${seqNo}번째 도전` : null}
+                    🏆 용기 레벨 UP {seqNo}
                   </span>
                 ) : null}
               </div>

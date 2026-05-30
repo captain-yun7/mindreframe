@@ -18,6 +18,7 @@ export interface ThoughtItem {
   body_reaction: string | null;
   behavior: string | null;
   created_at: string;
+  sequence_no?: number | null;
 }
 
 export function ThoughtsList({ initial }: { initial: ThoughtItem[] }) {
@@ -35,15 +36,22 @@ export function ThoughtsList({ initial }: { initial: ThoughtItem[] }) {
   }
 
   const handleLoadMore = () => {
-    const cursor = items[items.length - 1]?.created_at;
+    const lastItem = items[items.length - 1];
+    const cursor = lastItem?.created_at;
     if (!cursor) return;
+    const lastSeq = lastItem?.sequence_no ?? null;
     startTransition(async () => {
       const r = await loadMoreThoughts(cursor, 20);
       if (!r.ok) {
         toast.show(r.error, "error");
         return;
       }
-      setItems((prev) => [...prev, ...(r.entries as ThoughtItem[])]);
+      const enriched = (r.entries as ThoughtItem[]).map((e, i) => ({
+        ...e,
+        sequence_no:
+          lastSeq != null && lastSeq - 1 - i > 0 ? lastSeq - 1 - i : null,
+      }));
+      setItems((prev) => [...prev, ...enriched]);
       setHasMore(r.hasMore);
     });
   };
@@ -51,23 +59,31 @@ export function ThoughtsList({ initial }: { initial: ThoughtItem[] }) {
   return (
     <>
       <ul className="mt-4 space-y-2" data-testid="recent-thoughts">
-        {items.map((t) => (
-          <li
-            key={t.id}
-            className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
-          >
-            <div className="text-gs-muted-soft text-[11px] mb-1">
-              {formatDateTimeKst(t.created_at)}
-            </div>
-            <div className="font-bold">{t.situation}</div>
-            {t.thought && <div className="text-gs-text-soft mt-0.5">생각 · {t.thought}</div>}
-            {t.emotion && <div className="text-gs-text-soft">감정 · {t.emotion}</div>}
-            {t.body_reaction && (
-              <div className="text-gs-text-soft">신체반응 · {t.body_reaction}</div>
-            )}
-            {t.behavior && <div className="text-gs-text-soft">행동 · {t.behavior}</div>}
-          </li>
-        ))}
+        {items.map((t) => {
+          const seqNo = t.sequence_no ?? null;
+          return (
+            <li
+              key={t.id}
+              className="p-3 rounded-[12px] bg-gs-navy-50/60 border border-gs-line-soft text-[13px]"
+            >
+              <div className="text-gs-muted-soft text-[11px] mb-1 flex items-center justify-between flex-wrap gap-1">
+                <span>{formatDateTimeKst(t.created_at)}</span>
+                {seqNo && seqNo > 0 ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
+                    🗑️ 생각 분리 레벨 UP {seqNo}
+                  </span>
+                ) : null}
+              </div>
+              <div className="font-bold">{t.situation}</div>
+              {t.thought && <div className="text-gs-text-soft mt-0.5">생각 · {t.thought}</div>}
+              {t.emotion && <div className="text-gs-text-soft">감정 · {t.emotion}</div>}
+              {t.body_reaction && (
+                <div className="text-gs-text-soft">신체반응 · {t.body_reaction}</div>
+              )}
+              {t.behavior && <div className="text-gs-text-soft">행동 · {t.behavior}</div>}
+            </li>
+          );
+        })}
       </ul>
       {hasMore && (
         <button

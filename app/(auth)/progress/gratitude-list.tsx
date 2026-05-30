@@ -13,14 +13,6 @@ type Gratitude = {
   sequence_no?: number | null;
 };
 
-// K6·F212 — 긍정 레벨 산식 (RPC v5와 동일). F223 라벨 "감사 레벨" → "긍정 레벨".
-function gratitudeLevelOf(seqNo: number): number {
-  if (seqNo < 1) return 0;
-  if (seqNo < 10) return 1;
-  if (seqNo < 30) return 2;
-  if (seqNo < 60) return 3;
-  return 4 + Math.floor((seqNo - 60) / 30);
-}
 
 export function GratitudeList({ initial }: { initial: Gratitude[] }) {
   const [items, setItems] = useState<Gratitude[]>(initial);
@@ -63,8 +55,7 @@ export function GratitudeList({ initial }: { initial: Gratitude[] }) {
     <>
       <ul className="mt-4 space-y-2" data-testid="recent-gratitudes">
         {items.map((g) => {
-          const seqNo = g.sequence_no ?? 0;
-          const level = gratitudeLevelOf(seqNo);
+          const seqNo = g.sequence_no ?? null;
           return (
             <li
               key={g.id}
@@ -72,9 +63,9 @@ export function GratitudeList({ initial }: { initial: Gratitude[] }) {
             >
               <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
                 <div className="text-gs-muted-soft text-[11px]">{g.recorded_at}</div>
-                {level > 0 ? (
+                {seqNo && seqNo > 0 ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
-                    🙏 긍정 레벨 {level}
+                    🙏 긍정 레벨 UP {seqNo}
                   </span>
                 ) : null}
               </div>
