@@ -33,10 +33,19 @@ export async function logDailyVideoWatch(dayNumber: number) {
   const startedAt =
     (profile as { notifications_started_at?: string | null } | null)
       ?.notifications_started_at ?? null;
-  // F217 — 알림 시작 전 사용자는 day 검증 skip (자유 재생).
-  // 알림 활성 사용자는 자기 myDay와 일치할 때만 카운트 (위변조 방지).
-  const myDay = computeDayNumber(startedAt);
-  if (myDay != null && myDay !== dayNumber) {
+  // F224 — 알림 시작 사용자는 startedAt 기준, 미시작은 본 영상 수 + 1 기준.
+  // 위변조 방지 — myDay와 일치해야만 카운트.
+  let myDay = computeDayNumber(startedAt);
+  if (myDay == null) {
+    const { count } = await supabase
+      .from("routine_checks")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("item_key", "daily_video");
+    const watched = count ?? 0;
+    myDay = Math.min(Math.max(1, watched + 1), 100);
+  }
+  if (myDay !== dayNumber) {
     return {
       ok: false as const,
       error: "현재 일차와 일치하지 않습니다",
@@ -95,7 +104,18 @@ export async function getTodayDailyVideo(): Promise<TodayDailyVideo> {
   const startedAt =
     (profile as { notifications_started_at?: string | null } | null)
       ?.notifications_started_at ?? null;
-  const dayNumber = computeDayNumber(startedAt) ?? 1;
+  // F224 — 알림 시작 사용자는 그 기준일자로, 미시작 사용자는 본 영상 수 + 1로 진도 자동 계산.
+  // 예: 처음 → day 1, 1편 시청 → 다음 날 day 2, …
+  let dayNumber = computeDayNumber(startedAt) ?? null;
+  if (dayNumber == null) {
+    const { count } = await supabase
+      .from("routine_checks")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("item_key", "daily_video");
+    const watched = count ?? 0;
+    dayNumber = Math.min(Math.max(1, watched + 1), 100);
+  }
 
   let row:
     | { title: string; video_url: string | null; duration_seconds: number | null }
