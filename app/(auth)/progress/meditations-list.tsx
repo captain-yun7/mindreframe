@@ -59,7 +59,6 @@ export function MeditationsList({ initial }: { initial: MeditationItem[] }) {
     <>
       <ul className="mt-4 space-y-2" data-testid="recent-meditations">
         {items.map((m) => {
-          const minutes = Math.round((m.duration ?? 0) / 60);
           const seqNo = m.sequence_no ?? null;
           return (
             <li
@@ -75,14 +74,8 @@ export function MeditationsList({ initial }: { initial: MeditationItem[] }) {
                   </span>
                 ) : null}
               </div>
-              <div className="flex items-center justify-between gap-3">
-                <div className="font-bold truncate flex-1">{m.track_title}</div>
-                {minutes > 0 ? (
-                  <div className="text-gs-muted-soft text-xs shrink-0">
-                    {minutes}분
-                  </div>
-                ) : null}
-              </div>
+              {/* F232 — "N분" 표기 제거 */}
+              <div className="font-bold truncate">{m.track_title}</div>
             </li>
           );
         })}
