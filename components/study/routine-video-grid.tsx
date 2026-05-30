@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   getRoutineVideosBatch,
   getRoutineVideoSignedUrl,
@@ -10,7 +10,7 @@ import {
 /**
  * /study 하단 "100일 루틴 3분 영상" 그리드.
  * - 데스크탑 4열 / 태블릿 2열 / 모바일 1열
- * - IntersectionObserver로 sentinel이 보이면 다음 batch fetch
+ * - F222 명시적 "더 보기" 버튼 (이전 IntersectionObserver 자동 스크롤 → 사용자 트리거)
  * - 카드 클릭 시 그 자리에서 인라인 재생 (presigned URL은 클릭 시점에 server action으로 발급)
  * - free 유저도 시청 가능 — 별도 plan 가드 없음
  */
@@ -27,7 +27,6 @@ export function RoutineVideoGrid({
   const [nextOffset, setNextOffset] = useState<number | null>(initialNextOffset);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const [activeDay, setActiveDay] = useState<number | null>(null);
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
@@ -55,20 +54,6 @@ export function RoutineVideoGrid({
       setLoading(false);
     }
   }, [loading, nextOffset, pageSize]);
-
-  useEffect(() => {
-    if (nextOffset == null) return;
-    const el = sentinelRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) void loadMore();
-      },
-      { rootMargin: "240px 0px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [loadMore, nextOffset]);
 
   const handlePlay = useCallback(async (dayNumber: number) => {
     setActiveError(null);
@@ -126,22 +111,28 @@ export function RoutineVideoGrid({
         })}
       </ul>
       <div
-        ref={sentinelRef}
-        className="h-12 mt-4 flex items-center justify-center text-xs text-gs-muted"
+        className="mt-4 flex items-center justify-center"
         aria-live="polite"
       >
         {error ? (
           <button
             type="button"
             onClick={() => void loadMore()}
-            className="text-gs-navy-bright underline"
+            className="px-5 py-2 rounded-full border border-gs-line-soft bg-white text-sm font-bold text-gs-navy-bright hover:-translate-y-0.5 hover:shadow-toss-card transition-all"
           >
             다시 시도
           </button>
-        ) : loading ? (
-          "불러오는 중…"
-        ) : nextOffset == null ? (
-          items.length > 0 ? "마지막 영상까지 다 봤어요" : null
+        ) : nextOffset != null ? (
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={loading}
+            className="w-full py-3 rounded-full border border-gs-line-soft bg-white text-sm font-bold text-gs-text-strong hover:-translate-y-0.5 hover:shadow-toss-card transition-all disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
+          >
+            {loading ? "불러오는 중…" : "더 보기"}
+          </button>
+        ) : items.length > 0 ? (
+          <p className="text-xs text-gs-muted">마지막 영상까지 다 봤어요</p>
         ) : null}
       </div>
     </div>
