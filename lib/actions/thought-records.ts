@@ -114,9 +114,11 @@ function stripJsonBlock(text: string): string {
 export async function sendTrashMessage({
   history,
   content,
+  sessionId: incomingSessionId,
 }: {
   history: TrashMsg[];
   content: string;
+  sessionId?: string | null;
 }) {
   const supabase = await createSupabaseServerClient();
   const {
@@ -127,7 +129,7 @@ export async function sendTrashMessage({
   const trimmed = content.trim();
   if (!trimmed) return { ok: false as const, error: "내용을 입력해주세요" };
 
-  // 위기 감지
+  // 위기 감지 — session 생성하지 않고 안내만
   if (detectCrisis(trimmed).level === "warn") {
     return {
       ok: true as const,
@@ -135,6 +137,7 @@ export async function sendTrashMessage({
       crisis: true as const,
       parsedRecord: null,
       saved: false,
+      sessionId: incomingSessionId ?? null,
     };
   }
 
@@ -142,6 +145,21 @@ export async function sendTrashMessage({
   const usage = await checkUsageOnly(supabase, user.id, "trash");
   if (!usage.ok) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
+  }
+
+  // F231 — 대화 메시지 저장 시작. 첫 메시지면 chat_sessions row 생성.
+  let sessionId: string | null = incomingSessionId ?? null;
+  if (!sessionId) {
+    const { data: sess } = await supabase
+      .from("chat_sessions")
+      .insert({
+        user_id: user.id,
+        title: trimmed.slice(0, 30),
+        status: "active",
+      })
+      .select("id")
+      .single();
+    sessionId = (sess as { id: string } | null)?.id ?? null;
   }
 
   const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
@@ -202,10 +220,12 @@ export async function sendTrashMessage({
         : parsedJson.emotion_name
       : "";
 
+    // F231 — session_id 함께 저장 (대화 전체 보기용)
     const { data: row, error } = await supabase
       .from("thought_records")
       .insert({
         user_id: user.id,
+        session_id: sessionId,
         situation: parsedJson.situation,
         thought: parsedJson.thought ?? "",
         emotion: emotionStr,
@@ -227,6 +247,14 @@ export async function sendTrashMessage({
     }
   }
 
+  // F231 — chat_messages에 user/assistant 메시지 저장 (대화 전체 보기용)
+  if (sessionId) {
+    await supabase.from("chat_messages").insert([
+      { session_id: sessionId, role: "user", content: trimmed },
+      { session_id: sessionId, role: "assistant", content: visibleText },
+    ]);
+  }
+
   return {
     ok: true as const,
     reply: visibleText,
@@ -234,5 +262,6 @@ export async function sendTrashMessage({
     parsedRecord: parsedJson,
     saved,
     savedId,
+    sessionId,
   };
 }

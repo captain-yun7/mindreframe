@@ -188,7 +188,7 @@ export async function loadMoreThoughts(beforeCursor: string, pageSize: number = 
   const safeSize = Math.min(Math.max(1, pageSize), 50);
   const { data, error } = await supabase
     .from("thought_records")
-    .select("id, situation, thought, emotion, body_reaction, behavior, created_at")
+    .select("id, session_id, situation, thought, emotion, body_reaction, behavior, created_at")
     .eq("user_id", user.id)
     .lt("created_at", beforeCursor)
     .order("created_at", { ascending: false })

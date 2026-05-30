@@ -34,6 +34,7 @@ export function TrashClient({
   const [isLoading, setIsLoading] = useState(false);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [done, setDone] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [usedCount, setUsedCount] = useState(initialUsage?.used ?? 0);
   const dailyLimit = initialUsage?.limit ?? 0;
   const isUnlimited = initialUsage?.isUnlimited ?? false;
@@ -65,6 +66,7 @@ export function TrashClient({
       result = await sendTrashMessage({
         history: historyForApi,
         content: trimmed,
+        sessionId,
       });
     } catch (e) {
       toast.show(
@@ -79,6 +81,11 @@ export function TrashClient({
     if (!result.ok) {
       toast.show(result.error, "error");
       return;
+    }
+
+    // F231 — 첫 호출 후 받은 sessionId 유지 (이후 메시지부터 동일 session)
+    if (result.sessionId && !sessionId) {
+      setSessionId(result.sessionId);
     }
 
     if (result.crisis) {

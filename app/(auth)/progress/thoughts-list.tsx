@@ -4,14 +4,17 @@ import { useState, useTransition } from "react";
 import { loadMoreThoughts } from "@/lib/actions/dashboard";
 import { useToast } from "@/components/ui/toast";
 import { formatDateTimeKst } from "@/lib/dates";
+import { supabase } from "@/lib/supabase";
 
 /**
  * K6·F208 — 생각쓰레기통 기록 "더 보기" 패턴.
  * GratitudeList와 동일 흐름 (created_at cursor).
+ * F231 — session_id 있으면 chat_messages 전체 대화 모달, 없으면 5요소 fallback.
  */
 
 export interface ThoughtItem {
   id: string;
+  session_id?: string | null;
   situation: string;
   thought: string | null;
   emotion: string | null;
@@ -21,12 +24,40 @@ export interface ThoughtItem {
   sequence_no?: number | null;
 }
 
+interface ChatMsg {
+  id: string;
+  role: string;
+  content: string;
+  created_at: string;
+}
+
 export function ThoughtsList({ initial }: { initial: ThoughtItem[] }) {
   const [items, setItems] = useState<ThoughtItem[]>(initial);
   const [hasMore, setHasMore] = useState(initial.length >= 5);
   const [pending, startTransition] = useTransition();
   const [openItem, setOpenItem] = useState<ThoughtItem | null>(null);
+  const [convoMessages, setConvoMessages] = useState<ChatMsg[]>([]);
+  const [convoLoading, setConvoLoading] = useState(false);
   const toast = useToast();
+
+  async function openWithConversation(t: ThoughtItem) {
+    setOpenItem(t);
+    setConvoMessages([]);
+    if (!t.session_id) return; // 5요소 fallback
+    setConvoLoading(true);
+    const { data } = await supabase
+      .from("chat_messages")
+      .select("id, role, content, created_at")
+      .eq("session_id", t.session_id)
+      .order("created_at", { ascending: true });
+    setConvoMessages((data ?? []).filter((m) => m.role !== "system") as ChatMsg[]);
+    setConvoLoading(false);
+  }
+
+  function closeModal() {
+    setOpenItem(null);
+    setConvoMessages([]);
+  }
 
   if (initial.length === 0) {
     return (
@@ -82,13 +113,13 @@ export function ThoughtsList({ initial }: { initial: ThoughtItem[] }) {
                 <div className="text-gs-text-soft">신체반응 · {t.body_reaction}</div>
               )}
               {t.behavior && <div className="text-gs-text-soft">행동 · {t.behavior}</div>}
-              {/* F226 — 전체 보기 (5요소 모달 — schema 변경 없이 간단 모달) */}
+              {/* F231 — 대화 전체 보기 (session_id 있으면 chat_messages, 없으면 5요소) */}
               <button
                 type="button"
-                onClick={() => setOpenItem(t)}
+                onClick={() => void openWithConversation(t)}
                 className="mt-2 text-xs font-bold text-gs-navy-bright hover:text-gs-navy underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40 rounded"
               >
-                전체 보기 →
+                {t.session_id ? "대화 전체 보기 →" : "전체 보기 →"}
               </button>
             </li>
           );
@@ -112,33 +143,64 @@ export function ThoughtsList({ initial }: { initial: ThoughtItem[] }) {
           aria-modal="true"
           aria-label="생각쓰레기통 기록 전체 보기"
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 px-4"
-          onClick={() => setOpenItem(null)}
+          onClick={closeModal}
         >
           <div
-            className="bg-white w-full max-w-[560px] max-h-[80vh] rounded-[18px] shadow-gs-dropdown flex flex-col overflow-hidden"
+            className="bg-white w-full max-w-[640px] max-h-[80vh] rounded-[18px] shadow-gs-dropdown flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-3 border-b border-gs-line-soft flex items-center justify-between">
-              <h3 className="text-base font-bold">생각쓰레기통 기록</h3>
+              <h3 className="text-base font-bold">
+                {openItem.session_id ? "대화 전체" : "생각쓰레기통 기록"}
+              </h3>
               <button
                 type="button"
-                onClick={() => setOpenItem(null)}
+                onClick={closeModal}
                 aria-label="닫기"
                 className="text-gs-muted hover:text-gs-text-strong text-lg leading-none px-2"
               >
                 ×
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 text-[14px] leading-[1.7]">
-              <div className="text-gs-muted-soft text-[12px]">
-                {formatDateTimeKst(openItem.created_at)}
+            {openItem.session_id ? (
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 bg-gs-surface-muted">
+                {convoLoading ? (
+                  <div className="text-center text-gs-muted text-sm py-8">불러오는 중...</div>
+                ) : convoMessages.length === 0 ? (
+                  <div className="text-center text-gs-muted text-sm py-8">
+                    저장된 대화가 없어요.
+                  </div>
+                ) : (
+                  convoMessages.map((m) => (
+                    <div
+                      key={m.id}
+                      className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-3 py-2 rounded-[14px] text-[13px] whitespace-pre-wrap break-words ${
+                          m.role === "user"
+                            ? "bg-gs-navy-bright text-white"
+                            : "bg-white border border-gs-line-soft text-gs-text-strong"
+                        }`}
+                      >
+                        {m.content}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
-              <Field label="상황" value={openItem.situation} />
-              <Field label="생각" value={openItem.thought} />
-              <Field label="감정" value={openItem.emotion} />
-              <Field label="신체반응" value={openItem.body_reaction} />
-              <Field label="행동" value={openItem.behavior} />
-            </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 text-[14px] leading-[1.7]">
+                <div className="text-gs-muted-soft text-[12px]">
+                  {formatDateTimeKst(openItem.created_at)}
+                </div>
+                <Field label="상황" value={openItem.situation} />
+                <Field label="생각" value={openItem.thought} />
+                <Field label="감정" value={openItem.emotion} />
+                <Field label="신체반응" value={openItem.body_reaction} />
+                <Field label="행동" value={openItem.behavior} />
+              </div>
+            )}
           </div>
         </div>
       )}
