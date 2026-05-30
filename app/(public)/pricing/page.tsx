@@ -212,9 +212,10 @@ export default async function PricingPage({
           {plans.map((plan) => {
             const isRecommended = plan.key === effectiveRecommended;
             const planRank = PLAN_RANK_FOR_CARD[plan.key];
-            // K3·F162 A안 분기
+            // K3·F162 A안 분기. F236 — 무료(free) 사용자는 "업그레이드" 아닌 "선택하기".
             const isCurrent = user != null && plan.key === currentPlan;
-            const isUpgrade = user != null && planRank > currentRank;
+            const isUpgrade =
+              user != null && currentPlan !== "free" && planRank > currentRank;
             return (
               <StaggerItem key={plan.name}>
                 <div
