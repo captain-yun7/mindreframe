@@ -32,8 +32,13 @@ export function AlternativeCardsGrid({
   return (
     <>
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* F221 — 최신 카드일수록 큰 번호. 가장 오래된 = 1, 가장 최신 = 총 개수. */}
         {shown.map((c, idx) => (
-          <AlternativeThoughtCard key={c.key} text={c.text} index={idx + 1} />
+          <AlternativeThoughtCard
+            key={c.key}
+            text={c.text}
+            index={cards.length - idx}
+          />
         ))}
       </div>
       {hasMore && (
