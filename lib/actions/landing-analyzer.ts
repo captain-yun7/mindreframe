@@ -20,7 +20,8 @@ import { callOpenAIChat } from "@/lib/ai/openai-client";
  * 결과: 분석기 정식 결과의 축약 버전 — 인지왜곡 1~3개 + 짧은 대안. 결과 저장은 익명 row에 jsonb로.
  */
 
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+// 원본 토닥챗 — 랜딩 1단계 분석은 gpt-4.1 (안정적). 치료·마무리 단계가 없으므로 OPENAI_MODEL 불필요.
+const ANALYZER_MODEL = process.env.ANALYZER_MODEL ?? "gpt-4.1";
 
 const DAILY_CAP = Number(process.env.LANDING_ANALYZER_DAILY_CAP ?? 100);
 const IP_DAILY_LIMIT = 5;
@@ -124,7 +125,7 @@ export async function analyzeAnonymous({
   // 4) OpenAI 호출 — K1·F189 timeout/retry 통일 helper
   const prompts = await getPrompts();
   const callResult = await callOpenAIChat({
-    model: OPENAI_MODEL,
+    model: ANALYZER_MODEL,
     messages: [
       { role: "system", content: prompts.analyzerMain },
       { role: "user", content: trimmed },

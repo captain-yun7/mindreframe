@@ -32,6 +32,8 @@ import {
  */
 
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+// 원본 토닥챗 — 1단계 인지왜곡 JSON 분석만 gpt-4.1 (안정적), 치료·마무리는 OPENAI_MODEL.
+const ANALYZER_MODEL = process.env.ANALYZER_MODEL ?? "gpt-4.1";
 
 function isCrisis(text: string) {
   return detectCrisis(text).level === "warn";
@@ -102,10 +104,10 @@ export async function analyzeUserInput({ content }: { content: string }) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
-  // 분석 호출 — site_settings prompt fallback
+  // 분석 호출 — site_settings prompt fallback. 모델은 원본대로 gpt-4.1 고정(ANALYZER_MODEL).
   const prompts = await getPrompts();
   const r = await callOpenAIChat({
-    model: OPENAI_MODEL,
+    model: ANALYZER_MODEL,
     messages: [
       { role: "system", content: prompts.analyzerMain },
       { role: "user", content: trimmed },
