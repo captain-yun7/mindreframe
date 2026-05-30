@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
 import { normalizePlan } from "@/lib/auth/plan";
 import { PageFade } from "@/components/motion/page-fade";
+import { SiteFooter } from "@/components/site-footer";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 import { Section } from "@/components/toss/section";
@@ -316,6 +317,8 @@ export default async function LandingPage() {
           </FadeIn>
         </div>
       </section>
+      {/* K7·F214 — 푸터는 메인페이지에만 유지 */}
+      <SiteFooter />
     </PageFade>
   );
 }

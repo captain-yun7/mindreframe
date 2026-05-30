@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
+import { useCoachUnreadForUser, useCoachUnreadForAdmin } from "@/lib/hooks/use-coach-unread";
 
 const navItems = [
   { href: "/study", label: "알고가기" },
@@ -97,6 +98,10 @@ export function SiteHeader() {
     user?.email?.split("@")[0] ||
     "";
 
+  // K7·F154 — 카톡식 안 읽음 배지
+  const coachUnread = useCoachUnreadForUser(isLoggedIn ? user!.id : null);
+  const adminUnread = useCoachUnreadForAdmin(isAdmin);
+
   return (
     <header
       className={`sticky top-0 z-50 h-20 bg-white/95 backdrop-blur-[18px] border-b transition-shadow duration-200 ${
@@ -123,6 +128,9 @@ export function SiteHeader() {
           <nav className="flex items-center gap-1 text-[14px] max-lg:hidden">
             {navItems.map((item) => {
               const active = pathname === item.href;
+              // K7·F154 — 코치 메뉴 옆 안 읽음 배지
+              const badge =
+                item.href === "/coach" && coachUnread > 0 ? coachUnread : 0;
               return (
                 <Link
                   key={item.href}
@@ -133,7 +141,10 @@ export function SiteHeader() {
                       : "text-gs-muted font-medium hover:text-gs-navy-900"
                   }`}
                 >
-                  <span>{item.label}</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span>{item.label}</span>
+                    {badge > 0 ? <UnreadBadge count={badge} /> : null}
+                  </span>
                   {active ? (
                     <motion.span
                       layoutId="nav-underline"
@@ -173,13 +184,14 @@ export function SiteHeader() {
           {isAdmin ? (
             <Link
               href="/admin"
-              className={`text-[13px] font-bold tracking-[-0.02em] px-3 py-1.5 rounded-full transition-colors duration-200 ${
+              className={`inline-flex items-center gap-1.5 text-[13px] font-bold tracking-[-0.02em] px-3 py-1.5 rounded-full transition-colors duration-200 ${
                 pathname.startsWith("/admin")
                   ? "bg-gs-gold-50 text-gs-gold-700 border border-gs-gold/40"
                   : "text-gs-gold-700 border border-transparent hover:bg-gs-gold-50"
               }`}
             >
-              관리자
+              <span>관리자</span>
+              {adminUnread > 0 ? <UnreadBadge count={adminUnread} /> : null}
             </Link>
           ) : null}
 
@@ -257,6 +269,8 @@ export function SiteHeader() {
               >
                 {navItems.map((item) => {
                   const active = pathname === item.href;
+                  const badge =
+                    item.href === "/coach" && coachUnread > 0 ? coachUnread : 0;
                   return (
                     <motion.div
                       key={item.href}
@@ -268,14 +282,15 @@ export function SiteHeader() {
                     >
                       <Link
                         href={item.href}
-                        className={`block px-3 py-3 rounded-xl tracking-[-0.02em] text-[15px] transition-colors duration-150 ${
+                        className={`flex items-center justify-between px-3 py-3 rounded-xl tracking-[-0.02em] text-[15px] transition-colors duration-150 ${
                           active
                             ? "bg-gs-gold-50 text-gs-navy-900 font-bold"
                             : "text-gs-text-strong font-medium hover:bg-gs-surface-mid"
                         }`}
                         onClick={() => setMenuOpen(false)}
                       >
-                        {item.label}
+                        <span>{item.label}</span>
+                        {badge > 0 ? <UnreadBadge count={badge} /> : null}
                       </Link>
                     </motion.div>
                   );
@@ -291,14 +306,15 @@ export function SiteHeader() {
                   >
                     <Link
                       href="/admin"
-                      className={`block px-3 py-3 rounded-xl tracking-[-0.02em] text-[15px] font-bold transition-colors duration-150 ${
+                      className={`flex items-center justify-between px-3 py-3 rounded-xl tracking-[-0.02em] text-[15px] font-bold transition-colors duration-150 ${
                         pathname.startsWith("/admin")
                           ? "bg-gs-gold-50 text-gs-gold-700"
                           : "text-gs-gold-700 hover:bg-gs-gold-50"
                       }`}
                       onClick={() => setMenuOpen(false)}
                     >
-                      관리자
+                      <span>관리자</span>
+                      {adminUnread > 0 ? <UnreadBadge count={adminUnread} /> : null}
                     </Link>
                   </motion.div>
                 ) : null}
@@ -341,5 +357,21 @@ export function SiteHeader() {
         ) : null}
       </AnimatePresence>
     </header>
+  );
+}
+
+/**
+ * K7·F154 — 카톡식 안 읽음 배지. 빨간 동그라미 + 숫자(99+).
+ */
+function UnreadBadge({ count }: { count: number }) {
+  const label = count > 99 ? "99+" : String(count);
+  return (
+    <span
+      data-testid="coach-unread-badge"
+      aria-label={`안 읽음 ${count}개`}
+      className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-extrabold leading-none tabular-nums shadow-[0_1px_3px_rgba(239,68,68,0.4)]"
+    >
+      {label}
+    </span>
   );
 }

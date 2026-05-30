@@ -14,6 +14,7 @@ import { useTypingIndicator } from "@/lib/hooks/use-typing-indicator";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
 import { RealtimeStatusDot } from "@/components/realtime-status-dot";
 import { TypingDots } from "@/components/chat/typing-dots";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   sessions: CoachSessionSummary[];
@@ -49,6 +50,18 @@ export function CoachThreadClient({
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, othersTyping]);
+
+  // K7·F154 — 화면에 표시된 코치 답변을 읽음 처리 (페이지 진입·새 메시지 도착 시)
+  useEffect(() => {
+    if (!activeSession?.id) return;
+    const hasUnreadCoach = messages.some(
+      (m) => m.sender_role === "coach" && m.session_id === activeSession.id,
+    );
+    if (!hasUnreadCoach) return;
+    void supabase.rpc("mark_coach_messages_read", { p_session_id: activeSession.id });
+    // messages.length로 새 메시지 도착 감지 — messages 자체는 deps 불필요
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSession?.id, messages.length]);
 
   const rendered = renderWithSeparators(sessions, messages);
 

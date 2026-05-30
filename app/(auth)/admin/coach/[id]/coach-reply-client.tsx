@@ -14,6 +14,7 @@ import { useTypingIndicator } from "@/lib/hooks/use-typing-indicator";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
 import { RealtimeStatusDot } from "@/components/realtime-status-dot";
 import { TypingDots } from "@/components/chat/typing-dots";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   sessionId: string;
@@ -49,6 +50,18 @@ export function CoachReplyClient({
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, othersTyping]);
+
+  // K7·F154 — 어드민이 진입·새 사용자 메시지 도착 시 user 메시지 일괄 읽음 처리
+  useEffect(() => {
+    if (!activeSession?.id) return;
+    const hasUnreadUser = messages.some(
+      (m) => m.sender_role === "user" && m.session_id === activeSession.id,
+    );
+    if (!hasUnreadUser) return;
+    void supabase.rpc("mark_user_messages_read", { p_session_id: activeSession.id });
+    // messages.length로 새 메시지 도착 감지 — messages 자체는 deps 불필요
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSession?.id, messages.length]);
 
   // 진입한 [id]가 현재 활성 세션인 경우에만 종료 버튼 + 입력창 노출
   const canEnd = activeSession?.id === sessionId;
