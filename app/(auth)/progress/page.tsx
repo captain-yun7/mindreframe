@@ -12,7 +12,7 @@ import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 import { PageFade } from "@/components/motion/page-fade";
 import { getSiteSettings } from "@/lib/site-settings";
-import { AlternativeThoughtCard } from "@/components/alternative-thought-card";
+import { AlternativeCardsGrid } from "./alternative-cards-grid";
 import { QuickNav } from "@/components/quick-nav";
 
 export const dynamic = "force-dynamic";
@@ -287,35 +287,28 @@ export default async function ProgressPage() {
             <CardTitle>대안적 사고 카드</CardTitle>
             <CardDescription>가짜생각 분석기에서 찾은 대안적 사고들이 모입니다.</CardDescription>
             {stats && stats.recentAlternatives.length > 0 ? (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* K6·F207: 인지왜곡 1개당 카드 1장 분리 + 게임형 보상 톤 (행동연습장 4단계 톤) */}
-                {(() => {
-                  type Card = { key: string; text: string };
-                  const cards: Card[] = [];
-                  for (const r of stats.recentAlternatives) {
-                    const parsed = parseAlternativeThought(r.alternative_thought);
-                    if (parsed.pairs.length > 0) {
-                      for (let i = 0; i < parsed.pairs.length; i++) {
-                        const rational = parsed.pairs[i].rational?.trim();
-                        if (!rational) continue;
-                        cards.push({
-                          key: `${r.id}_${i}`,
-                          text: rational,
-                        });
-                      }
-                    } else if (parsed.text) {
-                      cards.push({ key: r.id, text: parsed.text });
+              // K6·F207: 인지왜곡 1개당 카드 1장 분리 + 게임형 보상 톤
+              // F220: 6개씩 노출 + "더 보기" 페이징
+              (() => {
+                type Card = { key: string; text: string };
+                const cards: Card[] = [];
+                for (const r of stats.recentAlternatives) {
+                  const parsed = parseAlternativeThought(r.alternative_thought);
+                  if (parsed.pairs.length > 0) {
+                    for (let i = 0; i < parsed.pairs.length; i++) {
+                      const rational = parsed.pairs[i].rational?.trim();
+                      if (!rational) continue;
+                      cards.push({
+                        key: `${r.id}_${i}`,
+                        text: rational,
+                      });
                     }
+                  } else if (parsed.text) {
+                    cards.push({ key: r.id, text: parsed.text });
                   }
-                  return cards.map((c, idx) => (
-                    <AlternativeThoughtCard
-                      key={c.key}
-                      text={c.text}
-                      index={idx + 1}
-                    />
-                  ));
-                })()}
-              </div>
+                }
+                return <AlternativeCardsGrid cards={cards} />;
+              })()
             ) : (
               <div className="mt-4 text-center text-gs-muted-soft text-[13px] py-8">
                 아직 저장된 대안사고가 없어요.
