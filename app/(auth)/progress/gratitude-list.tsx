@@ -13,7 +13,7 @@ type Gratitude = {
   sequence_no?: number | null;
 };
 
-// K6·F212 — 감사 레벨 산식 (RPC v5와 동일)
+// K6·F212 — 긍정 레벨 산식 (RPC v5와 동일). F223 라벨 "감사 레벨" → "긍정 레벨".
 function gratitudeLevelOf(seqNo: number): number {
   if (seqNo < 1) return 0;
   if (seqNo < 10) return 1;
@@ -38,15 +38,23 @@ export function GratitudeList({ initial }: { initial: Gratitude[] }) {
   }
 
   const handleLoadMore = () => {
-    const lastCursor = items[items.length - 1]?.created_at;
+    const lastItem = items[items.length - 1];
+    const lastCursor = lastItem?.created_at;
     if (!lastCursor) return;
+    // F223 — 더보기로 가져온 row에도 sequence_no 추정 (descending이므로 -1씩 감소).
+    const lastSeq = lastItem?.sequence_no ?? null;
     startTransition(async () => {
       const r = await loadMoreGratitudes(lastCursor, 20);
       if (!r.ok) {
         toast.show(r.error, "error");
         return;
       }
-      setItems((prev) => [...prev, ...r.entries]);
+      const enriched = r.entries.map((e, i) => ({
+        ...e,
+        sequence_no:
+          lastSeq != null && lastSeq - 1 - i > 0 ? lastSeq - 1 - i : null,
+      }));
+      setItems((prev) => [...prev, ...enriched]);
       setHasMore(r.hasMore);
     });
   };
@@ -66,7 +74,7 @@ export function GratitudeList({ initial }: { initial: Gratitude[] }) {
                 <div className="text-gs-muted-soft text-[11px]">{g.recorded_at}</div>
                 {level > 0 ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ec] border border-gs-gold-border px-2 py-0.5 text-[10.5px] font-extrabold text-gs-navy">
-                    🙏 감사 레벨 {level}
+                    🙏 긍정 레벨 {level}
                   </span>
                 ) : null}
               </div>
