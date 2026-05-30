@@ -32,25 +32,7 @@ export default async function StudyTodayPlayPage({
 
   const result = await getTodayDailyVideo();
 
-  if (!result.ok && result.reason === "not_started") {
-    return (
-      <div className="flex-1 bg-gs-bg px-4 py-8">
-        <div className="max-w-[640px] mx-auto bg-white rounded-[18px] border border-gs-line-soft p-7 text-center">
-          <p className="text-base font-bold">알림이 아직 시작되지 않았어요</p>
-          <p className="text-sm text-gs-muted mt-2">
-            마이페이지에서 알림을 활성화하면 100일 영상이 차례대로 재생됩니다.
-          </p>
-          <Link
-            href="/mypage"
-            className="inline-block mt-4 px-4 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold"
-          >
-            마이페이지로 이동
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
+  // F217 — 알림 미시작 사용자도 영상은 자유 재생 (daily-video.ts에서 day 1 fallback).
   // no_user는 위에서 redirect로 걸렀음 — 도달 X. no_row는 사용자 실제 일차 유지.
   const dayNumber = result.ok
     ? result.dayNumber

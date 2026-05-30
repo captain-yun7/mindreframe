@@ -162,7 +162,7 @@ export default async function MyPage() {
             <div className="mt-4">
               <NotificationSettings
                 initialHour={profile.notificationHour}
-                phoneRegistered={!!profile.phoneNumber}
+                initialPhone={profile.phoneNumber}
                 notificationsActive={!!profile.notificationsStartedAt}
               />
             </div>

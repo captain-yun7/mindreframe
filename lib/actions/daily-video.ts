@@ -33,11 +33,10 @@ export async function logDailyVideoWatch(dayNumber: number) {
   const startedAt =
     (profile as { notifications_started_at?: string | null } | null)
       ?.notifications_started_at ?? null;
+  // F217 — 알림 시작 전 사용자는 day 검증 skip (자유 재생).
+  // 알림 활성 사용자는 자기 myDay와 일치할 때만 카운트 (위변조 방지).
   const myDay = computeDayNumber(startedAt);
-  if (myDay == null) {
-    return { ok: false as const, error: "알림 시작 전입니다" };
-  }
-  if (myDay !== dayNumber) {
+  if (myDay != null && myDay !== dayNumber) {
     return {
       ok: false as const,
       error: "현재 일차와 일치하지 않습니다",
@@ -68,14 +67,14 @@ export type TodayDailyVideo =
       videoUrl: string | null;
       durationSeconds: number | null;
     }
-  | { ok: false; reason: "no_user" | "not_started" }
+  | { ok: false; reason: "no_user" }
   | { ok: false; reason: "no_row"; dayNumber: number };
 
 /**
  * 대시보드 / 영상 페이지에서 N일차 영상 메타 fetch.
  *
+ * F217 — 알림 시작 안 한 사용자도 영상은 자유 재생. notifications_started_at NULL이면 day 1로 fallback.
  * - 미로그인 → reason="no_user"
- * - notifications_started_at null → reason="not_started"
  * - 해당 일차 row 미존재 → reason="no_row"
  * - row 있으면 video_url(객체 키) → R2 GET presigned URL 발급. 객체 키 없으면 videoUrl=null.
  *
@@ -96,8 +95,7 @@ export async function getTodayDailyVideo(): Promise<TodayDailyVideo> {
   const startedAt =
     (profile as { notifications_started_at?: string | null } | null)
       ?.notifications_started_at ?? null;
-  const dayNumber = computeDayNumber(startedAt);
-  if (!dayNumber) return { ok: false, reason: "not_started" };
+  const dayNumber = computeDayNumber(startedAt) ?? 1;
 
   let row:
     | { title: string; video_url: string | null; duration_seconds: number | null }
