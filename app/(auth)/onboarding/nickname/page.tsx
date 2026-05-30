@@ -30,9 +30,8 @@ export default async function NicknameOnboardingPage() {
     redirect(profile.onboarding_completed ? "/dashboard" : "/survey");
   }
 
-  const emailPrefix = user.email?.split("@")[0] ?? "";
-  const suggested =
-    profile?.nickname && profile.nickname !== emailPrefix ? profile.nickname : "";
+  // F235 — 카카오/네이버 OAuth는 실명을 nickname으로 자동 채움. 사용자 보호를 위해 prefill 안 함.
+  // 사용자가 직접 입력한 별명만 저장.
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gs-navy via-gs-navy-mid to-gs-navy-bright text-white px-6 py-12">
@@ -44,11 +43,11 @@ export default async function NicknameOnboardingPage() {
           어떻게 불러드릴까요?
         </h1>
         <p className="text-base text-white/80 mb-8 leading-[1.7]">
-          닉네임은 한 번 정하면 <b className="text-gs-gold">바꿀 수 없어요</b>.
+          개인정보 보호를 위해 <b className="text-gs-gold">실명 대신 별명</b>으로 시작해요.
           <br />
-          신중히 골라주세요.
+          한 번 저장하면 변경할 수 없으니 신중히 골라주세요.
         </p>
-        <NicknameSetupForm suggested={suggested} />
+        <NicknameSetupForm suggested="" />
       </div>
     </div>
   );
