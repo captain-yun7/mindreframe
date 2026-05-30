@@ -62,8 +62,18 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
 
   async function runAnalysis(content: string) {
     setIsLoading(true);
-    const result = await analyzeUserInput({ content });
-    setIsLoading(false);
+    let result: Awaited<ReturnType<typeof analyzeUserInput>>;
+    try {
+      result = await analyzeUserInput({ content });
+    } catch (e) {
+      toast.show(
+        e instanceof Error ? e.message : "응답이 늦어지고 있어요. 다시 시도해주세요.",
+        "error",
+      );
+      return;
+    } finally {
+      setIsLoading(false);
+    }
     if (!result.ok) {
       toast.show(result.error, "error");
       return;
@@ -101,12 +111,22 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
     distortionName: string,
   ) {
     setIsLoading(true);
-    const r = await startTherapy({
-      sessionId: sid,
-      analysis: analysisData,
-      selectedDistortion: distortionName,
-    });
-    setIsLoading(false);
+    let r: Awaited<ReturnType<typeof startTherapy>>;
+    try {
+      r = await startTherapy({
+        sessionId: sid,
+        analysis: analysisData,
+        selectedDistortion: distortionName,
+      });
+    } catch (e) {
+      toast.show(
+        e instanceof Error ? e.message : "응답이 늦어지고 있어요. 다시 시도해주세요.",
+        "error",
+      );
+      return;
+    } finally {
+      setIsLoading(false);
+    }
     if (!r.ok) {
       toast.show(r.error, "error");
       return;
@@ -185,8 +205,18 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
       }
 
       setIsLoading(true);
-      const r = await continueTherapy({ sessionId, content: trimmed });
-      setIsLoading(false);
+      let r: Awaited<ReturnType<typeof continueTherapy>>;
+      try {
+        r = await continueTherapy({ sessionId, content: trimmed });
+      } catch (e) {
+        toast.show(
+          e instanceof Error ? e.message : "응답이 늦어지고 있어요. 다시 시도해주세요.",
+          "error",
+        );
+        return;
+      } finally {
+        setIsLoading(false);
+      }
       if (!r.ok) {
         toast.show(r.error, "error");
         return;

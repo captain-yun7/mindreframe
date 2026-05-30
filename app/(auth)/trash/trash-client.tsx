@@ -60,11 +60,21 @@ export function TrashClient({
       .map((m) => ({ role: m.role, content: m.content }));
 
     setIsLoading(true);
-    const result = await sendTrashMessage({
-      history: historyForApi,
-      content: trimmed,
-    });
-    setIsLoading(false);
+    let result: Awaited<ReturnType<typeof sendTrashMessage>>;
+    try {
+      result = await sendTrashMessage({
+        history: historyForApi,
+        content: trimmed,
+      });
+    } catch (e) {
+      toast.show(
+        e instanceof Error ? e.message : "응답이 늦어지고 있어요. 다시 시도해주세요.",
+        "error",
+      );
+      return;
+    } finally {
+      setIsLoading(false);
+    }
 
     if (!result.ok) {
       toast.show(result.error, "error");

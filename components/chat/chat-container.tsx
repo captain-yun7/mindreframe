@@ -155,6 +155,7 @@ export function ChatContainer({
 
       {/* Input — textarea 자동 확장 + IME-safe Enter */}
       <div className="sticky bottom-0 z-10 border-t border-gs-line-soft bg-white flex p-2 gap-2 items-end shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        {/* F218 — 응답 대기 중에도 입력 가능 (미리 작성 UX). 전송만 isLoading으로 막음. */}
         <textarea
           ref={inputRef}
           value={input}
@@ -163,8 +164,7 @@ export function ChatContainer({
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
           placeholder={placeholder}
-          disabled={isLoading}
-          className="flex-1 min-w-0 px-3 py-2 border border-gs-line-soft rounded-xl text-base md:text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 disabled:opacity-50 resize-none leading-6 max-h-[120px] placeholder:text-[12px] placeholder:text-gs-muted"
+          className="flex-1 min-w-0 px-3 py-2 border border-gs-line-soft rounded-xl text-base md:text-sm outline-none focus:border-gs-blue focus:ring-2 focus:ring-gs-blue/20 resize-none leading-6 max-h-[120px] placeholder:text-[12px] placeholder:text-gs-muted"
         />
         <button
           type="button"
