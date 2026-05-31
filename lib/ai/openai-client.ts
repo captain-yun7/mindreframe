@@ -53,20 +53,13 @@ export async function callOpenAIChat(
   let lastError = "";
   let lastStatus: number | undefined;
 
-  // F241/F244 — gpt-5 / o-series(reasoning 모델)는:
-  //   1. temperature 미지원 (400 에러) → 자동 제거
-  //   2. max_completion_tokens 미설정 시 reasoning 토큰만 소모하고 content가 비어 응답 멈춤
-  //      → 안전치 4000으로 보강 (호출부가 명시한 값은 존중)
+  // F241 — gpt-5 / o-series(reasoning 모델)는 temperature 미지원 (400 에러).
+  // 원본 호출부는 temperature를 그대로 보내도록 두고, 여기서 모델 기준으로 자동 제거.
   const modelStr = String(body.model ?? "");
   const isReasoningModel = /^(gpt-5|o\d)/.test(modelStr);
   const payload: OpenAIChatBody = { ...body };
-  if (isReasoningModel) {
-    if ("temperature" in payload) {
-      delete (payload as { temperature?: number }).temperature;
-    }
-    if (payload.max_completion_tokens == null) {
-      payload.max_completion_tokens = 4000;
-    }
+  if (isReasoningModel && "temperature" in payload) {
+    delete (payload as { temperature?: number }).temperature;
   }
 
   while (attempt < (allowRetry ? 2 : 1)) {
