@@ -123,14 +123,14 @@ export async function analyzeAnonymous({
 
   // 4) OpenAI 호출 — K1·F189 timeout/retry 통일 helper
   const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
+  // F241 — 원본 토닥챗 그대로: temperature 0.7. response_format/max_tokens 없음.
   const callResult = await callOpenAIChat({
     model: models.analyzer,
     messages: [
       { role: "system", content: prompts.analyzerMain },
       { role: "user", content: trimmed },
     ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4000,
+    temperature: 0.7,
   });
   if (!callResult.ok) {
     return { ok: false, error: callResult.error };

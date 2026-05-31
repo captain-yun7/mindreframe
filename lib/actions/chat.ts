@@ -74,7 +74,7 @@ export async function analyzeUserInput({ content }: { content: string }) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
-  // 분석 호출 — site_settings prompt + model fallback.
+  // F241 — 원본 토닥챗 그대로: temperature 0.7. response_format/max_tokens 없음.
   const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
   const r = await callOpenAIChat({
     model: models.analyzer,
@@ -82,8 +82,7 @@ export async function analyzeUserInput({ content }: { content: string }) {
       { role: "system", content: prompts.analyzerMain },
       { role: "user", content: trimmed },
     ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4000,
+    temperature: 0.7,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -189,10 +188,11 @@ export async function startTherapy({
 
   const baseMessages = [{ role: "system", content: therapySystem }];
   const models = await getModels();
+  // F241 — 원본 startTherapy 그대로: temperature 0.8. max_tokens 없음.
   const r = await callOpenAIChat({
     model: models.therapy,
     messages: baseMessages,
-    max_completion_tokens: 4000,
+    temperature: 0.8,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -282,10 +282,11 @@ export async function continueTherapy({
   ];
 
   const models = await getModels();
+  // F241 — 원본 continueTherapy 그대로: temperature 0.8. max_tokens 없음.
   const r = await callOpenAIChat({
     model: models.therapy,
     messages,
-    max_completion_tokens: 4000,
+    temperature: 0.8,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -384,6 +385,7 @@ export async function finalizeAndSave({
   ].join("\n");
 
   const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
+  // F241 — 원본 saveToGrowthRoom 그대로: temperature 0. response_format/max_tokens 없음.
   const r = await callOpenAIChat({
     model: models.therapy,
     messages: [
@@ -391,8 +393,7 @@ export async function finalizeAndSave({
       { role: "user", content: inputMaterial },
       ...convo.map((m) => ({ role: m.role, content: m.content })),
     ],
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4000,
+    temperature: 0,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 

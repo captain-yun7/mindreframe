@@ -165,11 +165,11 @@ export async function sendTrashMessage({
     { role: "user", content: trimmed },
   ];
 
-  // K1·F182: timeout 45s + 일시적 에러 1회 retry (callOpenAIChat 내장)
+  // F241 — 원본 sendToGPT 그대로: temperature 0.8. max_tokens 없음.
   const callResult = await callOpenAIChat({
     model: models.trash,
     messages,
-    max_completion_tokens: 4000,
+    temperature: 0.8,
   });
   if (!callResult.ok) {
     return { ok: false as const, error: callResult.error };

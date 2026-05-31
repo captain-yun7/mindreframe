@@ -53,6 +53,15 @@ export async function callOpenAIChat(
   let lastError = "";
   let lastStatus: number | undefined;
 
+  // F241 — gpt-5 / o-series(reasoning 모델)는 temperature 미지원 (400 에러).
+  // 원본 호출부는 temperature를 그대로 보내도록 두고, 여기서 모델 기준으로 자동 제거.
+  const modelStr = String(body.model ?? "");
+  const isReasoningModel = /^(gpt-5|o\d)/.test(modelStr);
+  const payload: OpenAIChatBody = { ...body };
+  if (isReasoningModel && "temperature" in payload) {
+    delete (payload as { temperature?: number }).temperature;
+  }
+
   while (attempt < (allowRetry ? 2 : 1)) {
     attempt += 1;
     const controller = new AbortController();
@@ -68,7 +77,7 @@ export async function callOpenAIChat(
           "Content-Type": "application/json",
           Authorization: `Bearer ${openaiKey}`,
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
 
