@@ -10,10 +10,6 @@ import {
 import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
 import { getPrompts, getModels } from "@/lib/cbt/prompts-loader";
 import { callOpenAIChat } from "@/lib/ai/openai-client";
-import {
-  isLikelyPlainSpeech,
-  REPHRASE_TO_POLITE_INSTRUCTION,
-} from "@/lib/cbt/tone-check";
 
 type ThoughtInput = {
   situation: string;
@@ -178,22 +174,8 @@ export async function sendTrashMessage({
   if (!callResult.ok) {
     return { ok: false as const, error: callResult.error };
   }
+  // F237 — 원본 그대로 단발 호출 결과 사용 (반말 검증 등 후처리 제거).
   let raw = callResult.text;
-
-  // K5·F183: 반말 응답이면 1회 자동 재요청 (존댓말 강제)
-  if (isLikelyPlainSpeech(raw)) {
-    const rephrased = await callOpenAIChat({
-      model: models.trash,
-      messages: [
-        ...messages,
-        { role: "assistant", content: raw },
-        { role: "system", content: REPHRASE_TO_POLITE_INSTRUCTION },
-        { role: "user", content: "위 안내대로 다시 작성해 주세요." },
-      ],
-      max_completion_tokens: 4000,
-    });
-    if (rephrased.ok) raw = rephrased.text;
-  }
 
   // 응답 내부 위기 감지
   let crisis = false;

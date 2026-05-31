@@ -15,51 +15,20 @@ import {
   buildTherapyPromptViaDb,
 } from "@/lib/cbt/prompts-loader";
 import { callOpenAIChat } from "@/lib/ai/openai-client";
-import {
-  isLikelyPlainSpeech,
-  REPHRASE_TO_POLITE_INSTRUCTION,
-} from "@/lib/cbt/tone-check";
 
 /**
  * 가짜생각 분석기 — 원본 1203토닥챗최신버전.index.html의 3-phase state machine 복원.
  *   analysis  → analyzeUserInput()
- *   selection → 사용자가 인지왜곡 카드 선택 (UI에서)
  *   therapy   → startTherapy() → continueTherapy() 반복
  *   finalize  → finalizeAndSave() (감정점수 후 응답 → 자동 트리거)
  *
- * K1 (F189/F190): 모든 OpenAI 호출은 lib/ai/openai-client의 callOpenAIChat 사용 →
- *   timeout 45s + 일시적 에러 1회 retry + 통일된 에러 메시지.
- * K5 (F183): 응답 후 반말 감지 → 1회 자동 재요청.
+ * F237 — 원본 그대로 단발 호출. 후처리(반말 검증 등) 일체 없음.
  */
 
 // F216 — 모델은 site_settings.model_* → ENV → 코드 default 우선순위로 getModels()에서 해석.
-// 1단계 분석은 models.analyzer (default gpt-4.1), 치료·마무리는 models.therapy (default gpt-4o-mini).
 
 function isCrisis(text: string) {
   return detectCrisis(text).level === "warn";
-}
-
-/**
- * 분석기 chat 응답 — 반말 감지되면 1회 재요청(존댓말 강제).
- * 사용자 발화는 그대로 두고 직전 system + 어시스턴트 응답을 다시 풀어 폴리시.
- */
-async function callChatWithPolitenessCheck(
-  baseMessages: Array<{ role: string; content: string }>,
-  rawText: string,
-  model: string,
-): Promise<string> {
-  if (!isLikelyPlainSpeech(rawText)) return rawText;
-  const rephrased = await callOpenAIChat({
-    model,
-    messages: [
-      ...baseMessages,
-      { role: "assistant", content: rawText },
-      { role: "system", content: REPHRASE_TO_POLITE_INSTRUCTION },
-      { role: "user", content: "위 안내대로 다시 작성해 주세요." },
-    ],
-    max_completion_tokens: 4000,
-  });
-  return rephrased.ok ? rephrased.text : rawText;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -222,11 +191,10 @@ export async function startTherapy({
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
-  // K5·F183: 반말 응답이면 1회 자동 재요청
-  const finalText = await callChatWithPolitenessCheck(baseMessages, r.text, models.therapy);
+  // F237 — 원본 그대로 단발 호출 결과 사용 (반말 검증 등 후처리 제거).
+  const finalText = r.text;
 
   // therapy system + 첫 assistant 응답을 chat_messages에 저장.
-  // system 메시지도 보존해야 continueTherapy()에서 분기 가능.
   await supabase.from("chat_messages").insert([
     { session_id: sessionId, role: "system", content: therapySystem },
     { session_id: sessionId, role: "assistant", content: finalText },
@@ -316,8 +284,8 @@ export async function continueTherapy({
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
-  // K5·F183: 반말 감지 시 1회 재요청
-  let replyText = await callChatWithPolitenessCheck(messages, r.text, models.therapy);
+  // F237 — 원본 그대로 단발 호출 결과 사용.
+  let replyText = r.text;
   let replyCrisis = false;
   if (isCrisis(replyText)) {
     replyCrisis = true;
