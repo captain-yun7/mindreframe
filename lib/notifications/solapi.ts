@@ -100,12 +100,13 @@ export interface AlimtalkTemplate {
 export async function listAlimtalkTemplates(): Promise<
   { ok: true; templates: AlimtalkTemplate[] } | { ok: false; error: string }
 > {
-  const pfId = process.env.SOLAPI_PFID;
-  if (!pfId) return { ok: false, error: "SOLAPI_PFID 미설정" };
+  // F243 — Solapi v2 templates API는 pfId query 미지원. APPROVED 전체 fetch 후
+  // 발신프로필(pfId)로 클라이언트 측 필터링.
+  const pfIdFilter = process.env.SOLAPI_PFID ?? "";
 
   try {
     const res = await fetch(
-      `${SOLAPI_BASE}/kakao/v2/templates?pfId=${encodeURIComponent(pfId)}&status=APPROVED&limit=100`,
+      `${SOLAPI_BASE}/kakao/v2/templates?status=APPROVED&limit=100`,
       {
         method: "GET",
         headers: { Authorization: authHeader() },
@@ -118,6 +119,8 @@ export async function listAlimtalkTemplates(): Promise<
         content?: string;
         variables?: Array<{ name: string }> | string[];
         status?: string;
+        pfId?: string;
+        channelId?: string;
       }>;
       errorCode?: string;
       errorMessage?: string;
@@ -128,7 +131,17 @@ export async function listAlimtalkTemplates(): Promise<
         error: `${data.errorCode ?? res.status} ${data.errorMessage ?? "템플릿 목록 조회 실패"}`,
       };
     }
-    const templates: AlimtalkTemplate[] = (data.templateList ?? []).map((t) => {
+    const all = data.templateList ?? [];
+    // 발신프로필 필터 (env SOLAPI_PFID 있으면 매칭만, 없으면 전체)
+    const filtered = pfIdFilter
+      ? all.filter(
+          (t) =>
+            (t.pfId && t.pfId === pfIdFilter) ||
+            (t.channelId && t.channelId === pfIdFilter),
+        )
+      : all;
+    const sourceList = filtered.length > 0 ? filtered : all;
+    const templates: AlimtalkTemplate[] = sourceList.map((t) => {
       const vars = (t.variables ?? []) as Array<{ name: string } | string>;
       const names = vars
         .map((v) => (typeof v === "string" ? v : (v?.name ?? "")))
