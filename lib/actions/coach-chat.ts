@@ -98,12 +98,10 @@ export async function startCoachSession() {
       .select("id")
       .single();
     if (e2 || !c2) return { ok: false as const, error: "세션을 시작하지 못했어요" };
-    revalidatePath("/coach");
     return { ok: true as const, sessionId: c2.id };
   }
 
   if (error || !created) return { ok: false as const, error: "세션을 시작하지 못했어요" };
-  revalidatePath("/coach");
   return { ok: true as const, sessionId: created.id };
 }
 
@@ -138,7 +136,6 @@ export async function endCoachSession(sessionId: string) {
     payload: { session_id: sessionId },
   });
 
-  revalidatePath("/coach");
   revalidatePath("/admin/coach");
   revalidatePath(`/admin/coach/${sessionId}`);
   return { ok: true as const };
@@ -168,7 +165,6 @@ export async function sendCoachMessage(sessionId: string, content: string) {
     console.error("[sendCoachMessage] telegram notify failed:", e);
   });
 
-  revalidatePath("/coach");
   revalidatePath(`/admin/coach/${sessionId}`);
   return { ok: true as const, message: data as CoachMessage };
 }
@@ -440,7 +436,6 @@ export async function sendCoachReply(sessionId: string, content: string) {
     console.error("coach reply notification failed:", e);
   });
 
-  revalidatePath("/coach");
   revalidatePath(`/admin/coach/${sessionId}`);
   revalidatePath("/admin/coach");
   return { ok: true as const, message: data as CoachMessage };

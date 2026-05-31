@@ -41,7 +41,6 @@ export async function addThoughtRecord(input: ThoughtInput) {
   await autoCheckRoutine(supabase, user.id, "trash");
   revalidatePath("/progress");
   revalidatePath("/dashboard");
-  revalidatePath("/trash");
   return { ok: true as const, id: data.id };
 }
 
@@ -225,7 +224,6 @@ export async function sendTrashMessage({
       await incrementUsage(supabase, user.id, "trash");
       revalidatePath("/progress");
       revalidatePath("/dashboard");
-      revalidatePath("/trash");
     }
   }
 
