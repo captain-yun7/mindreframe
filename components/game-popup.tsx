@@ -66,21 +66,43 @@ export function GamePopup({
     return () => window.clearTimeout(t);
   }, [eligible, hideForDays, storageKey]);
 
-  const close = useCallback(() => setOpen(false), []);
+  // F246 — close/CTA에도 짧은 cooldown(24h) 기록. 페이지 reset되어도 즉시 재오픈되지 않도록 안전망.
+  //        "1주간 안 보기"는 hideForDays(7) 유지. 일반 dismiss는 24h만 — 사용자가 다음 날엔 다시 볼 수 있게.
+  const SHORT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+  const writeStorage = useCallback(
+    (cooldownMs: number) => {
+      try {
+        // 저장값은 "다음 노출 가능 시점이 (저장시각 + hideForDays)"인 dismissedAt 기준이라
+        // 짧은 cooldown은 "지금으로부터 cooldownMs 후에 다시 보이도록" 역산해서 저장한다.
+        // 즉, dismissedAt = now - (hideForDays*day - cooldownMs)
+        const hideWindowMs = hideForDays * 24 * 60 * 60 * 1000;
+        const dismissedAt =
+          cooldownMs >= hideWindowMs
+            ? Date.now()
+            : Date.now() - (hideWindowMs - cooldownMs);
+        window.localStorage.setItem(storageKey, String(dismissedAt));
+      } catch {
+        // ignore
+      }
+    },
+    [hideForDays, storageKey],
+  );
+
+  const close = useCallback(() => {
+    writeStorage(SHORT_COOLDOWN_MS);
+    setOpen(false);
+  }, [writeStorage]);
 
   const dismissWeek = useCallback(() => {
-    try {
-      window.localStorage.setItem(storageKey, String(Date.now()));
-    } catch {
-      // ignore
-    }
+    writeStorage(hideForDays * 24 * 60 * 60 * 1000);
     setOpen(false);
-  }, [storageKey]);
+  }, [hideForDays, writeStorage]);
 
   const handleCta = useCallback(() => {
+    writeStorage(SHORT_COOLDOWN_MS);
     onCta?.();
     setOpen(false);
-  }, [onCta]);
+  }, [onCta, writeStorage]);
 
   // ESC
   useEffect(() => {

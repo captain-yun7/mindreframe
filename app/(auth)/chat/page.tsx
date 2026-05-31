@@ -6,6 +6,8 @@ import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
 import { ChatClient } from "./chat-client";
 
 export const dynamic = "force-dynamic";
+// F246 — callOpenAIChat(45s) + retry 1회로 최대 ~90s까지 갈 수 있어 Vercel function 기본 timeout 보강.
+export const maxDuration = 90;
 
 export default async function ChatPage() {
   // 2차 가드 — 가짜생각 분석기는 light 이상(free 차단). 운영자 면제.

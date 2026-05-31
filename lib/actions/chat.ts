@@ -142,7 +142,7 @@ export async function analyzeUserInput({ content }: { content: string }) {
     alternative_thought: null,
   });
 
-  revalidatePath("/chat");
+  // F246 — /chat 자기 자신 revalidate 제거. ChatClient unmount → state 손실 → GamePopup 재오픈 방지.
   return {
     ok: true as const,
     sessionId: sess.id,
@@ -205,7 +205,7 @@ export async function startTherapy({
     { session_id: sessionId, role: "assistant", content: finalText },
   ]);
 
-  revalidatePath("/chat");
+  // F246 — /chat 자기 자신 revalidate 제거. ChatClient unmount → state 손실 → GamePopup 재오픈 방지.
   return { ok: true as const, reply: finalText };
 }
 
@@ -307,7 +307,7 @@ export async function continueTherapy({
     /(감정|불안|강도)\s*(점수|몇\s*점|점)/.test(replyText) &&
     /(다시|재확인|마지막|지금)/.test(replyText);
 
-  revalidatePath("/chat");
+  // F246 — /chat 자기 자신 revalidate 제거. ChatClient unmount → state 손실 → GamePopup 재오픈 방지.
   return {
     ok: true as const,
     reply: replyText,
@@ -455,9 +455,9 @@ export async function finalizeAndSave({
   // H2: 분석기 카운팅은 finalize 1회만 (analyzeUserInput/startTherapy/continueTherapy는 사전 체크만)
   await incrementUsage(supabase, user.id, "analyzer");
 
+  // F246 — /chat 자기 자신 revalidate 제거. /progress, /dashboard는 다른 페이지 갱신 의도이므로 유지.
   revalidatePath("/progress");
   revalidatePath("/dashboard");
-  revalidatePath("/chat");
 
   return {
     ok: true as const,
