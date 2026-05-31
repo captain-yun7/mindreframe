@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { PageLayout, PageTitle } from "@/components/page-layout";
-import { Card } from "@/components/card";
+import { Card, CardTitle, CardDescription } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
+import { TestSendForm } from "./test-send-form";
 
 const PAGE_SIZE = 50;
 
@@ -69,6 +70,16 @@ export default async function AdminNotificationsPage({
       <div className="text-xs text-gs-muted mb-4">
         총 {count ?? 0}건 · 오늘 발송 성공 {todaySent} / 실패 {todayFailed}
       </div>
+
+      <Card className="p-4 mb-4">
+        <CardTitle>알림톡/SMS 즉시 테스트 발송</CardTitle>
+        <CardDescription>
+          ENV(SOLAPI_*)와 검수 통과 템플릿 동작 확인용. 실제 메시지가 발송됩니다.
+        </CardDescription>
+        <div className="mt-3">
+          <TestSendForm />
+        </div>
+      </Card>
 
       <Card className="p-4 mb-4">
         <div className="flex gap-2 flex-wrap">

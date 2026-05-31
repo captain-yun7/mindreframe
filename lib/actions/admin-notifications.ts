@@ -52,3 +52,60 @@ export async function adminUpdateNotificationMessage(input: NotificationMessageI
   revalidatePath("/admin/notifications/messages");
   return { ok: true as const };
 }
+
+/**
+ * F240 — 관리자 테스트 발송. SMS 또는 알림톡(템플릿) 즉시 발송.
+ *  - kind="sms"        : 일반 SMS (검수 불필요)
+ *  - kind="alimtalk"   : 카카오 알림톡 (검수 통과 템플릿 필요)
+ * 변수는 JSON 문자열로 받음. 빈 객체도 허용.
+ */
+export async function adminSendTestNotification(input: {
+  kind: "sms" | "alimtalk";
+  to: string;
+  text?: string;          // SMS용 본문
+  templateId?: string;    // alimtalk용 템플릿 ID
+  variables?: string;     // alimtalk용 JSON 문자열
+}) {
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+
+  const cleanedPhone = input.to.replace(/[^0-9]/g, "");
+  if (!/^01[0-9]{8,9}$/.test(cleanedPhone)) {
+    return { ok: false as const, error: "수신 번호 형식이 올바르지 않아요 (01012345678)" };
+  }
+
+  try {
+    if (input.kind === "sms") {
+      const text = (input.text ?? "").trim();
+      if (!text) return { ok: false as const, error: "본문을 입력해주세요" };
+      const { sendSms } = await import("@/lib/notifications/solapi");
+      const r = await sendSms({ to: cleanedPhone, text });
+      if (!r.ok) return { ok: false as const, error: r.error ?? "SMS 발송 실패" };
+      return { ok: true as const, messageId: r.messageId ?? "", kind: "sms" as const };
+    }
+
+    // alimtalk
+    const templateId = (input.templateId ?? "").trim();
+    if (!templateId) return { ok: false as const, error: "템플릿 ID를 입력해주세요" };
+    let variables: Record<string, string> = {};
+    if (input.variables && input.variables.trim()) {
+      try {
+        const parsed = JSON.parse(input.variables);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          variables = Object.fromEntries(
+            Object.entries(parsed).map(([k, v]) => [k, String(v)]),
+          );
+        }
+      } catch {
+        return { ok: false as const, error: "variables는 JSON 형식이어야 해요" };
+      }
+    }
+    const { sendAlimtalk } = await import("@/lib/notifications/solapi");
+    const r = await sendAlimtalk({ to: cleanedPhone, templateId, variables });
+    if (!r.ok) return { ok: false as const, error: r.error ?? "알림톡 발송 실패" };
+    return { ok: true as const, messageId: r.messageId ?? "", kind: "alimtalk" as const };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown";
+    return { ok: false as const, error: msg };
+  }
+}
