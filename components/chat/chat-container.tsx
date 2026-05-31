@@ -140,9 +140,10 @@ export function ChatContainer({
             <div className="mb-2 flex flex-col items-start">
               <div className="bg-white border border-gs-line-soft px-3 py-2 rounded-[14px] flex items-center gap-2">
                 {loadingLabel ? (
-                  // K5·F188 — label 있을 때 점점점 dots 제거. 부드러운 pulse 텍스트만.
+                  // F239 — label 뒤에 . / .. / ... 순환 애니메이션
                   <span className="ai-thinking-text text-sm font-medium">
                     {loadingLabel}
+                    <AnimatedDots />
                   </span>
                 ) : (
                   <TypingDots bare />
@@ -179,3 +180,21 @@ export function ChatContainer({
   );
 }
 
+/**
+ * F239 — 로딩 텍스트 뒤 . / .. / ... 순환 (간격 400ms).
+ * 폭 고정으로 다른 텍스트가 흔들리지 않도록 inline-block + 고정 width.
+ */
+function AnimatedDots() {
+  const [count, setCount] = useState(1);
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount((c) => (c >= 3 ? 1 : c + 1));
+    }, 400);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="inline-block w-[1.5em] text-left ml-0.5">
+      {".".repeat(count)}
+    </span>
+  );
+}
