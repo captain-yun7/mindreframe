@@ -141,10 +141,17 @@ export async function listAlimtalkTemplates(): Promise<
         )
       : all;
     const sourceList = filtered.length > 0 ? filtered : all;
+    // F245 — 변수명 정규화: Solapi가 "#{day}" 형식으로 반환할 수도 있고 "day"만 줄 수도 있음.
+    // content에서 추출한 건 "day". 둘 다 unique에 그대로 넣으면 중복 표시됨.
+    // → 어떤 형식이든 양쪽 brackets/#{} 제거 후 통일.
+    const stripBrackets = (s: string): string =>
+      s.replace(/^#?\{/, "").replace(/\}$/, "").trim();
+
     const templates: AlimtalkTemplate[] = sourceList.map((t) => {
       const vars = (t.variables ?? []) as Array<{ name: string } | string>;
       const names = vars
         .map((v) => (typeof v === "string" ? v : (v?.name ?? "")))
+        .map(stripBrackets)
         .filter(Boolean);
       // content에서 #{xxx} 패턴도 추출 (variables 누락 케이스 대비)
       const fromContent =
