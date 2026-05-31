@@ -85,6 +85,73 @@ export async function sendSms({
   }
 }
 
+/**
+ * F242 — 검수 통과 알림톡 템플릿 목록 조회.
+ * Solapi 카카오 비즈메시지 v2 API. APPROVED만 반환.
+ */
+export interface AlimtalkTemplate {
+  templateId: string;
+  name: string;
+  content: string;
+  variables: string[];
+  status: string;
+}
+
+export async function listAlimtalkTemplates(): Promise<
+  { ok: true; templates: AlimtalkTemplate[] } | { ok: false; error: string }
+> {
+  const pfId = process.env.SOLAPI_PFID;
+  if (!pfId) return { ok: false, error: "SOLAPI_PFID 미설정" };
+
+  try {
+    const res = await fetch(
+      `${SOLAPI_BASE}/kakao/v2/templates?pfId=${encodeURIComponent(pfId)}&status=APPROVED&limit=100`,
+      {
+        method: "GET",
+        headers: { Authorization: authHeader() },
+      },
+    );
+    const data = (await res.json()) as {
+      templateList?: Array<{
+        templateId?: string;
+        name?: string;
+        content?: string;
+        variables?: Array<{ name: string }> | string[];
+        status?: string;
+      }>;
+      errorCode?: string;
+      errorMessage?: string;
+    };
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: `${data.errorCode ?? res.status} ${data.errorMessage ?? "템플릿 목록 조회 실패"}`,
+      };
+    }
+    const templates: AlimtalkTemplate[] = (data.templateList ?? []).map((t) => {
+      const vars = (t.variables ?? []) as Array<{ name: string } | string>;
+      const names = vars
+        .map((v) => (typeof v === "string" ? v : (v?.name ?? "")))
+        .filter(Boolean);
+      // content에서 #{xxx} 패턴도 추출 (variables 누락 케이스 대비)
+      const fromContent =
+        (t.content ?? "").match(/#\{[^}]+\}/g)?.map((m) => m.slice(2, -1)) ?? [];
+      const uniqueVars = Array.from(new Set([...names, ...fromContent]));
+      return {
+        templateId: t.templateId ?? "",
+        name: t.name ?? "",
+        content: t.content ?? "",
+        variables: uniqueVars,
+        status: t.status ?? "",
+      };
+    });
+    return { ok: true, templates };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "unknown";
+    return { ok: false, error: `network: ${msg}` };
+  }
+}
+
 export async function sendAlimtalk({
   to,
   templateId,

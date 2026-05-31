@@ -54,6 +54,16 @@ export async function adminUpdateNotificationMessage(input: NotificationMessageI
 }
 
 /**
+ * F242 — 검수 통과 알림톡 템플릿 목록 조회 (드롭다운용).
+ */
+export async function adminListAlimtalkTemplates() {
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+  const { listAlimtalkTemplates } = await import("@/lib/notifications/solapi");
+  return listAlimtalkTemplates();
+}
+
+/**
  * F240 — 관리자 테스트 발송. SMS 또는 알림톡(템플릿) 즉시 발송.
  *  - kind="sms"        : 일반 SMS (검수 불필요)
  *  - kind="alimtalk"   : 카카오 알림톡 (검수 통과 템플릿 필요)
