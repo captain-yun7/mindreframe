@@ -8,7 +8,7 @@ import {
   CRISIS_GUIDE_MESSAGE,
 } from "@/lib/cbt/crisis-detection";
 import { checkUsageOnly, incrementUsage } from "@/lib/ai/usage";
-import { getPrompts, getModels } from "@/lib/cbt/prompts-loader";
+import { getPrompts, getModels, getMaxTokens } from "@/lib/cbt/prompts-loader";
 import { callOpenAIChat } from "@/lib/ai/openai-client";
 
 type ThoughtInput = {
@@ -157,18 +157,23 @@ export async function sendTrashMessage({
     sessionId = (sess as { id: string } | null)?.id ?? null;
   }
 
-  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
+  const [prompts, models, maxTokens] = await Promise.all([
+    getPrompts(),
+    getModels(),
+    getMaxTokens(),
+  ]);
   const messages = [
     { role: "system", content: prompts.trashMain },
     ...history.map((m) => ({ role: m.role, content: m.content })),
     { role: "user", content: trimmed },
   ];
 
-  // F241 — 원본 sendToGPT 그대로: temperature 0.8. max_tokens 없음.
+  // F241/F249 — 원본 sendToGPT 5/31 그대로: temperature 0.8 + max_tokens(default 2000).
   const callResult = await callOpenAIChat({
     model: models.trash,
     messages,
     temperature: 0.8,
+    max_completion_tokens: maxTokens.trash,
   });
   if (!callResult.ok) {
     return { ok: false as const, error: callResult.error };

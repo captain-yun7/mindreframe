@@ -12,11 +12,13 @@ import {
 import {
   getPrompts,
   getModels,
+  getMaxTokens,
   KNOWN_TEMPLATE_PLACEHOLDERS,
   MODEL_OPTIONS,
 } from "@/lib/cbt/prompts-loader";
 import { PromptsEditor } from "./prompts-editor";
 import { ModelsEditor } from "./models-editor";
+import { MaxTokensEditor } from "./max-tokens-editor";
 
 /**
  * F248 — 두 문자열의 첫 차이 위치 + 주변 30자 snippet 추출 (진단용)
@@ -67,8 +69,42 @@ const SAMPLE_ANALYSIS = {
 export default async function AdminPromptsPage() {
   await requireAdmin();
 
-  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
+  const [prompts, models, maxTokens] = await Promise.all([
+    getPrompts(),
+    getModels(),
+    getMaxTokens(),
+  ]);
   const therapyPreview = buildTherapyPrompt(SAMPLE_ANALYSIS, "재앙화");
+
+  const maxTokensItems = [
+    {
+      key: "max_tokens_analyzer" as const,
+      label: "1단계 분석",
+      description: "JSON 추출. 원본 5/31: 1000",
+      initialValue: maxTokens.rawValues.max_tokens_analyzer,
+      source: maxTokens.source.max_tokens_analyzer,
+      defaultValue: 1000,
+      effective: maxTokens.analyzer,
+    },
+    {
+      key: "max_tokens_therapy" as const,
+      label: "치료·마무리",
+      description: "치료 대화 + 마무리 JSON. 원본 5/31: 2000",
+      initialValue: maxTokens.rawValues.max_tokens_therapy,
+      source: maxTokens.source.max_tokens_therapy,
+      defaultValue: 2000,
+      effective: maxTokens.therapy,
+    },
+    {
+      key: "max_tokens_trash" as const,
+      label: "생각쓰레기통",
+      description: "5요소 수집 대화. 원본 5/31: 2000",
+      initialValue: maxTokens.rawValues.max_tokens_trash,
+      source: maxTokens.source.max_tokens_trash,
+      defaultValue: 2000,
+      effective: maxTokens.trash,
+    },
+  ];
 
   const modelItems = [
     {
@@ -275,6 +311,17 @@ export default async function AdminPromptsPage() {
         </CardDescription>
         <div className="mt-3">
           <ModelsEditor items={modelItems} options={MODEL_OPTIONS} />
+        </div>
+      </Card>
+
+      <Card className="mt-4">
+        <CardTitle>응답 최대 길이 (max_tokens)</CardTitle>
+        <CardDescription>
+          단계별 응답 토큰 제한. 빈값=원본 5/31 default, <code className="font-mono">0</code>=무제한.
+          넘기면 응답이 잘릴 수 있어요.
+        </CardDescription>
+        <div className="mt-3">
+          <MaxTokensEditor items={maxTokensItems} />
         </div>
       </Card>
 

@@ -262,3 +262,104 @@ export async function getModels(): Promise<Models> {
 export function invalidateModelsCache() {
   modelsCache = null;
 }
+
+/* ────────────────────────────────────────────────────────────
+ * F249 — 어드민 max_tokens 설정
+ *   key:   max_tokens_analyzer / max_tokens_therapy / max_tokens_trash
+ *   value: 정수 문자열. 빈값이면 코드 default. '0'이면 무제한(undefined 반환).
+ *
+ * 원본 5/31 로컬 default:
+ *   analyzer: 1000 / therapy: 2000 / trash: 2000
+ * ──────────────────────────────────────────────────────────── */
+
+const MAX_TOKENS_KEYS = [
+  "max_tokens_analyzer",
+  "max_tokens_therapy",
+  "max_tokens_trash",
+] as const;
+
+type MaxTokensKey = (typeof MAX_TOKENS_KEYS)[number];
+
+const MAX_TOKENS_DEFAULTS: Record<MaxTokensKey, number> = {
+  max_tokens_analyzer: 1000,
+  max_tokens_therapy: 2000,
+  max_tokens_trash: 2000,
+};
+
+export interface MaxTokens {
+  /** undefined = 무제한 (OpenAI default). number = max_completion_tokens로 전달. */
+  analyzer: number | undefined;
+  therapy: number | undefined;
+  trash: number | undefined;
+  source: Record<MaxTokensKey, "db" | "default">;
+  /** UI 표시용 — DB에 저장된 raw 값 ("" / "0" / "1000" 등) */
+  rawValues: Record<MaxTokensKey, string>;
+}
+
+let maxTokensCache: { value: MaxTokens; expiresAt: number } | null = null;
+
+async function fetchMaxTokensFromDb(): Promise<Record<MaxTokensKey, string>> {
+  const out: Record<MaxTokensKey, string> = {
+    max_tokens_analyzer: "",
+    max_tokens_therapy: "",
+    max_tokens_trash: "",
+  };
+  try {
+    const sb = await createSupabaseServerClient();
+    const { data, error } = await sb
+      .from("site_settings")
+      .select("key, value")
+      .in("key", MAX_TOKENS_KEYS as unknown as string[]);
+    if (error || !data) return out;
+    for (const row of data) {
+      const k = row.key as MaxTokensKey;
+      if (MAX_TOKENS_KEYS.includes(k) && typeof row.value === "string") {
+        out[k] = row.value;
+      }
+    }
+  } catch {
+    // fetch 실패 → default
+  }
+  return out;
+}
+
+export async function getMaxTokens(): Promise<MaxTokens> {
+  const now = Date.now();
+  if (maxTokensCache && maxTokensCache.expiresAt > now) return maxTokensCache.value;
+
+  const db = await fetchMaxTokensFromDb();
+
+  const pick = (
+    key: MaxTokensKey,
+  ): { value: number | undefined; source: "db" | "default" } => {
+    const raw = (db[key] ?? "").trim();
+    if (raw === "") return { value: MAX_TOKENS_DEFAULTS[key], source: "default" };
+    if (raw === "0") return { value: undefined, source: "db" }; // 무제한
+    const n = parseInt(raw, 10);
+    if (Number.isFinite(n) && n > 0 && n < 100000) return { value: n, source: "db" };
+    return { value: MAX_TOKENS_DEFAULTS[key], source: "default" };
+  };
+
+  const a = pick("max_tokens_analyzer");
+  const t = pick("max_tokens_therapy");
+  const tr = pick("max_tokens_trash");
+
+  const value: MaxTokens = {
+    analyzer: a.value,
+    therapy: t.value,
+    trash: tr.value,
+    source: {
+      max_tokens_analyzer: a.source,
+      max_tokens_therapy: t.source,
+      max_tokens_trash: tr.source,
+    },
+    rawValues: db,
+  };
+
+  maxTokensCache = { value, expiresAt: now + CACHE_MS };
+  return value;
+}
+
+export function invalidateMaxTokensCache() {
+  maxTokensCache = null;
+}

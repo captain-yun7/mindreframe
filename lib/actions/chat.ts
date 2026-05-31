@@ -12,6 +12,7 @@ import { type AnalysisResult } from "@/lib/cbt/prompts";
 import {
   getPrompts,
   getModels,
+  getMaxTokens,
   buildTherapyPromptViaDb,
 } from "@/lib/cbt/prompts-loader";
 import { callOpenAIChat } from "@/lib/ai/openai-client";
@@ -74,8 +75,12 @@ export async function analyzeUserInput({ content }: { content: string }) {
     return { ok: false as const, error: usage.reason ?? "사용량 한도 초과" };
   }
 
-  // F241 — 원본 토닥챗 그대로: temperature 0.7. response_format/max_tokens 없음.
-  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
+  // F241/F249 — 원본 토닥챗 5/31 그대로: temperature 0.7 + max_tokens(어드민 설정, default 1000).
+  const [prompts, models, maxTokens] = await Promise.all([
+    getPrompts(),
+    getModels(),
+    getMaxTokens(),
+  ]);
   const r = await callOpenAIChat({
     model: models.analyzer,
     messages: [
@@ -83,6 +88,7 @@ export async function analyzeUserInput({ content }: { content: string }) {
       { role: "user", content: trimmed },
     ],
     temperature: 0.7,
+    max_completion_tokens: maxTokens.analyzer,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -187,12 +193,13 @@ export async function startTherapy({
   }
 
   const baseMessages = [{ role: "system", content: therapySystem }];
-  const models = await getModels();
-  // F241 — 원본 startTherapy 그대로: temperature 0.8. max_tokens 없음.
+  const [models, maxTokens] = await Promise.all([getModels(), getMaxTokens()]);
+  // F241/F249 — 원본 startTherapy 5/31 그대로: temperature 0.8 + max_tokens(default 2000).
   const r = await callOpenAIChat({
     model: models.therapy,
     messages: baseMessages,
     temperature: 0.8,
+    max_completion_tokens: maxTokens.therapy,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -281,12 +288,13 @@ export async function continueTherapy({
     { role: "user", content: trimmed },
   ];
 
-  const models = await getModels();
-  // F241 — 원본 continueTherapy 그대로: temperature 0.8. max_tokens 없음.
+  const [models, maxTokens] = await Promise.all([getModels(), getMaxTokens()]);
+  // F241/F249 — 원본 continueTherapy 5/31 그대로: temperature 0.8 + max_tokens(default 2000).
   const r = await callOpenAIChat({
     model: models.therapy,
     messages,
     temperature: 0.8,
+    max_completion_tokens: maxTokens.therapy,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 
@@ -384,8 +392,12 @@ export async function finalizeAndSave({
     `대화(참고용):`,
   ].join("\n");
 
-  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
-  // F241 — 원본 saveToGrowthRoom 그대로: temperature 0. response_format/max_tokens 없음.
+  const [prompts, models, maxTokens] = await Promise.all([
+    getPrompts(),
+    getModels(),
+    getMaxTokens(),
+  ]);
+  // F241/F249 — 원본 saveToGrowthRoom 5/31 그대로: temperature 0 + max_tokens(default 2000).
   const r = await callOpenAIChat({
     model: models.therapy,
     messages: [
@@ -394,6 +406,7 @@ export async function finalizeAndSave({
       ...convo.map((m) => ({ role: m.role, content: m.content })),
     ],
     temperature: 0,
+    max_completion_tokens: maxTokens.therapy,
   });
   if (!r.ok) return { ok: false as const, error: r.error };
 

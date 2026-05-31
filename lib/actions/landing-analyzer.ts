@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { detectCrisis, CRISIS_GUIDE_MESSAGE } from "@/lib/cbt/crisis-detection";
 import { type AnalysisResult } from "@/lib/cbt/prompts";
-import { getPrompts, getModels } from "@/lib/cbt/prompts-loader";
+import { getPrompts, getModels, getMaxTokens } from "@/lib/cbt/prompts-loader";
 import { callOpenAIChat } from "@/lib/ai/openai-client";
 
 /**
@@ -122,8 +122,12 @@ export async function analyzeAnonymous({
   }
 
   // 4) OpenAI 호출 — K1·F189 timeout/retry 통일 helper
-  const [prompts, models] = await Promise.all([getPrompts(), getModels()]);
-  // F241 — 원본 토닥챗 그대로: temperature 0.7. response_format/max_tokens 없음.
+  const [prompts, models, maxTokens] = await Promise.all([
+    getPrompts(),
+    getModels(),
+    getMaxTokens(),
+  ]);
+  // F241/F249 — 원본 토닥챗 5/31 그대로: temperature 0.7 + max_tokens(default 1000).
   const callResult = await callOpenAIChat({
     model: models.analyzer,
     messages: [
@@ -131,6 +135,7 @@ export async function analyzeAnonymous({
       { role: "user", content: trimmed },
     ],
     temperature: 0.7,
+    max_completion_tokens: maxTokens.analyzer,
   });
   if (!callResult.ok) {
     return { ok: false, error: callResult.error };

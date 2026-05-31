@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import {
   invalidatePromptsCache,
   invalidateModelsCache,
+  invalidateMaxTokensCache,
   ALLOWED_MODEL_VALUES,
 } from "@/lib/cbt/prompts-loader";
 
@@ -154,6 +155,45 @@ export async function adminUpdateModel(key: string, value: string) {
   if (error) return { ok: false as const, error: error.message };
 
   invalidateModelsCache();
+  revalidatePath("/admin/prompts");
+  return { ok: true as const };
+}
+
+/**
+ * F249 — max_tokens 설정 (max_tokens_analyzer / max_tokens_therapy / max_tokens_trash).
+ * 빈값: 코드 default (1000/2000/2000). '0': 무제한. 그 외: 양의 정수.
+ */
+const MAX_TOKENS_KEYS = new Set([
+  "max_tokens_analyzer",
+  "max_tokens_therapy",
+  "max_tokens_trash",
+]);
+
+export async function adminUpdateMaxTokens(key: string, value: string) {
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+
+  if (!MAX_TOKENS_KEYS.has(key)) {
+    return { ok: false as const, error: "허용되지 않은 max_tokens key" };
+  }
+  if (typeof value !== "string") return { ok: false as const, error: "value 타입 오류" };
+
+  const trimmed = value.trim();
+  if (trimmed !== "") {
+    const n = parseInt(trimmed, 10);
+    if (!Number.isFinite(n) || n < 0 || n > 100000 || String(n) !== trimmed) {
+      return { ok: false as const, error: "0~100000 사이 정수만 허용" };
+    }
+  }
+
+  const { error } = await supabaseAdmin.from("site_settings").upsert({
+    key,
+    value: trimmed,
+    updated_by: guard.userId,
+  });
+  if (error) return { ok: false as const, error: error.message };
+
+  invalidateMaxTokensCache();
   revalidatePath("/admin/prompts");
   return { ok: true as const };
 }
