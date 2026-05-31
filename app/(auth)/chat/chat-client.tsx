@@ -19,7 +19,7 @@ import { type AnalysisResult } from "@/lib/cbt/prompts";
 import { GamePopup } from "@/components/game-popup";
 import { QuickNav } from "@/components/quick-nav";
 
-type Phase = "analysis" | "therapy" | "done";
+type Phase = "analysis" | "selection" | "therapy" | "done";
 
 const INITIAL_MESSAGE: ChatMessage = {
   role: "assistant",
@@ -27,9 +27,10 @@ const INITIAL_MESSAGE: ChatMessage = {
     "어떤 일이 있었는지, 그리고 어떤 생각이 들었는지 구체적으로 적어주세요. 그리고 감정을 0~100점으로 측정해주세요.\n\n예시: \"회의에서 발표를 해야 하는데, 떨려서 실수할 것 같고 사람들이 나를 이상하게 볼 것 같아요. 80점\"",
 };
 
-// K5·F192 — "1단계 분석" 표기 삭제. therapy/done 라벨만 유지.
+// K5·F192 — "1단계 분석" 표기 삭제. selection/therapy/done 라벨만 유지.
 const PHASE_LABEL: Record<Phase, string> = {
   analysis: "",
+  selection: "왜곡 선택",
   therapy: "합리적 사고 만들기",
   done: "정리 완료",
 };
@@ -90,15 +91,16 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
 
     await new Promise((r) => setTimeout(r, 1300));
 
-    // F219 — 카드 선택 UI 제거. 여러 개여도 첫 번째 왜곡으로 자동 시작.
-    // 5단계 마무리에서 모든 왜곡별 합리적사고가 출력되므로 누락 없음.
+    // F238 — 원본 토닥챗 그대로: 1개면 자동, 여러 개면 사용자 번호 입력 대기.
     const distCount = result.analysis.distortions.length;
-    if (distCount >= 1) {
+    if (distCount === 1) {
       await runStartTherapy(
         result.sessionId,
         result.analysis,
         result.analysis.distortions[0].name,
       );
+    } else if (distCount > 1) {
+      setPhase("selection");
     } else {
       appendSystem(
         "분석에서 명확한 인지왜곡을 찾지 못했어요. 자동사고와 감정을 좀 더 구체적으로 적어주시면 다시 분석해볼게요.",
@@ -180,6 +182,24 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
       return;
     }
 
+    // F238 — 원본 토닥챗 selection: 번호 입력 받아서 치료 시작.
+    if (phase === "selection") {
+      const match = trimmed.match(/\d+/);
+      if (match && analysis && sessionId) {
+        const idx = parseInt(match[0], 10) - 1;
+        if (idx >= 0 && idx < analysis.distortions.length) {
+          await runStartTherapy(
+            sessionId,
+            analysis,
+            analysis.distortions[idx].name,
+          );
+          return;
+        }
+      }
+      appendSystem("올바른 번호를 입력해주세요.");
+      return;
+    }
+
     if (phase === "therapy" && sessionId) {
       if (awaitingEmotionAfterRef.current) {
         const n = Number(trimmed);
@@ -226,9 +246,11 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
   const placeholder =
     phase === "analysis"
       ? "자동사고와 감정 점수를 적어주세요..."
-      : phase === "done"
-        ? "분석이 마무리되었어요"
-        : "답을 적어주세요...";
+      : phase === "selection"
+        ? "번호를 입력해주세요 (예: 1)"
+        : phase === "done"
+          ? "분석이 마무리되었어요"
+          : "답을 적어주세요...";
 
   return (
     <PageFade>
