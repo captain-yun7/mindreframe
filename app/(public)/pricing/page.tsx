@@ -18,6 +18,8 @@ const PLAN_RANK_FOR_CARD: Record<Plan, number> = {
 
 export const metadata: Metadata = {
   title: "요금제",
+  description:
+    "100일 인지행동치료 프로그램. 라이트 254,000원 / 프로 394,000원 / 프리미엄 694,000원. 가짜생각 분석기·생각쓰레기통·1:1 코칭·행동연습장·명상·오늘의 루틴 모두 포함.",
 };
 
 const PLAN_LABEL: Record<string, string> = {

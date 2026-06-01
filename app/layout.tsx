@@ -10,18 +10,74 @@ const pretendard = localFont({
   weight: "100 900",
 });
 
+// F250 — SEO metadata 풀셋. 가이드: _docs/runbook/seo.md
+const SITE_URL = "https://www.mindreframe.net";
+const SITE_NAME = "가짜생각";
+const SITE_DESCRIPTION =
+  "우울·불안·공황장애의 원인인 왜곡된 생각을 가짜생각 분석기가 찾아 교정하는 인지행동치료(CBT) 기반 생각 훈련 프로그램";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "가짜생각 — 인지행동치료 기반 생각 훈련",
-    template: "%s | 가짜생각",
+    default: `${SITE_NAME} — 인지행동치료 기반 생각 훈련`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "우울·불안·공황장애의 원인인 왜곡된 생각을 가짜생각 분석기가 찾아 교정하는 인지행동치료 기반 생각 훈련 프로그램",
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "인지행동치료",
+    "CBT",
+    "우울증",
+    "불안장애",
+    "공황장애",
+    "자동사고",
+    "인지왜곡",
+    "생각 훈련",
+    "마음챙김",
+    "감사일기",
+    "명상",
+    "가짜생각",
+  ],
+  authors: [{ name: "마인드시어터" }],
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — 인지행동치료 기반 생각 훈련`,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: SITE_NAME,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — 인지행동치료 기반 생각 훈련`,
+    description: SITE_DESCRIPTION,
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "가짜생각",
+    title: SITE_NAME,
   },
 };
 

@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { StudyList } from "./study-list";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+
+export const metadata: Metadata = {
+  title: "알고가기 — CBT 개념 학습",
+  description:
+    "우울·불안의 원리부터 인지왜곡 11가지, 회피·반추까지 100일 훈련에 필요한 모든 인지행동치료(CBT) 개념을 한 곳에서 학습하세요.",
+};
 import { STUDY_CORE, STUDY_GROUPS } from "@/lib/study-content"; // fallback
 import type { StudyGroup, StudyItem } from "@/lib/study-content";
 import { PageFade } from "@/components/motion/page-fade";

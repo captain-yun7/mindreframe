@@ -142,8 +142,27 @@ export default async function LandingPage() {
     FALLBACK_LANDING_FINAL_CTA,
   ) ?? { title: "오늘 시작해보세요 🌱", subtitle: "" };
 
+  // F250 — JSON-LD Organization 구조화된 데이터
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "가짜생각",
+    alternateName: "mindreframe",
+    url: "https://www.mindreframe.net",
+    logo: "https://www.mindreframe.net/logo.png",
+    description:
+      "우울·불안·공황장애의 원인인 왜곡된 생각을 가짜생각 분석기가 찾아 교정하는 인지행동치료(CBT) 기반 생각 훈련 프로그램",
+    foundingDate: "2026",
+    founder: { "@type": "Organization", name: "마인드시어터" },
+  };
+
   return (
     <PageFade>
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger -- JSON-LD 정적 데이터, XSS 위험 없음
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
       {/* ── HERO ── */}
       <section className="w-full px-4 py-24 md:py-32 text-white bg-[radial-gradient(circle_at_20%_0%,rgba(63,99,255,0.4)_0,transparent_50%),linear-gradient(135deg,var(--color-gs-navy)_0%,var(--color-gs-navy-mid)_40%,var(--color-gs-navy-bright)_100%)]">
         <div className="mx-auto w-full max-w-[1200px]">
