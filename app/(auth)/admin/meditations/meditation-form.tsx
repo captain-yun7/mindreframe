@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -8,6 +8,7 @@ import {
   adminUpdateMeditation,
   adminDeleteMeditation,
 } from "@/lib/actions/admin-meditations";
+import { requestMeditationAudioUploadUrl } from "@/lib/actions/admin-meditation-audio";
 
 type Category = "person" | "nature" | "music";
 
@@ -45,6 +46,55 @@ export function MeditationForm({ mode, initial }: Props) {
   const [requiredPlan, setRequiredPlan] = useState<"" | "pro">(
     initial?.requiredPlan ?? "",
   );
+
+  // 음원 파일 업로드 (영상 업로드와 동일 패턴)
+  const [uploading, setUploading] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAudioUpload(file: File) {
+    if (!slug.trim()) {
+      toast.show("slug를 먼저 입력하세요", "error");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    setUploading(true);
+    setUploadPct(0);
+    try {
+      const r1 = await requestMeditationAudioUploadUrl(
+        slug.trim(),
+        file.type || "audio/mpeg",
+      );
+      if (!r1.ok) {
+        toast.show(r1.error, "error");
+        return;
+      }
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", r1.uploadUrl);
+        xhr.setRequestHeader("Content-Type", r1.contentType);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadPct(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`R2 ${xhr.status} ${xhr.responseText.slice(0, 200)}`));
+        };
+        xhr.onerror = () => reject(new Error("네트워크 오류 (CORS 설정 확인)"));
+        xhr.send(file);
+      });
+      setAudioUrl(r1.publicUrl);
+      toast.show("음원 업로드 완료 — 아래 등록/저장을 눌러주세요", "success");
+    } catch (e) {
+      toast.show(`업로드 실패: ${(e as Error).message}`, "error");
+    } finally {
+      setUploading(false);
+      setUploadPct(0);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   const handleSubmit = () => {
     const payload = {
@@ -165,11 +215,40 @@ export function MeditationForm({ mode, initial }: Props) {
         </Field>
       </div>
 
-      <Field label="오디오 URL (R2 public URL — Cloudflare R2 대시보드에서 업로드 후 복사)">
+      <Field label="음원 파일 업로드 (mp3/wav/m4a — slug 입력 후 선택)">
+        <div className="flex flex-col gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/*"
+            disabled={pending || uploading}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleAudioUpload(f);
+            }}
+            className="text-sm"
+          />
+          {uploading && (
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-1.5 bg-gs-line-soft rounded overflow-hidden">
+                <div
+                  className="h-full bg-gs-blue transition-all"
+                  style={{ width: `${uploadPct}%` }}
+                />
+              </div>
+              <span className="text-[11px] text-gs-muted whitespace-nowrap">
+                {uploadPct}%
+              </span>
+            </div>
+          )}
+        </div>
+      </Field>
+
+      <Field label="오디오 URL (위에서 업로드하면 자동 입력 — 직접 입력도 가능)">
         <input
           value={audioUrl}
           onChange={(e) => setAudioUrl(e.target.value)}
-          disabled={pending}
+          disabled={pending || uploading}
           placeholder="https://pub-...r2.dev/audio/..."
           className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm font-mono"
         />
@@ -205,7 +284,7 @@ export function MeditationForm({ mode, initial }: Props) {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={pending}
+          disabled={pending || uploading}
           className="px-6 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold disabled:opacity-50"
         >
           {pending ? "저장 중..." : mode === "create" ? "등록" : "저장"}
