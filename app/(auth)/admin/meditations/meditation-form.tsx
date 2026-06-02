@@ -36,6 +36,12 @@ export function MeditationForm({ mode, initial }: Props) {
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [category, setCategory] = useState<Category>(initial?.category ?? "person");
   const [title, setTitle] = useState(initial?.title ?? "");
+
+  // slug 자동 생성 — 한글 제목은 영문화 불가하므로 카테고리 + 랜덤 suffix.
+  function autoSlug(cat: Category): string {
+    const rand = Math.random().toString(36).slice(2, 8);
+    return `${cat}-${rand}`;
+  }
   const [description, setDescription] = useState(initial?.description ?? "");
   const [durationSeconds, setDurationSeconds] = useState<number>(
     initial?.durationSeconds ?? 180,
@@ -53,16 +59,17 @@ export function MeditationForm({ mode, initial }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAudioUpload(file: File) {
-    if (!slug.trim()) {
-      toast.show("slug를 먼저 입력하세요", "error");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
+    // slug 비어있으면 자동 생성 (카테고리 + 랜덤)
+    let useSlug = slug.trim();
+    if (!useSlug) {
+      useSlug = autoSlug(category);
+      setSlug(useSlug);
     }
     setUploading(true);
     setUploadPct(0);
     try {
       const r1 = await requestMeditationAudioUploadUrl(
-        slug.trim(),
+        useSlug,
         file.type || "audio/mpeg",
       );
       if (!r1.ok) {
@@ -139,12 +146,12 @@ export function MeditationForm({ mode, initial }: Props) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-        <Field label="slug (영문/숫자/하이픈)">
+        <Field label="slug (비워두면 업로드 시 자동 생성)">
           <input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            placeholder="예: nature-rain"
-            disabled={pending}
+            placeholder="자동 생성됨 (직접 입력도 가능)"
+            disabled={pending || uploading}
             className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm font-mono"
           />
         </Field>
