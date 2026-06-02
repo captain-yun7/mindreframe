@@ -14,6 +14,7 @@ import { PageFade } from "@/components/motion/page-fade";
 import { getSiteSettings } from "@/lib/site-settings";
 import { AlternativeCardsGrid } from "./alternative-cards-grid";
 import { QuickNav } from "@/components/quick-nav";
+import { computeDayNumber } from "@/lib/coach/day-number";
 
 export const dynamic = "force-dynamic";
 
@@ -104,8 +105,22 @@ async function loadStats() {
     cursor.setDate(cursor.getDate() - 1);
   }
 
+  // F253 — "N일차"는 영상과 동일하게 가입 경과일 기준 (알림 시작했으면 그 기준).
+  // hero "일차" 표기와 오늘의 영상 일차가 일치하도록 통일.
+  const { data: profile } = await supabase
+    .from("users")
+    .select("notifications_started_at")
+    .eq("id", user.id)
+    .single();
+  const startedAt =
+    (profile as { notifications_started_at?: string | null } | null)
+      ?.notifications_started_at ?? null;
+  const programDay =
+    computeDayNumber(startedAt) ?? computeDayNumber(user.created_at) ?? 1;
+
   return {
     totalDays: stats.totalDays,
+    programDay,
     streak,
     analysesCount: stats.analysesCount,
     alternativesCount: stats.alternativesCount,
@@ -179,8 +194,10 @@ export default async function ProgressPage() {
   if ((stats?.gratitudeCount ?? 0) >= 30) earnedSet.add("기록왕");
   if ((stats?.totalDays ?? 0) >= 100) earnedSet.add("100일 완주");
 
-  const totalDaysSafe = stats?.totalDays ?? 0;
-  const dayLabel = totalDaysSafe > 0 ? `${Math.min(totalDaysSafe, 100)}일차` : "첫 날";
+  // F253 — "N일차"는 가입 경과일(programDay) 기준 — 오늘의 영상 일차와 통일.
+  // "총 훈련일수"(KPI)는 실제 활동일(totalDays)로 별개 유지.
+  const programDay = stats?.programDay ?? 0;
+  const dayLabel = programDay > 0 ? `${Math.min(programDay, 100)}일차` : "첫 날";
   const greetName = nickname ? `${nickname}님, ` : "";
 
   return (

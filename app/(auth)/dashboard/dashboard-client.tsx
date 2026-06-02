@@ -146,7 +146,20 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
     totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0;
   const completionRate = `${completionPct}%`;
 
-  const dayLabel = initial.totalDays > 0 ? `${initial.totalDays}일차` : "첫 날";
+  // F253 — hero "N일차"는 오늘의 영상과 동일한 가입 경과일(todayVideo.dayNumber) 기준.
+  // (기존엔 totalDays(활동일)라 영상 일차와 불일치했음)
+  const videoDay = (() => {
+    const v = initial.todayVideo;
+    if (!v) return null;
+    if (v.ok) return v.dayNumber;
+    if (v.reason === "no_row") return v.dayNumber;
+    return null;
+  })();
+  const dayLabel = videoDay
+    ? `${videoDay}일차`
+    : initial.totalDays > 0
+      ? `${initial.totalDays}일차`
+      : "첫 날";
   const greetName = initial.nickname ? `${initial.nickname}님, ` : "";
 
   // K4·F174 — 감사일기 사전 안내 → 저장 → 응원 모달 흐름
