@@ -36,6 +36,10 @@ export const metadata: Metadata = {
     "감사일기",
     "명상",
     "가짜생각",
+    "가짜생각솔루션",
+    "가짜생각 솔루션",
+    "마인드리프레임",
+    "mindreframe",
   ],
   authors: [{ name: "마인드시어터" }],
   openGraph: {
