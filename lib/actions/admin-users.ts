@@ -175,7 +175,14 @@ export async function adminUpdateUserNickname(userId: string, nickname: string) 
     .from("users")
     .update({ nickname: trimmed, updated_at: new Date().toISOString() })
     .eq("id", userId);
-  if (error) return { ok: false as const, error: error.message };
+  if (error) {
+    // F255 — nickname unique 인덱스 위반 시 친절 안내
+    const code = (error as { code?: string }).code;
+    if (code === "23505" || /uq_users_nickname_active|duplicate key/i.test(error.message)) {
+      return { ok: false as const, error: "이미 사용 중인 닉네임입니다" };
+    }
+    return { ok: false as const, error: error.message };
+  }
 
   await writeAudit({
     adminUserId: guard.userId,

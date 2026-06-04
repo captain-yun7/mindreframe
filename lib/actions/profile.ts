@@ -38,6 +38,24 @@ export async function setNicknameOnce(nickname: string) {
     return { ok: false as const, error: "닉네임은 이미 설정되었습니다 (변경 불가)" };
   }
 
+  // F255 — 중복 닉네임 사전 체크 (대소문자 무시 정확 매칭). 본인 제외.
+  // ilike 와일드카드(% _)가 닉네임에 들어가도 리터럴로 매칭되도록 escape.
+  const escaped = trimmed.replace(/[%_\\]/g, "\\$&");
+  const { data: dup } = await supabase
+    .from("users")
+    .select("id")
+    .eq("nickname_set", true)
+    .ilike("nickname", escaped)
+    .neq("id", user.id)
+    .limit(1)
+    .maybeSingle();
+  if (dup) {
+    return {
+      ok: false as const,
+      error: "사용할 수 없는 닉네임입니다. 다른 닉네임을 선택해주세요.",
+    };
+  }
+
   const { error } = await supabase
     .from("users")
     .update({
@@ -47,7 +65,17 @@ export async function setNicknameOnce(nickname: string) {
     })
     .eq("id", user.id);
 
-  if (error) return { ok: false as const, error: error.message };
+  if (error) {
+    // F255 — 동시 가입 race로 unique 인덱스 위반 시(23505) 친절 안내
+    const code = (error as { code?: string }).code;
+    if (code === "23505" || /uq_users_nickname_active|duplicate key/i.test(error.message)) {
+      return {
+        ok: false as const,
+        error: "사용할 수 없는 닉네임입니다. 다른 닉네임을 선택해주세요.",
+      };
+    }
+    return { ok: false as const, error: error.message };
+  }
   revalidatePath("/mypage");
   revalidatePath("/onboarding/nickname");
   return { ok: true as const };
