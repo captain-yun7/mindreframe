@@ -125,11 +125,22 @@ export default async function LandingPage() {
     settings.landing_hero_subtitle ??
     "반복되는 가짜생각을 하루 20분, 쉽고 짧게,\n100일이면 분명히 달라져요.";
 
-  const features =
+  // F256 — 코치 채팅(/coach)을 항상 맨 앞 + 명칭 "코치 PT 채팅"으로 강제.
+  // DB(landing_menu_items)에 저장된 값이든 코드 fallback이든 일관 적용.
+  const rawFeatures =
     parseSettingJson<LandingMenuItem[]>(
       settings.landing_menu_items,
       FALLBACK_LANDING_MENU_ITEMS,
     ) ?? [];
+  const features = [...rawFeatures]
+    .map((f) =>
+      f.href === "/coach" ? { ...f, title: "코치 PT 채팅" } : f,
+    )
+    .sort((a, b) => {
+      if (a.href === "/coach") return -1;
+      if (b.href === "/coach") return 1;
+      return 0;
+    });
 
   const stats =
     parseSettingJson<LandingStatItem[]>(
@@ -168,13 +179,13 @@ export default async function LandingPage() {
         <div className="mx-auto w-full max-w-[1200px]">
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <FadeIn delay={0} y={20}>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.15] font-extrabold tracking-[-0.03em]">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl leading-[1.15] font-extrabold tracking-[-0.03em] break-keep">
                 {renderHeroTitle(heroTitleRaw)}
               </h1>
-              <p className="mt-6 text-base md:text-lg text-white/85 leading-relaxed whitespace-pre-line">
+              <p className="mt-6 text-base md:text-lg text-white/85 leading-relaxed whitespace-pre-line break-keep">
                 {heroSubtitleRaw}
               </p>
-              <p className="mt-3 text-sm md:text-base text-gs-gold/90 font-medium">
+              <p className="mt-3 text-sm md:text-base text-gs-gold/90 font-medium break-keep">
                 실명 공개 없이 닉네임으로 안전하고 편하게 진행됩니다.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -208,10 +219,10 @@ export default async function LandingPage() {
       <Section tone="light">
         <FadeIn>
           <div className="text-center mb-10 md:mb-14">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-text-strong">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-text-strong break-keep">
               강력한 생각 초점 이동 도구
             </h2>
-            <p className="mt-4 text-base md:text-lg text-gs-muted-soft">
+            <p className="mt-4 text-base md:text-lg text-gs-muted-soft break-keep">
               짧게, 매일, 쉽게, 6가지 도구를 쓰세요.
             </p>
           </div>
@@ -235,7 +246,7 @@ export default async function LandingPage() {
       <Section tone="navy-50">
         <FadeIn>
           <div className="text-center mb-8 md:mb-10">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-navy">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-navy break-keep">
               힘들었을 때 떠오른 생각, 적어볼까요?
             </h2>
           </div>
@@ -249,7 +260,7 @@ export default async function LandingPage() {
       <Section tone="light">
         <FadeIn>
           <div className="text-center mb-10 md:mb-14">
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-text-strong">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-text-strong break-keep">
               먼저 시작한 분들의 이야기
             </h2>
           </div>
