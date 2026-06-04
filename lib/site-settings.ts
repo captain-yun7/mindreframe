@@ -149,7 +149,7 @@ export const FALLBACK_LANDING_HERO_SUBTITLE =
   "반복되는 '가짜생각'을 하루 20분, 쉽고 짧게.\n100일이면 분명히 달라져요.";
 
 export const FALLBACK_LANDING_MENU_ITEMS =
-  '[{"emoji":"💭","title":"가짜생각 분석기","description":"생각 한 줄만 적으면 인지왜곡, 대안사고까지 전부 찾아드려요.","href":"/chat"},{"emoji":"🗑️","title":"생각쓰레기통","description":"여기에 생각을 버리고, 뭉친 마음의 실타래를 푸세요!","href":"/trash"},{"emoji":"🌙","title":"명상하기","description":"초점 이동, 짧고 가볍게 매일.","href":"/meditation"},{"emoji":"🎯","title":"행동연습장","description":"불안 줄이기 연습, 우울 벗어나기 연습. 작은 용기를 쌓으세요.","href":"/exercise"},{"emoji":"🤝","title":"코치 채팅","description":"가짜 생각 코치와 100일을 시작하세요.","href":"/coach"},{"emoji":"🌱","title":"나의 성장방","description":"오늘의 기록이 쌓여 100일의 변화로. 한눈에 확인하세요.","href":"/progress"}]';
+  '[{"emoji":"🤝","title":"코치 채팅","description":"가짜 생각 코치와 100일을 시작하세요.","href":"/coach"},{"emoji":"💭","title":"가짜생각 분석기","description":"생각 한 줄만 적으면 인지왜곡, 대안사고까지 전부 찾아드려요.","href":"/chat"},{"emoji":"🗑️","title":"생각쓰레기통","description":"여기에 생각을 버리고, 뭉친 마음의 실타래를 푸세요!","href":"/trash"},{"emoji":"🌙","title":"명상하기","description":"초점 이동, 짧고 가볍게 매일.","href":"/meditation"},{"emoji":"🎯","title":"행동연습장","description":"불안 줄이기 연습, 우울 벗어나기 연습. 작은 용기를 쌓으세요.","href":"/exercise"},{"emoji":"🌱","title":"나의 성장방","description":"오늘의 기록이 쌓여 100일의 변화로. 한눈에 확인하세요.","href":"/progress"}]';
 
 export const FALLBACK_LANDING_STATS =
   '[{"value":"10+","label":"함께한 사람들"},{"value":"500+","label":"분석된 생각"},{"value":"100일","label":"훈련 프로그램"}]';

@@ -25,7 +25,7 @@ import {
 
 const reviews = [
   {
-    text: '"18년간 먹던 불안·우울증 약을 먹지 않게 됐어요!"',
+    text: '"14일 베타 참여를 하며 5년간 먹던 불안약을 끊을 수 있을 거란 희망이 생겼어요."',
     tag: "40대 직장인 · 사회불안",
     gender: "female" as const,
     gradientId: "gF1",
@@ -34,7 +34,7 @@ const reviews = [
     clothStroke: "#4f46e5",
   },
   {
-    text: '"인지행동치료 받다가 어려워서 포기했는데, 이렇게 쉬운 거였다니 충격적이네요!"',
+    text: '"신기해요. 생각이 바뀔 수 있다는 것도 신기했어요."',
     tag: "30대 자영업자 · 우울/불안",
     gender: "female" as const,
     gradientId: "gF2",
@@ -43,7 +43,7 @@ const reviews = [
     clothStroke: "#ec4899",
   },
   {
-    text: '"하라는 대로만 하면 끝. 엄마가 달라진 저를 보고 놀랐어요!!"',
+    text: '"이렇게 좋은 프로그램이 있다니 진짜 최고다"',
     tag: "20대 직장인 · 우울/불안",
     gender: "male" as const,
     gradientId: "gM1",
@@ -123,7 +123,7 @@ export default async function LandingPage() {
     settings.landing_hero_title ?? "우울·불안은 <gold>생각습관</gold>이에요.\n훈련으로만 바뀝니다 🌱";
   const heroSubtitleRaw =
     settings.landing_hero_subtitle ??
-    "반복되는 '가짜생각'을 하루 20분, 쉽고 짧게.\n100일이면 분명히 달라져요.";
+    "반복되는 가짜생각을 하루 20분, 쉽고 짧게,\n100일이면 분명히 달라져요.";
 
   const features =
     parseSettingJson<LandingMenuItem[]>(
@@ -173,6 +173,9 @@ export default async function LandingPage() {
               </h1>
               <p className="mt-6 text-base md:text-lg text-white/85 leading-relaxed whitespace-pre-line">
                 {heroSubtitleRaw}
+              </p>
+              <p className="mt-3 text-sm md:text-base text-gs-gold/90 font-medium">
+                실명 공개 없이 닉네임으로 안전하고 편하게 진행됩니다.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <BigCTA href="/login" variant="gold" size="xl">
@@ -233,7 +236,7 @@ export default async function LandingPage() {
         <FadeIn>
           <div className="text-center mb-8 md:mb-10">
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] text-gs-navy">
-              지금 떠오른 생각, 한 번 적어볼까요?
+              힘들었을 때 떠오른 생각, 적어볼까요?
             </h2>
           </div>
           <div className="bg-white rounded-toss-card px-6 py-7 shadow-toss-card max-w-[880px] mx-auto">
