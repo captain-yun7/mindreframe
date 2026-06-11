@@ -60,11 +60,13 @@ async function loadMessageMap(): Promise<Map<number, string>> {
 }
 
 export async function GET(request: Request) {
-  // Vercel Cron만 허용
+  // Vercel Cron(Authorization 헤더) 또는 외부 cron-job.org(?key= 쿼리) 허용.
+  // cron-job.org는 헤더 설정이 번거로워 쿼리 파라미터 인증도 지원.
   const expected = process.env.CRON_SECRET;
   if (expected) {
     const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${expected}`) {
+    const keyParam = new URL(request.url).searchParams.get("key");
+    if (auth !== `Bearer ${expected}` && keyParam !== expected) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
   }
