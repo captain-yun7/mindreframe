@@ -111,6 +111,8 @@ export async function GET(request: Request) {
   let sent = 0;
   let failed = 0;
   let skipped = 0;
+  let errored = 0;
+  const errorSamples: string[] = [];
 
   for (const u of (users ?? []) as UserRow[]) {
     if (!u.phone_number || !u.notifications_started_at) {
@@ -143,8 +145,14 @@ export async function GET(request: Request) {
       status: "pending",
     });
     if (lockErr) {
-      // unique violation = 이미 처리됨
-      skipped++;
+      if (lockErr.code === "23505") {
+        // unique violation = 같은 유저·같은 일차 이미 처리됨 (정상 중복 방지)
+        skipped++;
+        continue;
+      }
+      // 그 외 에러(테이블 없음/DB 장애 등)는 묻지 말고 드러냄 — 조용한 전수 스킵 방지
+      errored++;
+      if (errorSamples.length < 3) errorSamples.push(`${lockErr.code}: ${lockErr.message}`);
       continue;
     }
 
@@ -187,5 +195,7 @@ export async function GET(request: Request) {
     sent,
     failed,
     skipped,
+    errored,
+    ...(errorSamples.length > 0 ? { errors: errorSamples } : {}),
   });
 }
