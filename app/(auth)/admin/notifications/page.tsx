@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card, CardTitle, CardDescription } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { TestSendForm } from "./test-send-form";
 
 const PAGE_SIZE = 50;
@@ -28,9 +29,11 @@ export default async function AdminNotificationsPage({
   const status = params.status ?? "";
   const page = Math.max(1, Number(params.page ?? "1"));
 
-  const { supabase } = await requireAdmin();
+  await requireAdmin();
 
-  let query = supabase
+  // notification_logs는 RLS가 self-select(auth.uid()=user_id)뿐이라
+  // 세션 클라이언트로는 본인 로그만 보임 → 전체 발송 현황은 서비스롤로 조회.
+  let query = supabaseAdmin
     .from("notification_logs")
     .select(
       "id, user_id, day_number, channel, status, external_message_id, error_message, sent_at, created_at, users:user_id (nickname, email, phone_number)",
@@ -46,7 +49,7 @@ export default async function AdminNotificationsPage({
 
   // 오늘 통계
   const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const { data: todayLogs } = await supabase
+  const { data: todayLogs } = await supabaseAdmin
     .from("notification_logs")
     .select("status")
     .gte("created_at", `${today}T00:00:00+09:00`);

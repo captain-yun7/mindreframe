@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageLayout, PageTitle, PageLead } from "@/components/page-layout";
 import { Card, CardTitle } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { todayKst } from "@/lib/dates";
 
 export default async function AdminDashboardPage() {
@@ -33,7 +34,8 @@ export default async function AdminDashboardPage() {
       .from("coach_chat_sessions")
       .select("id", { count: "exact", head: true })
       .eq("status", "active"),
-    supabase
+    // notification_logs는 RLS self-select뿐 → 전체 집계는 서비스롤로
+    supabaseAdmin
       .from("notification_logs")
       .select("id, status")
       .gte("created_at", `${today}T00:00:00+09:00`),

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageLayout, PageTitle } from "@/components/page-layout";
 import { Card, CardTitle } from "@/components/card";
 import { requireAdmin } from "@/lib/auth/admin";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminUserActions } from "./admin-user-actions";
 import { DeleteUserButton } from "./delete-user-button";
 
@@ -97,7 +98,8 @@ export default async function AdminUserDetailPage({
       .eq("user_id", id)
       .order("started_at", { ascending: false })
       .limit(10),
-    supabase
+    // notification_logs는 RLS self-select뿐 → 타 유저 로그는 서비스롤로 조회
+    supabaseAdmin
       .from("notification_logs")
       .select("day_number, status, sent_at, error_message, created_at")
       .eq("user_id", id)
