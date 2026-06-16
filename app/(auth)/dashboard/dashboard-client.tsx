@@ -204,6 +204,11 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
                 {initial.heroSubtitle ??
                   "작은 한 걸음이 큰 변화로 이어져요. 오늘도 1%만 해도 충분해요."}
               </p>
+              {videoDay && (
+                <p className="mt-3 text-sm md:text-base font-bold text-gs-navy-bright">
+                  오늘의 루틴에서 {videoDay}일차 교육영상을 먼저 확인하세요.
+                </p>
+              )}
 
               {/* 진행률 바 */}
               <div className="mt-6 md:mt-8 max-w-[440px]">
