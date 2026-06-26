@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { Plan } from "@/lib/auth/plan";
 import { writeAudit } from "@/lib/actions/_audit";
+import { todayKst } from "@/lib/dates";
 
 async function ensureAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
@@ -31,6 +32,20 @@ export async function adminUpdateUserPlan(
     const d = new Date();
     d.setDate(d.getDate() + expiresInDays);
     update.plan_expires_at = d.toISOString();
+  }
+
+  // 유료 플랜 수동 부여 시 결제 플로우와 동일하게 알림 시작.
+  // 번호 있고 아직 미시작(started_at NULL)인 경우만 오늘로 세팅 (기존 시작일은 보존).
+  if (plan !== "free") {
+    const { data: cur } = await supabaseAdmin
+      .from("users")
+      .select("phone_number, notifications_started_at")
+      .eq("id", userId)
+      .single();
+    const c = cur as { phone_number?: string | null; notifications_started_at?: string | null } | null;
+    if (c?.phone_number && !c.notifications_started_at) {
+      update.notifications_started_at = todayKst();
+    }
   }
 
   const { error } = await supabaseAdmin.from("users").update(update).eq("id", userId);
@@ -90,9 +105,21 @@ export async function adminUpdateUserNotification(
     }
     update.notification_hour = notificationHour;
   }
-  // active=false면 notifications_started_at 비우기 → cron이 발송 안 함
+  // active 토글: 끄면 started_at 비우고, 켜는데 아직 미시작이면 오늘로 세팅
+  // (이미 시작일 있으면 보존 — 일차 카운트 리셋 방지)
   if (!active) {
     update.notifications_started_at = null;
+  } else {
+    const { data: cur } = await supabaseAdmin
+      .from("users")
+      .select("notifications_started_at")
+      .eq("id", userId)
+      .single();
+    const started = (cur as { notifications_started_at?: string | null } | null)
+      ?.notifications_started_at;
+    if (!started) {
+      update.notifications_started_at = todayKst();
+    }
   }
 
   const { error } = await supabaseAdmin.from("users").update(update).eq("id", userId);
