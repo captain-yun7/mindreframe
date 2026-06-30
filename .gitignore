@@ -29,3 +29,7 @@ scripts/*.png
 /test-results/
 /playwright-report/
 /playwright/.cache/
+.env*.local
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
