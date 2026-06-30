@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useToast } from "@/components/ui/toast";
 import { adminUpdatePlan, type AdminPlanInput } from "@/lib/actions/admin-plans";
+import { ConfirmDialog } from "../_ui/confirm-dialog";
 
 interface Props {
   initial: {
@@ -28,9 +29,12 @@ export function PlanEditor({ initial }: Props) {
   const [sortOrder, setSortOrder] = useState(initial.sort_order);
   const [isActive, setIsActive] = useState(initial.is_active);
   const [pending, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const toast = useToast();
 
-  const handleSave = () => {
+  const amountChanged = amount !== initial.amount;
+
+  const doSave = () => {
     const features = featuresText
       .split("\n")
       .map((line) => line.trim())
@@ -144,13 +148,34 @@ export function PlanEditor({ initial }: Props) {
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={handleSave}
+          onClick={() => setConfirmOpen(true)}
           disabled={pending}
           className="px-4 py-2 rounded-[10px] bg-gs-blue text-white text-sm font-bold disabled:opacity-50"
         >
           {pending ? "저장 중…" : "저장"}
         </button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={doSave}
+        title="플랜을 저장할까요?"
+        tone={amountChanged ? "danger" : "default"}
+        confirmLabel="저장"
+        description={
+          <div className="space-y-2">
+            <p>
+              이 플랜(<b className="uppercase">{initial.slug}</b>)은 <b>결제 페이지에 즉시 반영</b>됩니다.
+            </p>
+            {amountChanged && (
+              <p className="text-gs-danger font-bold">
+                ⚠️ 금액 변경: {initial.amount.toLocaleString()}원 → {amount.toLocaleString()}원
+              </p>
+            )}
+          </div>
+        }
+      />
     </div>
   );
 }

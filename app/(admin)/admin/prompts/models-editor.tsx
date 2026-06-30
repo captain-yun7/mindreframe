@@ -21,17 +21,17 @@ interface ModelOption {
 interface Props {
   items: ModelItem[];
   options: readonly ModelOption[];
+  readOnly?: boolean;
 }
 
 /**
- * F216 — AI 모델 어드민 선택. 빈 값(="default 사용")도 옵션으로 제공.
- * 각 단계별로 독립 저장 + 캐시 즉시 무효화.
+ * F216 — AI 모델 조회. readOnly=true이면 선택 잠금(현재 설정 뷰).
  */
-export function ModelsEditor({ items, options }: Props) {
+export function ModelsEditor({ items, options, readOnly = false }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {items.map((m) => (
-        <ModelCard key={m.key} item={m} options={options} />
+        <ModelCard key={m.key} item={m} options={options} readOnly={readOnly} />
       ))}
     </div>
   );
@@ -40,9 +40,11 @@ export function ModelsEditor({ items, options }: Props) {
 function ModelCard({
   item,
   options,
+  readOnly,
 }: {
   item: ModelItem;
   options: readonly ModelOption[];
+  readOnly: boolean;
 }) {
   const [value, setValue] = useState(item.initialValue);
   const [pending, startTransition] = useTransition();
@@ -88,7 +90,8 @@ function ModelCard({
       <select
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="w-full px-2 py-2 rounded-[10px] border border-gs-line-soft text-xs bg-white focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
+        disabled={readOnly}
+        className="w-full px-2 py-2 rounded-[10px] border border-gs-line-soft text-xs bg-white focus:outline-none focus:ring-2 focus:ring-gs-blue/40 disabled:bg-gs-surface-muted/60 disabled:text-gs-muted"
       >
         <option value="">(코드 default 사용)</option>
         {options.map((opt) => (
@@ -98,14 +101,20 @@ function ModelCard({
         ))}
       </select>
 
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={pending || value === item.initialValue}
-        className="mt-2 w-full px-3 py-2 rounded-[10px] bg-gs-blue text-white text-xs font-bold disabled:opacity-40"
-      >
-        저장
-      </button>
+      {readOnly ? (
+        <div className="mt-2 text-[10.5px] text-gs-muted bg-gs-surface-muted rounded-[8px] px-2 py-1.5">
+          🔒 읽기 전용 — 코드/배포로만 변경
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={pending || value === item.initialValue}
+          className="mt-2 w-full px-3 py-2 rounded-[10px] bg-gs-blue text-white text-xs font-bold disabled:opacity-40"
+        >
+          저장
+        </button>
+      )}
     </div>
   );
 }

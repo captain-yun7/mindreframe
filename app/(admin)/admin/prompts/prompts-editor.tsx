@@ -16,23 +16,25 @@ interface PromptItem {
 
 interface Props {
   items: PromptItem[];
+  /** 읽기 전용 — 분석기 동작 직결이라 실수 방지용으로 편집 잠금 */
+  readOnly?: boolean;
 }
 
 /**
- * J3 / F144 — 운영자가 site_settings의 prompt_* 4개 키를 textarea로 직접 편집.
- * 빈 값으로 저장하면 코드 fallback으로 자동 복귀.
+ * J3 / F144 — 운영자가 site_settings의 prompt_* 4개 키를 조회.
+ * readOnly=true이면 편집 잠금(현재 값 뷰어 + fallback 비교만).
  */
-export function PromptsEditor({ items }: Props) {
+export function PromptsEditor({ items, readOnly = false }: Props) {
   return (
     <div className="space-y-4">
       {items.map((p) => (
-        <PromptCard key={p.key} item={p} />
+        <PromptCard key={p.key} item={p} readOnly={readOnly} />
       ))}
     </div>
   );
 }
 
-function PromptCard({ item }: { item: PromptItem }) {
+function PromptCard({ item, readOnly }: { item: PromptItem; readOnly: boolean }) {
   const [value, setValue] = useState(item.initialValue);
   const [showFallback, setShowFallback] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -107,29 +109,39 @@ function PromptCard({ item }: { item: PromptItem }) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         rows={16}
+        readOnly={readOnly}
         placeholder="비우면 코드의 fallback prompt가 사용됩니다."
-        className="w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-[12px] font-mono leading-[1.55] focus:outline-none focus:ring-2 focus:ring-gs-blue/40 whitespace-pre"
+        className={
+          "w-full px-3 py-2 rounded-[10px] border border-gs-line-soft text-[12px] font-mono leading-[1.55] focus:outline-none focus:ring-2 focus:ring-gs-blue/40 whitespace-pre" +
+          (readOnly ? " bg-gs-surface-muted/60 text-gs-muted cursor-default" : "")
+        }
       />
 
       <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={pending}
-            className="px-4 py-2 rounded-[10px] bg-gs-blue text-white text-xs font-bold disabled:opacity-50"
-          >
-            저장
-          </button>
-          <button
-            type="button"
-            onClick={handleResetToFallback}
-            disabled={pending}
-            className="px-3 py-2 rounded-[10px] bg-white border border-gs-line-soft text-xs disabled:opacity-50"
-          >
-            코드 fallback으로 복원
-          </button>
-        </div>
+        {readOnly ? (
+          <div className="text-[11px] text-gs-muted bg-gs-surface-muted rounded-[8px] px-2.5 py-1.5">
+            🔒 읽기 전용 — 분석기 동작에 직결되어 코드/배포로만 변경합니다.
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={pending}
+              className="px-4 py-2 rounded-[10px] bg-gs-blue text-white text-xs font-bold disabled:opacity-50"
+            >
+              저장
+            </button>
+            <button
+              type="button"
+              onClick={handleResetToFallback}
+              disabled={pending}
+              className="px-3 py-2 rounded-[10px] bg-white border border-gs-line-soft text-xs disabled:opacity-50"
+            >
+              코드 fallback으로 복원
+            </button>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setShowFallback((v) => !v)}

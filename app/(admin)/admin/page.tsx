@@ -66,7 +66,6 @@ export default async function AdminDashboardPage() {
   const quickLinks = [
     { href: "/admin/users", label: "사용자 관리", desc: "검색·필터·플랜·일괄·CSV" },
     { href: "/admin/payments", label: "결제 이력", desc: "상세·검색·환불" },
-    { href: "/admin/subscriptions", label: "구독 관리", desc: "상태·해지·재개" },
     { href: "/admin/coupons", label: "쿠폰 관리", desc: "발행·편집·사용이력" },
     { href: "/admin/coach", label: "코치 채팅", desc: "활성 세션 답변" },
     { href: "/admin/audit", label: "감사 로그", desc: "관리자 작업 이력" },

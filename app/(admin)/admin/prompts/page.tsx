@@ -304,7 +304,7 @@ export default async function AdminPromptsPage() {
           단계별로 다른 모델을 사용할 수 있어요. <code className="font-mono">(코드 default 사용)</code> 선택 시 ENV → 하드코딩 default로 복귀합니다.
         </CardDescription>
         <div className="mt-3">
-          <ModelsEditor items={modelItems} options={MODEL_OPTIONS} />
+          <ModelsEditor items={modelItems} options={MODEL_OPTIONS} readOnly />
         </div>
       </Card>
 
@@ -315,12 +315,12 @@ export default async function AdminPromptsPage() {
           넘기면 응답이 잘릴 수 있어요.
         </CardDescription>
         <div className="mt-3">
-          <MaxTokensEditor items={maxTokensItems} />
+          <MaxTokensEditor items={maxTokensItems} readOnly />
         </div>
       </Card>
 
       <div className="mt-4">
-        <PromptsEditor items={items} />
+        <PromptsEditor items={items} readOnly />
       </div>
 
       <Card className="mt-6">

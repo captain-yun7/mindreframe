@@ -16,23 +16,24 @@ interface MaxTokensItem {
 
 interface Props {
   items: MaxTokensItem[];
+  readOnly?: boolean;
 }
 
 /**
- * F249 — max_tokens 어드민 편집.
+ * F249 — max_tokens 조회. readOnly=true이면 편집 잠금.
  * 빈값(코드 default 사용) / 0(무제한) / 정수(직접 지정).
  */
-export function MaxTokensEditor({ items }: Props) {
+export function MaxTokensEditor({ items, readOnly = false }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {items.map((m) => (
-        <MaxTokensCard key={m.key} item={m} />
+        <MaxTokensCard key={m.key} item={m} readOnly={readOnly} />
       ))}
     </div>
   );
 }
 
-function MaxTokensCard({ item }: { item: MaxTokensItem }) {
+function MaxTokensCard({ item, readOnly }: { item: MaxTokensItem; readOnly: boolean }) {
   const [value, setValue] = useState(item.initialValue);
   const [pending, startTransition] = useTransition();
   const toast = useToast();
@@ -81,18 +82,25 @@ function MaxTokensCard({ item }: { item: MaxTokensItem }) {
         inputMode="numeric"
         value={value}
         onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ""))}
+        readOnly={readOnly}
         placeholder="빈값=default, 0=무제한"
-        className="w-full px-2 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
+        className="w-full px-2 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40 read-only:bg-gs-surface-muted/60 read-only:text-gs-muted"
       />
 
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={pending || value === item.initialValue}
-        className="mt-2 w-full px-3 py-2 rounded-[10px] bg-gs-blue text-white text-xs font-bold disabled:opacity-40"
-      >
-        저장
-      </button>
+      {readOnly ? (
+        <div className="mt-2 text-[10.5px] text-gs-muted bg-gs-surface-muted rounded-[8px] px-2 py-1.5">
+          🔒 읽기 전용 — 코드/배포로만 변경
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={pending || value === item.initialValue}
+          className="mt-2 w-full px-3 py-2 rounded-[10px] bg-gs-blue text-white text-xs font-bold disabled:opacity-40"
+        >
+          저장
+        </button>
+      )}
     </div>
   );
 }

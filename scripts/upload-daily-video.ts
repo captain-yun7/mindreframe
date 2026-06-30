@@ -12,10 +12,16 @@
  *   NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *
  * 객체 키 패턴: `video/day-N.mp4` 고정 (어드민 UI와 동일)
+ *
+ * 업로드 직전 faststart 자동 적용:
+ *   moov가 파일 끝에 있으면(progressive 재생 불가) ffmpeg `-c copy`로 앞으로
+ *   재배치 → 재인코딩 없이 즉시 재생 가능. ffmpeg 필요 (`brew install ffmpeg`).
  */
 
 import { config as loadEnv } from "dotenv";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { presignR2, readR2Config } from "../lib/video/r2-sigv4";
@@ -32,6 +38,55 @@ function parseDayFromFilename(file: string): number | null {
   // "1일차.mp4" / "day-1.mp4" / "1.mp4"
   const m = base.match(/(?:day[-_])?(\d+)(?:일차)?\.(?:mp4|MP4)$/);
   return m ? Number(m[1]) : null;
+}
+
+/**
+ * mp4 앞부분에서 moov가 mdat보다 먼저 나오는지로 faststart 여부 판정.
+ * (정밀 atom 파싱은 아니지만 실무 판정에 충분)
+ */
+function isFaststart(filePath: string): boolean {
+  const fd = fs.openSync(filePath, "r");
+  try {
+    const buf = Buffer.alloc(65536);
+    fs.readSync(fd, buf, 0, buf.length, 0);
+    const moovIdx = buf.indexOf("moov");
+    const mdatIdx = buf.indexOf("mdat");
+    if (moovIdx === -1) return false; // moov가 앞 64KB에 없음 → 끝에 있을 가능성
+    if (mdatIdx === -1) return true; // mdat가 64KB 밖 → moov가 앞
+    return moovIdx < mdatIdx;
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+/**
+ * faststart 보장. 이미 적용돼 있으면 원본 경로 그대로,
+ * 아니면 ffmpeg로 재배치한 임시 파일 경로를 반환 (재인코딩 없음 = -c copy).
+ * tmp:true면 호출자가 업로드 후 삭제해야 한다.
+ */
+function ensureFaststart(filePath: string): { path: string; tmp: boolean } {
+  if (isFaststart(filePath)) return { path: filePath, tmp: false };
+  const tmpPath = path.join(
+    os.tmpdir(),
+    `faststart-${Date.now()}-${path.basename(filePath)}`,
+  );
+  try {
+    execFileSync(
+      "ffmpeg",
+      ["-y", "-i", filePath, "-c", "copy", "-movflags", "+faststart",
+       "-loglevel", "error", tmpPath],
+      { stdio: "inherit" },
+    );
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      throw new Error(
+        "ffmpeg 미설치 — faststart 변환 불가. `brew install ffmpeg` 후 재시도",
+      );
+    }
+    throw new Error(`faststart 변환 실패: ${(e as Error).message}`);
+  }
+  return { path: tmpPath, tmp: true };
 }
 
 async function uploadOne(
@@ -59,19 +114,27 @@ async function uploadOne(
     );
   }
 
+  // 브라우저 progressive 재생을 위해 moov를 앞으로 (미적용 시에만 변환)
+  const fast = ensureFaststart(filePath);
+  if (fast.tmp) console.log(`  ↻ faststart 변환 적용`);
+
   const objectKey = `video/day-${dayNumber}.mp4`;
   const uploadUrl = await presignR2(cfg, "PUT", objectKey, 60 * 30); // 30분
 
-  // Node 20+ fetch — Buffer body 직접 전송 (≤ 1GB는 readFileSync로 충분)
-  const body = fs.readFileSync(filePath);
-  const res = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": "video/mp4" },
-    body,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`R2 PUT 실패 ${res.status} ${text.slice(0, 200)}`);
+  try {
+    // Node 20+ fetch — Buffer body 직접 전송 (3분 영상 ≈ 수백 MB)
+    const body = fs.readFileSync(fast.path);
+    const res = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "video/mp4" },
+      body,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`R2 PUT 실패 ${res.status} ${text.slice(0, 200)}`);
+    }
+  } finally {
+    if (fast.tmp) fs.rmSync(fast.path, { force: true });
   }
 
   const supabaseAdmin = createClient(SUPA_URL, SUPA_SVC, {
