@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { writeAudit } from "./_audit";
 
 async function ensureAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
@@ -81,6 +82,12 @@ export async function adminCreateMeditation(input: MeditationInput) {
     .single();
   if (error) return { ok: false as const, error: error.message };
 
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "meditation.create",
+    payload: { slug: input.slug },
+  });
+
   revalidatePath("/admin/meditations");
   revalidatePath("/meditation");
   return { ok: true as const, id: data.id, slug: data.slug };
@@ -109,6 +116,12 @@ export async function adminUpdateMeditation(id: string, input: MeditationInput) 
     .eq("id", id);
   if (error) return { ok: false as const, error: error.message };
 
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "meditation.update",
+    payload: { id },
+  });
+
   revalidatePath("/admin/meditations");
   revalidatePath("/meditation");
   return { ok: true as const };
@@ -120,6 +133,12 @@ export async function adminDeleteMeditation(id: string) {
 
   const { error } = await supabaseAdmin.from("meditations").delete().eq("id", id);
   if (error) return { ok: false as const, error: error.message };
+
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "meditation.delete",
+    payload: { id },
+  });
 
   revalidatePath("/admin/meditations");
   revalidatePath("/meditation");

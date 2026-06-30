@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { writeAudit } from "./_audit";
 
 async function ensureAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
@@ -75,6 +76,12 @@ export async function adminCreateStudyArticle(input: StudyArticleInput) {
     .single();
   if (error) return { ok: false as const, error: error.message };
 
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "study.create",
+    payload: { slug: input.slug },
+  });
+
   revalidatePath("/admin/study");
   revalidatePath("/study");
   revalidatePath(`/study/${data.slug}`);
@@ -115,6 +122,11 @@ export async function adminUpdateStudyArticle(id: string, input: StudyArticleInp
   if (prev?.slug && prev.slug !== input.slug) {
     revalidatePath(`/study/${prev.slug}`);
   }
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "study.update",
+    payload: { id },
+  });
   return { ok: true as const };
 }
 
@@ -134,6 +146,11 @@ export async function adminDeleteStudyArticle(id: string) {
   revalidatePath("/admin/study");
   revalidatePath("/study");
   if (row?.slug) revalidatePath(`/study/${row.slug}`);
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "study.delete",
+    payload: { id },
+  });
   return { ok: true as const };
 }
 
@@ -185,6 +202,12 @@ export async function adminUpsertNotificationVideo(input: NotificationVideoInput
     updated_by: guard.userId,
   });
   if (error) return { ok: false as const, error: error.message };
+
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "study.update",
+    payload: { dayNumber: input.dayNumber },
+  });
 
   revalidatePath("/admin/study/videos");
   return { ok: true as const };

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { sendAlimtalk } from "@/lib/notifications/solapi";
+import { writeAudit } from "./_audit";
 
 async function ensureAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
@@ -16,6 +18,78 @@ async function ensureAdmin(): Promise<
   const { data: u } = await sb.from("users").select("role").eq("id", user.id).single();
   if (u?.role !== "admin") return { ok: false, error: "관리자 권한이 필요합니다" };
   return { ok: true, userId: user.id };
+}
+
+/**
+ * 실패(또는 임의) 알림 로그 1건 재발송.
+ * cron 발송 로직과 동일한 템플릿/변수로 다시 보내고, 같은 로그 row를 갱신한다.
+ */
+export async function adminResendNotification(logId: string) {
+  const g = await ensureAdmin();
+  if (!g.ok) return g;
+
+  const { data: log, error: logErr } = await supabaseAdmin
+    .from("notification_logs")
+    .select("id, user_id, day_number, channel")
+    .eq("id", logId)
+    .single();
+  if (logErr || !log) return { ok: false as const, error: "발송 로그를 찾을 수 없어요" };
+
+  const { data: user } = await supabaseAdmin
+    .from("users")
+    .select("phone_number")
+    .eq("id", log.user_id)
+    .single();
+  const phone = (user as { phone_number?: string | null } | null)?.phone_number;
+  if (!phone) return { ok: false as const, error: "사용자 휴대폰 번호가 없어요" };
+
+  const { data: msg } = await supabaseAdmin
+    .from("notification_messages")
+    .select("content")
+    .eq("day_number", log.day_number)
+    .single();
+  const content = (msg as { content?: string } | null)?.content;
+  if (!content) {
+    return { ok: false as const, error: `${log.day_number}일차 메시지 본문이 없어요` };
+  }
+
+  const templateId = process.env.SOLAPI_ALIMTALK_TEMPLATE_ID;
+  if (!templateId) return { ok: false as const, error: "알림톡 템플릿 미설정" };
+
+  const result = await sendAlimtalk({
+    to: phone.replace(/[^0-9]/g, ""),
+    templateId,
+    variables: { "#{day}": String(log.day_number), "#{content}": content },
+  });
+
+  if (result.ok) {
+    await supabaseAdmin
+      .from("notification_logs")
+      .update({
+        status: "sent",
+        external_message_id: result.messageId ?? null,
+        error_message: null,
+        sent_at: new Date().toISOString(),
+      })
+      .eq("id", logId);
+  } else {
+    await supabaseAdmin
+      .from("notification_logs")
+      .update({ status: "failed", error_message: result.error ?? "unknown" })
+      .eq("id", logId);
+  }
+
+  await writeAudit({
+    adminUserId: g.userId,
+    action: "notification.resend",
+    targetUserId: log.user_id,
+    payload: { logId, dayNumber: log.day_number, ok: result.ok },
+  });
+
+  revalidatePath("/admin/notifications");
+  return result.ok
+    ? { ok: true as const }
+    : { ok: false as const, error: result.error ?? "발송 실패" };
 }
 
 export interface NotificationMessageInput {
@@ -48,6 +122,12 @@ export async function adminUpdateNotificationMessage(input: NotificationMessageI
     updated_by: guard.userId,
   });
   if (error) return { ok: false as const, error: error.message };
+
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "notification_message.update",
+    payload: { dayNumber: input.dayNumber },
+  });
 
   revalidatePath("/admin/notifications/messages");
   return { ok: true as const };

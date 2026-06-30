@@ -9,6 +9,7 @@ import {
   invalidateMaxTokensCache,
   ALLOWED_MODEL_VALUES,
 } from "@/lib/cbt/prompts-loader";
+import { writeAudit } from "./_audit";
 
 async function ensureAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
@@ -87,6 +88,11 @@ export async function adminUpdateSiteSetting(key: string, value: string) {
   revalidatePath("/exercise");
   revalidatePath("/meditation");
   revalidatePath("/", "layout");
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "site_setting.update",
+    payload: { key },
+  });
   return { ok: true as const };
 }
 
@@ -119,6 +125,11 @@ export async function adminUpdatePrompt(key: string, value: string) {
   if (error) return { ok: false as const, error: error.message };
 
   invalidatePromptsCache();
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "site_setting.update",
+    payload: { key, kind: "prompt" },
+  });
   revalidatePath("/admin/prompts");
   return { ok: true as const };
 }
@@ -155,6 +166,11 @@ export async function adminUpdateModel(key: string, value: string) {
   if (error) return { ok: false as const, error: error.message };
 
   invalidateModelsCache();
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "site_setting.update",
+    payload: { key, kind: "model" },
+  });
   revalidatePath("/admin/prompts");
   return { ok: true as const };
 }
@@ -194,6 +210,11 @@ export async function adminUpdateMaxTokens(key: string, value: string) {
   if (error) return { ok: false as const, error: error.message };
 
   invalidateMaxTokensCache();
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "site_setting.update",
+    payload: { key, kind: "max_tokens" },
+  });
   revalidatePath("/admin/prompts");
   return { ok: true as const };
 }
