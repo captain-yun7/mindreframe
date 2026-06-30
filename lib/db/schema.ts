@@ -105,6 +105,11 @@ export const payments = pgTable("payments", {
   paymentType: text("payment_type").notNull(),
   status: text("status").notNull().default("pending"),
   paidAt: timestamp("paid_at", { withTimezone: true }),
+  // F91 — 환불 메타 (20260531_payment_refunds.sql)
+  refundedAt: timestamp("refunded_at", { withTimezone: true }),
+  refundReason: text("refund_reason"),
+  refundAmount: integer("refund_amount"),
+  refundedBy: uuid("refunded_by").references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
@@ -450,4 +455,63 @@ export const landingAnalyzerUsage = pgTable("landing_analyzer_usage", {
   contentHash: text("content_hash"),
   result: jsonb("result"),
   usedAt: timestamp("used_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ─── plans (F88 — 플랜 가격/혜택) ───
+// 20260529_plans_coupons.sql. 스키마 드리프트 해소 위해 정의 추가.
+export const plans = pgTable("plans", {
+  slug: text("slug").primaryKey(), // 'light' | 'pro' | 'premium'
+  name: text("name").notNull(),
+  amount: integer("amount").notNull(),
+  durationDays: integer("duration_days").notNull().default(100),
+  recommended: boolean("recommended").notNull().default(false),
+  features: jsonb("features").notNull().default([]),
+  guaranteeHtml: text("guarantee_html"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid("updated_by").references(() => users.id),
+});
+
+// ─── coupons (F88 — 쿠폰) ───
+export const coupons = pgTable("coupons", {
+  code: text("code").primaryKey(),
+  description: text("description"),
+  plan: text("plan").notNull(),
+  durationDays: integer("duration_days").notNull(),
+  validFrom: timestamp("valid_from", { withTimezone: true }),
+  validUntil: timestamp("valid_until", { withTimezone: true }),
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  issuedBy: uuid("issued_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ─── coupon_redemptions (F88 — 쿠폰 사용 이력) ───
+export const couponRedemptions = pgTable("coupon_redemptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  couponCode: text("coupon_code")
+    .notNull()
+    .references(() => coupons.code),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  appliedPlan: text("applied_plan").notNull(),
+  appliedUntil: timestamp("applied_until", { withTimezone: true }).notNull(),
+  redeemedAt: timestamp("redeemed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ─── admin_audit_logs (F71 — 어드민 위험 액션 감사) ───
+// 20260527_admin_users_crud.sql. write는 service-role server action으로만.
+export const adminAuditLogs = pgTable("admin_audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adminUserId: uuid("admin_user_id")
+    .notNull()
+    .references(() => users.id),
+  action: text("action").notNull(),
+  targetUserId: uuid("target_user_id").references(() => users.id),
+  payload: jsonb("payload"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
