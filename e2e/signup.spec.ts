@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+import { deleteTestUser } from "./helpers/auth";
 
 const admin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,9 +38,9 @@ test.describe("/signup 닉네임 익명 가입", () => {
       expect(rows?.length).toBe(1);
       expect(rows![0].nickname).toBe(nickname);
 
-      // cleanup
+      // cleanup — public.users 자식 데이터까지 정리 (auth만 지우면 고아 누적)
       if (rows![0].id) {
-        await admin.auth.admin.deleteUser(rows![0].id).catch(() => {});
+        await deleteTestUser(rows![0].id);
       }
     } else {
       // anonymous sign-in이 꺼져 있으면 OAuth 폴백 배너가 보여야 함
