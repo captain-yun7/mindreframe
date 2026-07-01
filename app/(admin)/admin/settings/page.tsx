@@ -104,9 +104,9 @@ export default async function AdminSettingsPage() {
         title="사이트 설정"
         desc={
           <>
-            푸터·약관·방침에 표시되는 값. 변경 시 사용자 페이지에 즉시 반영됩니다.
-            본문(terms_html / privacy_html)은 HTML로 작성하며 {`{{service_name}}`},{" "}
-            {`{{company_name}}`}, {`{{contact_email}}`} placeholder를 사용할 수 있습니다.
+            서비스명·연락처·hero 문구 등 평문 값은 편집 시 사용자 페이지에 즉시 반영됩니다.
+            랜딩 메뉴/stats/CTA(JSON)와 약관·방침(HTML)은 실수로 페이지가 깨질 수 있어
+            🔒 읽기전용입니다(코드/배포로만 변경).
           </>
         }
       />

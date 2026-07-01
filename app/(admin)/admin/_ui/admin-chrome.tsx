@@ -19,7 +19,6 @@ import {
   Sparkles,
   Settings,
   ClipboardList,
-  Activity,
   ScrollText,
   Menu,
   LogOut,
@@ -62,7 +61,6 @@ const NAV: NavGroup[] = [
       { href: "/admin/notifications", label: "알림 이력", icon: Bell },
       { href: "/admin/notifications/messages", label: "알림 메시지", icon: MessageSquareText },
       { href: "/admin/surveys", label: "설문 응답", icon: ClipboardList },
-      { href: "/admin/ai-usage", label: "AI 사용량", icon: Activity },
     ],
   },
   {
