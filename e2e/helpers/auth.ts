@@ -41,7 +41,58 @@ export async function createTestUser(plan: "free" | "light" | "pro" | "premium" 
   return { id: data.user.id, email, password };
 }
 
+// public.users → auth.users FK cascade가 없고 자식 테이블 대부분 ON DELETE CASCADE가
+// 없어, auth만 지우면 public.users 행 + 자식 데이터가 고아로 남는다.
+// 자식 행 → 어드민 참조 NULL → 본체 → auth 순으로 직접 정리.
 export async function deleteTestUser(userId: string) {
+  // ① 코치챗 (sender 먼저 → 세션이 메시지 cascade)
+  await admin.from("coach_chat_messages").delete().eq("sender_id", userId);
+  await admin.from("coach_chat_sessions").delete().eq("user_id", userId);
+
+  // ② 채팅 분석 → 세션 (chat_messages·잔여 analyses cascade)
+  await admin.from("chat_analyses").delete().eq("user_id", userId);
+  await admin.from("chat_sessions").delete().eq("user_id", userId);
+
+  // ③ 결제/구독 (payments → subscriptions)
+  await admin.from("payments").update({ refunded_by: null }).eq("refunded_by", userId);
+  await admin.from("payments").delete().eq("user_id", userId);
+  await admin.from("subscriptions").delete().eq("user_id", userId);
+
+  // ④ 단순 user_id 자식 테이블
+  const userTables = [
+    "notification_logs",
+    "survey_responses",
+    "emotion_scores",
+    "routine_checks",
+    "thought_records",
+    "gratitude_entries",
+    "study_progress",
+    "exercise_logs",
+    "meditation_logs",
+    "user_badges",
+    "ai_usage",
+    "exercise_state",
+    "coupon_redemptions",
+  ];
+  for (const table of userTables) {
+    await admin.from(table).delete().eq("user_id", userId);
+  }
+
+  // ⑤ 어드민 테스트에서 수정한 콘텐츠 참조는 보존 위해 NULL 처리
+  await admin.from("study_articles").update({ updated_by: null }).eq("updated_by", userId);
+  await admin.from("notification_videos").update({ updated_by: null }).eq("updated_by", userId);
+  await admin.from("notification_messages").update({ updated_by: null }).eq("updated_by", userId);
+  await admin.from("site_settings").update({ updated_by: null }).eq("updated_by", userId);
+  await admin.from("meditations").update({ updated_by: null }).eq("updated_by", userId);
+  await admin.from("plans").update({ updated_by: null }).eq("updated_by", userId);
+  await admin.from("coupons").update({ issued_by: null }).eq("issued_by", userId);
+
+  // ⑥ 감사 로그 (admin_user_id NOT NULL → 행 삭제)
+  await admin.from("admin_audit_logs").delete().eq("admin_user_id", userId);
+  await admin.from("admin_audit_logs").delete().eq("target_user_id", userId);
+
+  // ⑦ 본체
+  await admin.from("users").delete().eq("id", userId);
   await admin.auth.admin.deleteUser(userId).catch(() => {});
 }
 
