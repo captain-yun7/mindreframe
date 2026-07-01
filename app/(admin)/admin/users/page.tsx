@@ -15,6 +15,7 @@ import { StatusBadge } from "../_ui/status-badge";
 import { planLabel, roleLabel, PLAN_TONE } from "../_ui/lib/labels";
 import { fmtDate, fmtPhone } from "../_ui/lib/fmt";
 import { UsersExportButton } from "./users-export-button";
+import { UserRowActions } from "./user-row-actions";
 
 const PAGE_SIZE = 50;
 
@@ -198,6 +199,14 @@ export default async function AdminUsersPage({
       header: "알림",
       align: "center",
       cell: (u) => <span className="text-xs">{u.notifications_started_at ? "✅" : "-"}</span>,
+    },
+    {
+      key: "actions",
+      header: "관리",
+      align: "right",
+      cell: (u) => (
+        <UserRowActions userId={u.id} nickname={u.nickname} role={u.role} />
+      ),
     },
   ];
 
