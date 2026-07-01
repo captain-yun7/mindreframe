@@ -399,3 +399,104 @@ export async function adminDeleteUser(userId: string): Promise<
   revalidatePath(`/admin/users/${userId}`);
   return { ok: true };
 }
+
+/**
+ * 하드 삭제 — public.users 행 + 자식 데이터까지 영구 제거 (되돌리기 불가).
+ * 가데이터/테스트 유저 청소용. 자식 FK 대부분 ON DELETE CASCADE가 없어
+ * 자식 행 → 어드민 참조 NULL → 본체 → auth 순으로 직접 삭제.
+ * (scripts/cleanup-e2e-users.sql 과 동일한 순서·정책)
+ */
+export async function adminHardDeleteUser(userId: string): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+
+  if (userId === guard.userId) {
+    return { ok: false, error: "본인 계정은 삭제할 수 없어요" };
+  }
+
+  const { data: target, error: targetErr } = await supabaseAdmin
+    .from("users")
+    .select("id, role, email, nickname")
+    .eq("id", userId)
+    .single();
+  if (targetErr || !target) {
+    return { ok: false, error: "사용자를 찾을 수 없어요" };
+  }
+  if (target.role === "admin") {
+    return {
+      ok: false,
+      error: "관리자 계정은 직접 삭제할 수 없어요. 권한을 user로 강등한 뒤 삭제하세요",
+    };
+  }
+
+  // 감사 로그 먼저 기록 (target_user_id는 곧 삭제되므로 null + payload에 id 보존)
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "user.hard_delete",
+    targetUserId: null,
+    payload: { id: userId, email: target.email, nickname: target.nickname },
+  });
+
+  // ① 코치챗 (sender 먼저 → 세션이 메시지 cascade)
+  await supabaseAdmin.from("coach_chat_messages").delete().eq("sender_id", userId);
+  await supabaseAdmin.from("coach_chat_sessions").delete().eq("user_id", userId);
+
+  // ② 채팅 분석 → 세션 (chat_messages·잔여 analyses cascade)
+  await supabaseAdmin.from("chat_analyses").delete().eq("user_id", userId);
+  await supabaseAdmin.from("chat_sessions").delete().eq("user_id", userId);
+
+  // ③ 결제/구독 (payments → subscriptions). 타 유저 결제의 refunded_by=대상 은 NULL 처리.
+  await supabaseAdmin.from("payments").update({ refunded_by: null }).eq("refunded_by", userId);
+  await supabaseAdmin.from("payments").delete().eq("user_id", userId);
+  await supabaseAdmin.from("subscriptions").delete().eq("user_id", userId);
+
+  // ④ 단순 user_id 자식 테이블
+  const userTables = [
+    "notification_logs",
+    "survey_responses",
+    "emotion_scores",
+    "routine_checks",
+    "thought_records",
+    "gratitude_entries",
+    "study_progress",
+    "exercise_logs",
+    "meditation_logs",
+    "user_badges",
+    "ai_usage",
+    "exercise_state",
+    "coupon_redemptions",
+  ];
+  for (const table of userTables) {
+    await supabaseAdmin.from(table).delete().eq("user_id", userId);
+  }
+
+  // ⑤ 어드민 작성 참조는 콘텐츠 보존 위해 NULL 처리
+  await supabaseAdmin.from("study_articles").update({ updated_by: null }).eq("updated_by", userId);
+  await supabaseAdmin.from("notification_videos").update({ updated_by: null }).eq("updated_by", userId);
+  await supabaseAdmin.from("notification_messages").update({ updated_by: null }).eq("updated_by", userId);
+  await supabaseAdmin.from("site_settings").update({ updated_by: null }).eq("updated_by", userId);
+  await supabaseAdmin.from("meditations").update({ updated_by: null }).eq("updated_by", userId);
+  await supabaseAdmin.from("plans").update({ updated_by: null }).eq("updated_by", userId);
+  await supabaseAdmin.from("coupons").update({ issued_by: null }).eq("issued_by", userId);
+
+  // ⑥ 감사 로그: 이 유저가 관련된 과거 행 삭제 (admin_user_id NOT NULL → 행 삭제).
+  //    방금 기록한 hard_delete 로그는 target_user_id=null 이라 영향 없음.
+  await supabaseAdmin.from("admin_audit_logs").delete().eq("admin_user_id", userId);
+  await supabaseAdmin.from("admin_audit_logs").delete().eq("target_user_id", userId);
+
+  // ⑦ 본체
+  const { error: delErr } = await supabaseAdmin.from("users").delete().eq("id", userId);
+  if (delErr) {
+    return { ok: false, error: `삭제 실패: ${delErr.message}` };
+  }
+  const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
+  if (authErr) {
+    console.error("[adminHardDeleteUser] auth delete failed:", authErr);
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
+  return { ok: true };
+}
