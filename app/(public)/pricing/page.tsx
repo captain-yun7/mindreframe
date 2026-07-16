@@ -4,6 +4,7 @@ import { computeRecommendedPlan, normalizePlan, type Plan } from "@/lib/auth/pla
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
 import { CouponRedeemForm } from "./coupon-redeem-form";
+import { PaymentNoticePopup } from "./payment-notice-popup";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
@@ -179,6 +180,7 @@ export default async function PricingPage({
 
   return (
     <PageFade className="min-h-screen bg-gs-navy-50/40">
+      <PaymentNoticePopup />
       <div className="max-w-[960px] mx-auto px-5 pt-12 md:pt-16 pb-20">
         {/* 상단 */}
         <FadeIn>
