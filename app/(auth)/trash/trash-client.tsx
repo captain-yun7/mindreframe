@@ -216,7 +216,9 @@ export function TrashClient({
               )}
 
               <p className="mt-3 text-xs text-gs-muted text-center">
-                저장된 기록은 나의성장방에서 날짜별로 다시 볼 수 있어요.
+                저장된 기록은 나의 성장방에서 날짜별로 다시 볼 수 있어요.
+                <br />
+                생각쓰레기통은 실수할 수 있어요. 1:1 훈련 코치에게 문의주세요.
               </p>
             </div>
           </div>
