@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/supabase-server";
 import { createOrder } from "@/lib/actions/payments";
 import { getPlanSpec } from "@/lib/payments/plans";
 import { CheckoutWidget } from "./checkout-widget";
+import { getSiteSettings } from "@/lib/site-settings";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 
@@ -36,6 +37,9 @@ export default async function CheckoutPage({
       </div>
     );
   }
+
+  const settings = await getSiteSettings();
+  const contactEmail = settings.contact_email || "";
 
   const order = await createOrder(spec.slug);
   if (!order.ok) {
@@ -74,6 +78,21 @@ export default async function CheckoutPage({
         </FadeIn>
 
         <FadeIn>
+          <div
+            role="alert"
+            className="mb-6 px-4 py-3 rounded-toss-button bg-gs-warning-bg border border-gs-warning-border text-gs-warning text-sm text-center leading-[1.6]"
+          >
+            현재 결제가 원활하지 않습니다.
+            <br />
+            결제를 원하시는 분께서는 문자 주세요.
+            <br />
+            <a href="sms:010-5941-1357" className="font-bold underline">
+              010-5941-1357
+            </a>
+          </div>
+        </FadeIn>
+
+        <FadeIn>
           <div className="bg-white rounded-toss-card p-6 shadow-toss-card">
             <CheckoutWidget
               clientKey={clientKey}
@@ -87,7 +106,15 @@ export default async function CheckoutPage({
         </FadeIn>
 
         <p className="mt-6 text-center text-xs text-gs-muted-light leading-[1.6]">
-          7일 내 콘텐츠 미사용 시 전액 환불, 사용 후엔 일할 계산됩니다.
+          결제 후 7일 이내, 콘텐츠 미사용 상태일 경우 환불 불가합니다.
+          <br />
+          결제 관련 문의가 있으시면 언제든 연락주세요
+          <br />
+          {contactEmail ? (
+            <a href={`mailto:${contactEmail}`} className="text-gs-navy-bright font-bold hover:underline">
+              {contactEmail}
+            </a>
+          ) : null}
           <br />
           <Link href="/pricing" className="text-gs-navy-bright font-bold hover:underline">
             플랜 다시 선택하기
