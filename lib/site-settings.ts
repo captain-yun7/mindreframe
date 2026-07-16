@@ -38,7 +38,7 @@ export const FALLBACK_TERMS_HTML = `
 <h2 class="text-lg font-black mt-8 mb-2">제7조 (유료서비스 및 환불)</h2>
 <ul class="list-disc pl-6">
   <li>유료서비스의 요금·결제방법·이용기간은 결제 화면에서 안내합니다.</li>
-  <li>결제 후 7일 이내, 콘텐츠 미사용 상태일 경우 전액 환불 가능합니다.</li>
+  <li>결제 후 7일 이내, 콘텐츠 미사용 상태일 경우 환불 불가합니다.</li>
   <li>구독형 상품의 경우 다음 결제일 전까지 해지 시 이후 결제가 청구되지 않습니다.</li>
 </ul>
 
