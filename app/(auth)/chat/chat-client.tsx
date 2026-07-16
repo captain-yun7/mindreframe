@@ -333,6 +333,12 @@ export function ChatClient({ heroSubtitle, popup }: ChatClientProps) {
 
               {/* F219 — 카드 선택 UI 제거. 분석 직후 첫 번째 왜곡으로 자동 진행. */}
               {/* K5·F191 — "이 대화 정리하고 저장" 버튼 제거 (감정점수(후) 응답 후 자동 finalize) */}
+
+              <p className="mt-3 text-xs text-gs-muted text-center">
+                저장된 기록은 나의 성장방에서 날짜별로 다시 볼 수 있어요.
+                <br />
+                가짜생각 분석기는 실수할 수 있어요. 1:1 훈련 코치에게 문의주세요.
+              </p>
             </Card>
           </div>
         </FadeIn>
