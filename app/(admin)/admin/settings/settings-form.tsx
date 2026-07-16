@@ -97,9 +97,9 @@ export function SettingsForm({ rows: initial }: { rows: Row[] }) {
     <div className="space-y-4 mt-6">
       {rows.map((row) => {
         const isLong = LONG_VALUE_KEYS.has(row.key);
-        // JSON·HTML 값은 라이브 편집 위험(문법 깨지면 페이지 손상) → 읽기전용 잠금.
-        // 코드/배포로만 변경. 안전한 평문(서비스명·연락처·hero 문구)만 편집 가능.
-        const isLocked = JSON_KEYS.has(row.key) || HTML_KEYS.has(row.key);
+        // JSON 값은 라이브 편집 위험(문법 깨지면 페이지 손상) → 읽기전용 잠금.
+        // 약관·방침(HTML)은 운영자가 직접 수정해야 해서 편집 허용 (미리보기로 확인 가능).
+        const isLocked = JSON_KEYS.has(row.key);
         const isReadonly = READONLY_KEYS.has(row.key) || isLocked;
         const showPreview = preview.has(row.key);
         const isDirty = dirty.has(row.key);
