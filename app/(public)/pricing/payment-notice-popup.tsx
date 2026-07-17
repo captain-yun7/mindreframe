@@ -78,7 +78,7 @@ export function PaymentNoticePopup() {
                 결제를 원하시는 분께서는 문자 주세요.
                 <br />
                 <span className="mt-2 inline-block text-lg font-extrabold text-gs-text-strong">
-                  010-5941-1357
+                  010-8199-3403
                 </span>
               </div>
 
@@ -88,7 +88,7 @@ export function PaymentNoticePopup() {
                   size="xl"
                   fullWidth
                   onClick={() => {
-                    window.location.href = "sms:010-5941-1357";
+                    window.location.href = "sms:010-8199-3403";
                   }}
                 >
                   문자 보내기

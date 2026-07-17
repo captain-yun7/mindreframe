@@ -86,8 +86,8 @@ export default async function CheckoutPage({
             <br />
             결제를 원하시는 분께서는 문자 주세요.
             <br />
-            <a href="sms:010-5941-1357" className="font-bold underline">
-              010-5941-1357
+            <a href="sms:010-8199-3403" className="font-bold underline">
+              010-8199-3403
             </a>
           </div>
         </FadeIn>
