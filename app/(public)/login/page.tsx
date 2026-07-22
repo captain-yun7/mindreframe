@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { SocialLoginButtons } from "./social-login-buttons";
+import { EmailLoginForm } from "./email-login-form";
 import { getCurrentUser } from "@/lib/supabase-server";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -15,10 +16,10 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string }>;
 }) {
+  const params = await searchParams;
   // 이미 로그인된 사용자는 next 또는 /dashboard로 즉시 redirect
   const user = await getCurrentUser();
   if (user) {
-    const params = await searchParams;
     redirect(params.next ?? "/dashboard");
   }
   return (
@@ -47,6 +48,7 @@ export default async function LoginPage({
 
             <div className="flex flex-col items-center gap-3">
               <SocialLoginButtons />
+              <EmailLoginForm next={params.next} />
             </div>
           </div>
         </FadeIn>
