@@ -26,6 +26,10 @@ export async function SiteFooter() {
   const companyName = settings.company_name || "";
   const contactEmail = settings.contact_email || "";
   const address = settings.footer_address?.trim();
+  // PG 심사 요건 — 사업자등록증 정보와 일치해야 함
+  const businessOwner = settings.business_owner?.trim();
+  const businessRegNo = settings.business_reg_no?.trim();
+  const businessPhone = settings.business_phone?.trim();
 
   return (
     <footer className="bg-gs-navy text-white/70 text-[13px] mt-auto">
@@ -41,12 +45,29 @@ export async function SiteFooter() {
             </p>
             {companyName ? (
               <p className="mt-4 text-[12px] text-white/50">
-                {companyName}
+                상호: {companyName}
+                {businessOwner ? ` · 대표자: ${businessOwner}` : ""}
+              </p>
+            ) : null}
+            {businessRegNo ? (
+              <p className="mt-1 text-[12px] text-white/50">
+                사업자등록번호: {businessRegNo}
               </p>
             ) : null}
             {address ? (
               <p className="mt-1 text-[12px] text-white/50 leading-relaxed">
-                {address}
+                사업장 주소: {address}
+              </p>
+            ) : null}
+            {businessPhone ? (
+              <p className="mt-1 text-[12px] text-white/50">
+                전화번호:{" "}
+                <a
+                  href={`tel:${businessPhone.replace(/[^0-9+]/g, "")}`}
+                  className="hover:text-white/80 transition-colors"
+                >
+                  {businessPhone}
+                </a>
               </p>
             ) : null}
             {contactEmail ? (

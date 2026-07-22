@@ -45,7 +45,7 @@ const JSON_KEYS = new Set([
   "popup_exercise_step4_praise",
 ]);
 const HTML_KEYS = new Set(["terms_html", "privacy_html"]);
-const READONLY_KEYS = new Set(["footer_address"]);
+const READONLY_KEYS = new Set<string>([]);
 
 export function SettingsForm({ rows: initial }: { rows: Row[] }) {
   const [rows, setRows] = useState<Row[]>(initial);

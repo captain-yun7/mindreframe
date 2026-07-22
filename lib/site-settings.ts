@@ -192,6 +192,10 @@ const FALLBACK_SETTINGS: Record<string, string> = {
   contact_email: "support@mindreframe.net",
   effective_date: "2026-05-01",
   footer_address: "",
+  // PG 심사 요건 — 푸터 사업자 정보 (사업자등록증과 일치해야 함, 어드민에서 입력)
+  business_owner: "",
+  business_reg_no: "",
+  business_phone: "",
   terms_html: FALLBACK_TERMS_HTML,
   privacy_html: FALLBACK_PRIVACY_HTML,
 

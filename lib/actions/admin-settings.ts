@@ -25,8 +25,8 @@ async function ensureAdmin(): Promise<
   return { ok: true, userId: user.id };
 }
 
-// Sprint C에서 편집 차단되는 키 (회사 주소 등 사용자 결정 대기)
-const READONLY_KEYS = new Set<string>(["footer_address"]);
+// 편집 차단 키 — PG 심사 요건으로 footer_address 잠금 해제 (사업자 정보 입력 필요)
+const READONLY_KEYS = new Set<string>([]);
 const VALID_KEY_RE = /^[a-z_][a-z0-9_]*$/;
 
 // H3: JSON으로 저장돼야 하는 키 (서버에서 한번 더 검증)
