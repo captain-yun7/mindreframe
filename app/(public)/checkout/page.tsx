@@ -78,21 +78,6 @@ export default async function CheckoutPage({
         </FadeIn>
 
         <FadeIn>
-          <div
-            role="alert"
-            className="mb-6 px-4 py-3 rounded-toss-button bg-gs-warning-bg border border-gs-warning-border text-gs-warning text-sm text-center leading-[1.6]"
-          >
-            현재 결제가 원활하지 않습니다.
-            <br />
-            결제를 원하시는 분께서는 문자 주세요.
-            <br />
-            <a href="sms:010-8199-3403" className="font-bold underline">
-              010-8199-3403
-            </a>
-          </div>
-        </FadeIn>
-
-        <FadeIn>
           <div className="bg-white rounded-toss-card p-6 shadow-toss-card">
             <CheckoutWidget
               clientKey={clientKey}
@@ -106,7 +91,7 @@ export default async function CheckoutPage({
         </FadeIn>
 
         <p className="mt-6 text-center text-xs text-gs-muted-light leading-[1.6]">
-          결제 후 7일 이내, 콘텐츠 미사용 상태일 경우 환불 불가합니다.
+          결제 후 7일 이내, 콘텐츠 미사용(이용 개시 전) 상태일 경우 전액 환불 가능합니다.
           <br />
           결제 관련 문의가 있으시면 언제든 연락주세요
           <br />
