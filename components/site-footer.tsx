@@ -123,7 +123,7 @@ export async function SiteFooter() {
 
         <div className="mt-10 md:mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs text-white/40">
           <span>&copy; 2026 {serviceName}. All rights reserved.</span>
-          <span>이미지: Storyset</span>
+          {/* 정식 Storyset 일러스트 교체 시 "이미지: Storyset" 크레딧 복원 (public/illustrations/LICENSE.md) */}
         </div>
       </div>
     </footer>
