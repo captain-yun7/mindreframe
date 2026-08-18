@@ -172,7 +172,7 @@ export async function sendCoachMessage(sessionId: string, content: string) {
 /**
  * 사용자 발화 시 매칭된 코치(혹은 단일 운영자)에게 텔레그램 알림 발송.
  *
- * - 이미 코치 응답이 있었던 세션이면 알림 skip (스팸 방지: first_coach_reply_at)
+ * - 코치 응답 전이면 "새 문의", 응답 후 추가 메시지면 "새 메시지"로 발송
  * - 코치 telegram_chat_id 부재 시 TELEGRAM_DEFAULT_CHAT_ID로 fallback
  * - TELEGRAM_BOT_TOKEN 부재 시 wrapper가 즉시 skip
  * - 컬럼(coach_id / first_coach_reply_at) 부재 시 단일 운영자 fallback으로 동작
@@ -211,7 +211,7 @@ async function notifyCoachOfUserMessage(
     }
   }
   if (!session) return;
-  if (session.first_coach_reply_at) return; // 스팸 방지
+  const isFollowUp = !!session.first_coach_reply_at;
 
   // 사용자 닉네임 + 코치 chat_id 조회
   const userPromise = supabaseAdmin
@@ -240,8 +240,10 @@ async function notifyCoachOfUserMessage(
   const safePreview =
     preview.length > 80 ? preview.slice(0, 80) + "…" : preview;
   const text = [
-    `*새 문의 도착*`,
-    `${nickname}님이 코치 채팅을 시작했어요.`,
+    isFollowUp ? `*새 메시지 도착*` : `*새 문의 도착*`,
+    isFollowUp
+      ? `${nickname}님이 메시지를 보냈어요.`
+      : `${nickname}님이 코치 채팅을 시작했어요.`,
     ``,
     safePreview,
     ``,
