@@ -39,6 +39,15 @@ export async function startNotifications(userId: string, phoneNumber: string) {
     })
     .eq("id", userId);
   if (error) return { ok: false as const, error: "휴대폰 번호 등록 실패" };
+
+  // 1일차 알림 즉시 발송 (best-effort)
+  {
+    const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
+    sendDayOneNotificationNow(userId).catch((e) => {
+      console.error("[startNotifications] day-1 notification failed:", e);
+    });
+  }
+
   // F70 일관성 — 결제 후 /mypage 진입 시 알림 상태 즉시 반영
   revalidatePath("/mypage");
   return { ok: true as const };
@@ -77,6 +86,14 @@ export async function updatePhoneNumber(phoneNumber: string) {
     .update(update)
     .eq("id", user.id);
   if (error) return { ok: false as const, error: "휴대폰 번호 저장 실패" };
+
+  // 최초 등록(오늘이 1일차)이면 1일차 알림 즉시 발송 (best-effort)
+  if (!startedAt) {
+    const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
+    sendDayOneNotificationNow(user.id).catch((e) => {
+      console.error("[updatePhoneNumber] day-1 notification failed:", e);
+    });
+  }
 
   revalidatePath("/mypage");
   revalidatePath("/dashboard");
