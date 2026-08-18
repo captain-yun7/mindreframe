@@ -295,8 +295,10 @@ export type CoachActiveSession = {
   coach_warning: "red" | null;
 };
 
-/** 상담사·관리자 어드민 대시보드용 — 활성 세션 목록 + 최근 메시지 미리보기 + 회원 플랜 + F87 빨간 경고. */
-export async function listActiveSessionsForCoach() {
+/** 상담사·관리자 어드민 대시보드용 — 세션 목록(기본 활성, ended 지정 시 종료 대화 기록) + 최근 메시지 미리보기 + 회원 플랜 + F87 빨간 경고. */
+export async function listActiveSessionsForCoach(
+  status: "active" | "ended" = "active",
+) {
   const c = await requireCoachOrAdmin();
   if (!c.ok) return { ok: false as const, error: c.error };
 
@@ -316,8 +318,9 @@ export async function listActiveSessionsForCoach() {
       .select(
         "id, user_id, started_at, users:user_id (nickname, plan, deleted_at)",
       )
-      .eq("status", "active")
-      .order("started_at", { ascending: false });
+      .eq("status", status)
+      .order("started_at", { ascending: false })
+      .limit(100);
     if (
       res.error &&
       (res.error.code === "42703" || /deleted_at/.test(res.error.message))
@@ -325,8 +328,9 @@ export async function listActiveSessionsForCoach() {
       const r2 = await supabaseAdmin
         .from("coach_chat_sessions")
         .select("id, user_id, started_at, users:user_id (nickname, plan)")
-        .eq("status", "active")
-        .order("started_at", { ascending: false });
+        .eq("status", status)
+        .order("started_at", { ascending: false })
+        .limit(100);
       sessionsRaw =
         (r2.data as Array<{
           id: string;

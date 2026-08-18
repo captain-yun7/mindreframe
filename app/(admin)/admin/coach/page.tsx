@@ -5,7 +5,13 @@ import { Card } from "@/components/card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { listActiveSessionsForCoach } from "@/lib/actions/coach-chat";
 
-export default async function CoachAdminPage() {
+export default async function CoachAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  const status = tab === "ended" ? ("ended" as const) : ("active" as const);
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -25,16 +31,32 @@ export default async function CoachAdminPage() {
     );
   }
 
-  const r = await listActiveSessionsForCoach();
+  const r = await listActiveSessionsForCoach(status);
   const sessions = r.ok ? r.sessions : [];
 
   return (
     <>
-      <PageHeader title="코치 어드민" desc={`활성 대화 ${sessions.length}건`} />
+      <PageHeader
+        title="코치 어드민"
+        desc={
+          status === "ended"
+            ? `종료된 대화 ${sessions.length}건 (최근 100건)`
+            : `활성 대화 ${sessions.length}건`
+        }
+      />
+
+      <div className="mt-4 flex gap-2">
+        <TabLink href="/admin/coach" active={status === "active"}>
+          진행 중
+        </TabLink>
+        <TabLink href="/admin/coach?tab=ended" active={status === "ended"}>
+          종료된 대화
+        </TabLink>
+      </div>
 
       {sessions.length === 0 ? (
         <Card className="mt-4 p-6 text-center text-gs-muted text-sm">
-          현재 활성 대화가 없어요.
+          {status === "ended" ? "종료된 대화가 없어요." : "현재 활성 대화가 없어요."}
         </Card>
       ) : (
         <ul className="mt-4 space-y-2">
@@ -93,5 +115,28 @@ export default async function CoachAdminPage() {
         </ul>
       )}
     </>
+  );
+}
+
+function TabLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`px-3 py-1.5 rounded-full text-[13px] font-bold transition-colors ${
+        active
+          ? "bg-gs-navy-900 text-white"
+          : "bg-white border border-gs-line-soft text-gs-muted hover:text-gs-navy-900"
+      }`}
+    >
+      {children}
+    </Link>
   );
 }
