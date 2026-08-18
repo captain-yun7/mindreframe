@@ -402,6 +402,13 @@ export async function listActiveSessionsForCoach() {
     }),
   );
 
+  // 최근 메시지가 있는 대화가 위로 오도록 정렬 (메시지 없으면 세션 시작 시각 기준)
+  results.sort((a, b) => {
+    const ta = a.last_message_at ?? a.started_at;
+    const tb = b.last_message_at ?? b.started_at;
+    return tb.localeCompare(ta);
+  });
+
   return { ok: true as const, sessions: results };
 }
 
