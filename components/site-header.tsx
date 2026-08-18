@@ -25,6 +25,7 @@ export function SiteHeader() {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [dbNickname, setDbNickname] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
@@ -38,18 +39,18 @@ export function SiteHeader() {
         const ADMIN_EMAILS = [
           "mindtheater00@gmail.com",
         ];
-        if (data.user.email && ADMIN_EMAILS.includes(data.user.email)) {
-          setIsAdmin(true);
-          return;
-        }
+        const whitelisted =
+          !!data.user.email && ADMIN_EMAILS.includes(data.user.email);
         const { data: profile } = await supabase
           .from("users")
-          .select("role")
+          .select("role, nickname")
           .eq("id", data.user.id)
           .single();
-        setIsAdmin(profile?.role === "admin");
+        setDbNickname(profile?.nickname || null);
+        setIsAdmin(whitelisted || profile?.role === "admin");
       } else {
         setIsAdmin(false);
+        setDbNickname(null);
       }
     }
     load();
@@ -91,10 +92,12 @@ export function SiteHeader() {
   };
 
   const isLoggedIn = !!user;
+  // 사용자가 정한 별명(users.nickname) 우선 — 카카오 실명(full_name) 노출 방지
   const userName =
+    dbNickname ||
+    user?.user_metadata?.nickname ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
-    user?.user_metadata?.nickname ||
     user?.email?.split("@")[0] ||
     "";
 
