@@ -31,12 +31,13 @@ export default async function AdminUserDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, user: adminUser } = await requireAdmin();
+  const { user: adminUser } = await requireAdmin();
 
+  // users 등 타 사용자 데이터는 self-select RLS에 막히므로 전부 서비스롤로 조회
   // deleted_at / telegram_chat_id / allow_coach_view_exercise 컬럼 미적용 환경 fallback
   const baseCols =
     "id, email, nickname, plan, plan_expires_at, role, phone_number, notification_hour, notifications_started_at, onboarding_completed, provider, created_at";
-  let userRes = await supabase
+  let userRes = await supabaseAdmin
     .from("users")
     .select(
       `${baseCols}, deleted_at, telegram_chat_id, allow_coach_view_exercise`,
@@ -48,7 +49,7 @@ export default async function AdminUserDetailPage({
     (userRes.error.code === "42703" ||
       /allow_coach_view_exercise/.test(userRes.error.message))
   ) {
-    userRes = await supabase
+    userRes = await supabaseAdmin
       .from("users")
       .select(`${baseCols}, deleted_at, telegram_chat_id`)
       .eq("id", id)
@@ -59,7 +60,7 @@ export default async function AdminUserDetailPage({
     (userRes.error.code === "42703" ||
       /telegram_chat_id/.test(userRes.error.message))
   ) {
-    userRes = await supabase
+    userRes = await supabaseAdmin
       .from("users")
       .select(`${baseCols}, deleted_at`)
       .eq("id", id)
@@ -69,7 +70,7 @@ export default async function AdminUserDetailPage({
     userRes.error &&
     (userRes.error.code === "42703" || /deleted_at/.test(userRes.error.message))
   ) {
-    userRes = await supabase.from("users").select(baseCols).eq("id", id).maybeSingle();
+    userRes = await supabaseAdmin.from("users").select(baseCols).eq("id", id).maybeSingle();
   }
   const user = userRes.data as UserDetail | null;
   if (!user) notFound();
@@ -81,19 +82,16 @@ export default async function AdminUserDetailPage({
     recentNotificationsRes,
     paymentsRes,
   ] = await Promise.all([
-    supabase
-      .from("survey_responses")
+    supabaseAdmin.from("survey_responses")
       .select("depression_score, depression_severity, anxiety_score, anxiety_severity, recommended_track, completed_at")
       .eq("user_id", id)
       .order("completed_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
-      .from("chat_analyses")
+    supabaseAdmin.from("chat_analyses")
       .select("id", { count: "exact", head: true })
       .eq("user_id", id),
-    supabase
-      .from("coach_chat_sessions")
+    supabaseAdmin.from("coach_chat_sessions")
       .select("id, status, started_at, ended_at")
       .eq("user_id", id)
       .order("started_at", { ascending: false })
@@ -105,8 +103,7 @@ export default async function AdminUserDetailPage({
       .eq("user_id", id)
       .order("created_at", { ascending: false })
       .limit(10),
-    supabase
-      .from("payments")
+    supabaseAdmin.from("payments")
       .select("amount, plan, status, created_at")
       .eq("user_id", id)
       .order("created_at", { ascending: false })

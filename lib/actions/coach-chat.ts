@@ -298,6 +298,9 @@ export async function listActiveSessionsForCoach() {
   const c = await requireCoachOrAdmin();
   if (!c.ok) return { ok: false as const, error: c.error };
 
+  // users 테이블은 self-select RLS뿐이라 타 사용자 조인은 서비스롤로 조회
+  const { supabaseAdmin } = await import("@/lib/supabase-admin");
+
   // 삭제된 사용자의 세션은 제외 (best-effort — deleted_at 컬럼 미적용 환경 fallback)
   let sessionsRaw: Array<{
     id: string;
@@ -306,7 +309,7 @@ export async function listActiveSessionsForCoach() {
     users: { nickname?: string; plan?: string; deleted_at?: string | null } | null;
   }> | null = null;
   {
-    const res = await c.supabase
+    const res = await supabaseAdmin
       .from("coach_chat_sessions")
       .select(
         "id, user_id, started_at, users:user_id (nickname, plan, deleted_at)",
@@ -317,7 +320,7 @@ export async function listActiveSessionsForCoach() {
       res.error &&
       (res.error.code === "42703" || /deleted_at/.test(res.error.message))
     ) {
-      const r2 = await c.supabase
+      const r2 = await supabaseAdmin
         .from("coach_chat_sessions")
         .select("id, user_id, started_at, users:user_id (nickname, plan)")
         .eq("status", "active")
@@ -364,7 +367,7 @@ export async function listActiveSessionsForCoach() {
   const userIds = Array.from(new Set(sessions.map((s) => s.user_id)));
   const weeklyMap = new Map<string, number>();
   if (userIds.length > 0) {
-    const { data: weekly } = await c.supabase
+    const { data: weekly } = await supabaseAdmin
       .from("coach_chat_sessions")
       .select("user_id")
       .in("user_id", userIds)
@@ -376,7 +379,7 @@ export async function listActiveSessionsForCoach() {
 
   const results: CoachActiveSession[] = await Promise.all(
     sessions.map(async (s) => {
-      const { data: last } = await c.supabase
+      const { data: last } = await supabaseAdmin
         .from("coach_chat_messages")
         .select("content, created_at")
         .eq("session_id", s.id)
