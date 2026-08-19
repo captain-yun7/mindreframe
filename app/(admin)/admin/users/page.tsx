@@ -193,7 +193,19 @@ export default async function AdminUsersPage({
       },
     },
     { key: "role", header: "권한", hideOnMobile: true, cell: (u) => <span className="text-xs">{roleLabel(u.role)}</span> },
-    { key: "phone", header: "휴대폰", hideOnMobile: true, cell: (u) => <span className="text-xs">{fmtPhone(u.phone_number)}</span> },
+    {
+      key: "phone",
+      header: "휴대폰",
+      hideOnMobile: true,
+      cell: (u) =>
+        !u.phone_number && u.plan && u.plan !== "free" ? (
+          <span className="text-xs text-gs-warn font-bold" title="유료 플랜인데 휴대폰 미등록 — 알림톡 발송 불가">
+            ⚠️ 미등록
+          </span>
+        ) : (
+          <span className="text-xs">{fmtPhone(u.phone_number)}</span>
+        ),
+    },
     {
       key: "notify",
       header: "알림",
