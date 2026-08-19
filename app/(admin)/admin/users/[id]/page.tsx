@@ -186,6 +186,7 @@ export default async function AdminUserDetailPage({
             notificationsActive={!!user.notifications_started_at}
             isDeleted={!!user.deleted_at}
             currentTelegramChatId={user.telegram_chat_id ?? null}
+            currentPhoneNumber={user.phone_number ?? null}
           />
         </div>
       </Card>

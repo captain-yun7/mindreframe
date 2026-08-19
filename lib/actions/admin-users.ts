@@ -142,6 +142,55 @@ export async function adminUpdateUserNotification(
  *
  * chat_id 포맷: 양수(개인) 또는 음수(그룹). 가벼운 정규식 검증.
  */
+export async function adminUpdateUserPhone(userId: string, phoneNumber: string) {
+  const guard = await ensureAdmin();
+  if (!guard.ok) return guard;
+
+  const cleaned = phoneNumber.replace(/[^0-9]/g, "");
+  if (!/^01[0-9]{8,9}$/.test(cleaned)) {
+    return { ok: false as const, error: "휴대폰 번호 형식이 올바르지 않아요" };
+  }
+
+  const { data: cur } = await supabaseAdmin
+    .from("users")
+    .select("notifications_started_at")
+    .eq("id", userId)
+    .single();
+  const startedAt = (cur as { notifications_started_at?: string | null } | null)
+    ?.notifications_started_at;
+
+  const update: Record<string, unknown> = {
+    phone_number: cleaned,
+    updated_at: new Date().toISOString(),
+  };
+  // 최초 등록이면 결제/마이페이지 플로우와 동일하게 알림 시작일 세팅
+  if (!startedAt) {
+    update.notifications_started_at = todayKst();
+  }
+
+  const { error } = await supabaseAdmin.from("users").update(update).eq("id", userId);
+  if (error) return { ok: false as const, error: error.message };
+
+  // 알림 최초 시작 시 1일차 즉시 발송 (마이페이지 등록 경로와 동일, best-effort)
+  if (!startedAt) {
+    const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
+    sendDayOneNotificationNow(userId).catch((e) => {
+      console.error("[adminUpdateUserPhone] day-1 notification failed:", e);
+    });
+  }
+
+  await writeAudit({
+    adminUserId: guard.userId,
+    action: "user.update_phone",
+    targetUserId: userId,
+    payload: { phoneNumber: cleaned, notificationsStarted: !startedAt },
+  });
+
+  revalidatePath(`/admin/users/${userId}`);
+  revalidatePath("/admin/users");
+  return { ok: true as const };
+}
+
 export async function adminUpdateUserTelegramChatId(
   userId: string,
   chatId: string | null,

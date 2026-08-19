@@ -9,6 +9,7 @@ import {
   adminUpdateUserNotification,
   adminUpdateUserNickname,
   adminUpdateUserTelegramChatId,
+  adminUpdateUserPhone,
 } from "@/lib/actions/admin-users";
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
   notificationsActive: boolean;
   isDeleted?: boolean;
   currentTelegramChatId?: string | null;
+  currentPhoneNumber?: string | null;
 }
 
 const PLANS: Plan[] = ["free", "light", "pro", "premium"];
@@ -34,6 +36,7 @@ export function AdminUserActions({
   notificationsActive,
   isDeleted,
   currentTelegramChatId,
+  currentPhoneNumber,
 }: Props) {
   const [nickname, setNickname] = useState<string>(currentNickname);
   const [plan, setPlan] = useState<Plan>(currentPlan as Plan);
@@ -46,6 +49,8 @@ export function AdminUserActions({
   const [telegramChatId, setTelegramChatId] = useState<string>(
     currentTelegramChatId ?? "",
   );
+  const [phone, setPhone] = useState<string>(currentPhoneNumber ?? "");
+  const [phoneSaved, setPhoneSaved] = useState<boolean>(!!currentPhoneNumber);
   const [pending, startTransition] = useTransition();
   const toast = useToast();
 
@@ -78,6 +83,17 @@ export function AdminUserActions({
     });
   };
 
+  const handlePhone = () => {
+    startTransition(async () => {
+      const r = await adminUpdateUserPhone(userId, phone);
+      if (r.ok) setPhoneSaved(true);
+      toast.show(
+        r.ok ? "휴대폰 등록 완료 — 알림톡 발송이 시작돼요" : r.error,
+        r.ok ? "success" : "error",
+      );
+    });
+  };
+
   const handleTelegram = () => {
     startTransition(async () => {
       const r = await adminUpdateUserTelegramChatId(
@@ -94,8 +110,45 @@ export function AdminUserActions({
   const disabled = pending || !!isDeleted;
   const showTelegram = role === "coach" || role === "admin";
 
+  const missingPhoneWarning = plan !== "free" && !phoneSaved;
+
   return (
     <div className="space-y-3 text-sm">
+      {missingPhoneWarning && (
+        <div
+          role="alert"
+          className="px-3 py-2 rounded bg-gs-warn-bg border border-gs-warn-border text-gs-warn text-xs font-bold"
+        >
+          ⚠️ 유료 플랜인데 휴대폰 번호가 없어 알림톡이 발송되지 않아요. 아래에서
+          번호를 등록해주세요.
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="w-20 text-gs-muted">휴대폰</span>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          disabled={disabled}
+          placeholder="01012345678"
+          className={`px-2 py-1 rounded border w-48 ${
+            missingPhoneWarning ? "border-gs-warn" : "border-gs-line-soft"
+          }`}
+          aria-label="휴대폰 번호"
+        />
+        <button
+          onClick={handlePhone}
+          disabled={disabled || !phone.trim() || phone === (currentPhoneNumber ?? "")}
+          className="px-3 py-1 rounded bg-gs-blue text-white text-xs font-bold disabled:opacity-50"
+        >
+          번호 저장
+        </button>
+        <span className="text-[10px] text-gs-muted">
+          최초 등록 시 알림 시작일이 오늘로 세팅되고 1일차가 즉시 발송돼요
+        </span>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <span className="w-20 text-gs-muted">닉네임</span>
         <input
