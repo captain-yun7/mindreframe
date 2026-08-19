@@ -19,6 +19,7 @@ import {
 import type { TodayDailyVideo } from "@/lib/actions/daily-video";
 import { useToast } from "@/components/ui/toast";
 import { CelebrationModal } from "@/components/celebration-modal";
+import { GamePopup } from "@/components/game-popup";
 import { QuickNav } from "@/components/quick-nav";
 
 const checklistItems = [
@@ -179,6 +180,20 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
 
   return (
     <PageFade>
+      {/* 신규 가입 초반(3일차 이하)엔 "알고가기 먼저" 안내 팝업 */}
+      <GamePopup
+        storageKey="popup_dashboard_study_first_dismissed_at"
+        eligible={videoDay === null || videoDay <= 3}
+        emoji="📖"
+        title="처음 오셨다면, '알고가기'부터!"
+        body="가짜생각 훈련의 기본 개념을 담은 '알고가기'를 먼저 마스터하면 앞으로 뭘 하면 될지 한눈에 보여요. 오늘은 알고가기부터 시작해보세요."
+        ctaLabel="알고가기 보러가기"
+        onCta={() => {
+          window.location.href = "/study";
+        }}
+        variant="gold-border"
+      />
+
       {/* F229 — 저장 완료 응원 모달만 (사전 안내 제거) */}
       <CelebrationModal
         open={gratitudePraiseOpen}

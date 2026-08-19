@@ -172,7 +172,7 @@ export async function sendCoachMessage(sessionId: string, content: string) {
 /**
  * 사용자 발화 시 매칭된 코치(혹은 단일 운영자)에게 텔레그램 알림 발송.
  *
- * - 이미 코치 응답이 있었던 세션이면 알림 skip (스팸 방지: first_coach_reply_at)
+ * - 코치 응답 전이면 "새 문의", 응답 후 추가 메시지면 "새 메시지"로 발송
  * - 코치 telegram_chat_id 부재 시 TELEGRAM_DEFAULT_CHAT_ID로 fallback
  * - TELEGRAM_BOT_TOKEN 부재 시 wrapper가 즉시 skip
  * - 컬럼(coach_id / first_coach_reply_at) 부재 시 단일 운영자 fallback으로 동작
@@ -211,7 +211,7 @@ async function notifyCoachOfUserMessage(
     }
   }
   if (!session) return;
-  if (session.first_coach_reply_at) return; // 스팸 방지
+  const isFollowUp = !!session.first_coach_reply_at;
 
   // 사용자 닉네임 + 코치 chat_id 조회
   const userPromise = supabaseAdmin
@@ -240,8 +240,10 @@ async function notifyCoachOfUserMessage(
   const safePreview =
     preview.length > 80 ? preview.slice(0, 80) + "…" : preview;
   const text = [
-    `*새 문의 도착*`,
-    `${nickname}님이 코치 채팅을 시작했어요.`,
+    isFollowUp ? `*새 메시지 도착*` : `*새 문의 도착*`,
+    isFollowUp
+      ? `${nickname}님이 메시지를 보냈어요.`
+      : `${nickname}님이 코치 채팅을 시작했어요.`,
     ``,
     safePreview,
     ``,
@@ -293,10 +295,15 @@ export type CoachActiveSession = {
   coach_warning: "red" | null;
 };
 
-/** 상담사·관리자 어드민 대시보드용 — 활성 세션 목록 + 최근 메시지 미리보기 + 회원 플랜 + F87 빨간 경고. */
-export async function listActiveSessionsForCoach() {
+/** 상담사·관리자 어드민 대시보드용 — 세션 목록(기본 활성, ended 지정 시 종료 대화 기록) + 최근 메시지 미리보기 + 회원 플랜 + F87 빨간 경고. */
+export async function listActiveSessionsForCoach(
+  status: "active" | "ended" = "active",
+) {
   const c = await requireCoachOrAdmin();
   if (!c.ok) return { ok: false as const, error: c.error };
+
+  // users 테이블은 self-select RLS뿐이라 타 사용자 조인은 서비스롤로 조회
+  const { supabaseAdmin } = await import("@/lib/supabase-admin");
 
   // 삭제된 사용자의 세션은 제외 (best-effort — deleted_at 컬럼 미적용 환경 fallback)
   let sessionsRaw: Array<{
@@ -306,22 +313,24 @@ export async function listActiveSessionsForCoach() {
     users: { nickname?: string; plan?: string; deleted_at?: string | null } | null;
   }> | null = null;
   {
-    const res = await c.supabase
+    const res = await supabaseAdmin
       .from("coach_chat_sessions")
       .select(
         "id, user_id, started_at, users:user_id (nickname, plan, deleted_at)",
       )
-      .eq("status", "active")
-      .order("started_at", { ascending: false });
+      .eq("status", status)
+      .order("started_at", { ascending: false })
+      .limit(100);
     if (
       res.error &&
       (res.error.code === "42703" || /deleted_at/.test(res.error.message))
     ) {
-      const r2 = await c.supabase
+      const r2 = await supabaseAdmin
         .from("coach_chat_sessions")
         .select("id, user_id, started_at, users:user_id (nickname, plan)")
-        .eq("status", "active")
-        .order("started_at", { ascending: false });
+        .eq("status", status)
+        .order("started_at", { ascending: false })
+        .limit(100);
       sessionsRaw =
         (r2.data as Array<{
           id: string;
@@ -364,7 +373,7 @@ export async function listActiveSessionsForCoach() {
   const userIds = Array.from(new Set(sessions.map((s) => s.user_id)));
   const weeklyMap = new Map<string, number>();
   if (userIds.length > 0) {
-    const { data: weekly } = await c.supabase
+    const { data: weekly } = await supabaseAdmin
       .from("coach_chat_sessions")
       .select("user_id")
       .in("user_id", userIds)
@@ -376,7 +385,7 @@ export async function listActiveSessionsForCoach() {
 
   const results: CoachActiveSession[] = await Promise.all(
     sessions.map(async (s) => {
-      const { data: last } = await c.supabase
+      const { data: last } = await supabaseAdmin
         .from("coach_chat_messages")
         .select("content, created_at")
         .eq("session_id", s.id)
@@ -398,6 +407,13 @@ export async function listActiveSessionsForCoach() {
       };
     }),
   );
+
+  // 최근 메시지가 있는 대화가 위로 오도록 정렬 (메시지 없으면 세션 시작 시각 기준)
+  results.sort((a, b) => {
+    const ta = a.last_message_at ?? a.started_at;
+    const tb = b.last_message_at ?? b.started_at;
+    return tb.localeCompare(ta);
+  });
 
   return { ok: true as const, sessions: results };
 }

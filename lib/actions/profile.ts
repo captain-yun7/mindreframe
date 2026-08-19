@@ -76,9 +76,26 @@ export async function setNicknameOnce(nickname: string) {
     }
     return { ok: false as const, error: error.message };
   }
+  // 온보딩 완료 = 실질 가입 확정 → 운영자 텔레그램 알림 (best-effort)
+  notifyAdminOfSignup(trimmed, user.email ?? null).catch((e) => {
+    console.error("[setNicknameOnce] signup notify failed:", e);
+  });
+
   revalidatePath("/mypage");
   revalidatePath("/onboarding/nickname");
   return { ok: true as const };
+}
+
+async function notifyAdminOfSignup(nickname: string, email: string | null) {
+  const { sendTelegramMessage } = await import("@/lib/notifications/telegram");
+  const text = [
+    `*신규 가입*`,
+    `${nickname}님이 가입을 완료했어요.`,
+    email ? `이메일: ${email}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  await sendTelegramMessage({ text });
 }
 
 /**

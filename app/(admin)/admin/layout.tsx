@@ -10,10 +10,17 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
+  // 사용자가 정한 별명(users.nickname) 우선 — 카카오 실명(full_name) 노출 방지
+  const { data: profile } = await supabase
+    .from("users")
+    .select("nickname")
+    .eq("id", user.id)
+    .single();
   const userName =
-    (user.user_metadata?.full_name as string | undefined) ||
+    profile?.nickname ||
     (user.user_metadata?.nickname as string | undefined) ||
+    (user.user_metadata?.full_name as string | undefined) ||
     user.email?.split("@")[0] ||
     "관리자";
 

@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { PageHeader } from "../../_ui/page-header";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
   getCoachThreadForUser,
 } from "@/lib/actions/coach-chat";
@@ -62,9 +63,10 @@ export default async function CoachAdminSessionPage({
     user_id: string;
     users: SessionUserRow | null;
   };
+  // users 테이블은 self-select RLS뿐이라 타 사용자 조인은 서비스롤로 조회
   let sessionRow: SessionRow | null;
   {
-    const res = await supabase
+    const res = await supabaseAdmin
       .from("coach_chat_sessions")
       .select(baseSelect)
       .eq("id", id)
@@ -76,7 +78,7 @@ export default async function CoachAdminSessionPage({
           res.error.message,
         ))
     ) {
-      const r2 = await supabase
+      const r2 = await supabaseAdmin
         .from("coach_chat_sessions")
         .select(
           "id, status, started_at, ended_at, user_id, users:user_id (id, nickname, plan)",

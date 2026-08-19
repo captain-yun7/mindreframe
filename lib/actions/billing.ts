@@ -46,6 +46,15 @@ export async function activateBetaPlan(plan: Plan, phoneNumber?: string) {
   const { error } = await supabase.from("users").update(update).eq("id", user.id);
 
   if (error) return { ok: false as const, error: error.message };
+
+  // 1일차 알림 즉시 발송 (best-effort — cron 시각을 지나 등록해도 당일 안내가 가도록)
+  if (isPaid && cleanedPhone) {
+    const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
+    sendDayOneNotificationNow(user.id).catch((e) => {
+      console.error("[activateBetaPlan] day-1 notification failed:", e);
+    });
+  }
+
   revalidatePath("/mypage");
   revalidatePath("/pricing");
   return { ok: true as const, plan };
