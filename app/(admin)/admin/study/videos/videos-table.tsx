@@ -114,6 +114,11 @@ export function VideosTable({ rows: initial }: { rows: VideoRow[] }) {
 
   return (
     <div className="bg-white rounded-[14px] border border-gs-line-soft overflow-x-auto">
+      <div className="px-3 py-2 text-xs text-gs-warn bg-gs-warn-bg border-b border-gs-warn-border leading-[1.6]">
+        ⚠️ 아이폰 기본 촬영 영상(HEVC/H.265)은 업로드해도 일부 기기에서 <b>화면이 검게 나오고 소리만 재생</b>돼요.
+        아이폰은 설정 → 카메라 → 포맷을 &ldquo;높은 호환성&rdquo;으로 바꿔 촬영하거나, 편집 앱에서 H.264(MP4)로
+        내보낸 뒤 업로드해주세요. 업로드 후에는 꼭 재생 미리보기로 화면이 나오는지 확인!
+      </div>
       <table className="w-full text-sm">
         <thead className="bg-gs-surface-muted border-b border-gs-line-soft sticky top-0">
           <tr className="text-left text-xs text-gs-muted">
