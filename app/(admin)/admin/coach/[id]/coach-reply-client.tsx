@@ -8,7 +8,10 @@ import {
   type CoachSessionSummary,
   endCoachSession,
   sendCoachReply,
+  updateCoachMessage,
+  deleteCoachMessage,
 } from "@/lib/actions/coach-chat";
+import { COACH_MESSAGE_DELETED } from "@/lib/coach/message-constants";
 import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
 import { useTypingIndicator } from "@/lib/hooks/use-typing-indicator";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
@@ -37,6 +40,8 @@ export function CoachReplyClient({
     sessionIdsForRealtime,
   );
   const [input, setInput] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
   const [pending, startTransition] = useTransition();
   const toast = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -97,6 +102,42 @@ export function CoachReplyClient({
             : m,
         ),
       );
+    });
+  }
+
+  function startEdit(m: CoachMessage) {
+    setEditingId(m.id);
+    setEditText(m.content);
+  }
+
+  function handleEditSave() {
+    if (!editingId || !editText.trim()) return;
+    const id = editingId;
+    const content = editText.trim();
+    startTransition(async () => {
+      const r = await updateCoachMessage(id, content);
+      if (!r.ok) {
+        toast.show(r.error, "error");
+        return;
+      }
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, content } : m)));
+      setEditingId(null);
+      toast.show("메시지를 수정했어요", "success");
+    });
+  }
+
+  function handleDelete(m: CoachMessage) {
+    if (!confirm("이 메시지를 삭제할까요? 사용자 화면에는 '삭제된 메시지입니다'로 표시돼요.")) return;
+    startTransition(async () => {
+      const r = await deleteCoachMessage(m.id);
+      if (!r.ok) {
+        toast.show(r.error, "error");
+        return;
+      }
+      setMessages((prev) =>
+        prev.map((p) => (p.id === m.id ? { ...p, content: COACH_MESSAGE_DELETED } : p)),
+      );
+      toast.show("메시지를 삭제했어요", "success");
     });
   }
 
@@ -173,17 +214,74 @@ export function CoachReplyClient({
                       : "bg-gs-surface-muted border border-gs-line-soft"
                   }`}
                 >
-                  {item.m.content}
+                  {editingId === item.m.id ? (
+                    <div className="w-[420px] max-w-full">
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        rows={4}
+                        className="w-full px-2 py-1.5 rounded-[8px] border border-white/40 bg-white text-gs-navy text-sm focus:outline-none"
+                        aria-label="메시지 수정"
+                      />
+                      <div className="flex gap-2 mt-1 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          disabled={pending}
+                          className="px-2 py-0.5 rounded bg-white/20 text-white text-xs"
+                        >
+                          취소
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleEditSave}
+                          disabled={pending || !editText.trim()}
+                          className="px-2 py-0.5 rounded bg-white text-gs-blue text-xs font-bold disabled:opacity-50"
+                        >
+                          저장
+                        </button>
+                      </div>
+                    </div>
+                  ) : item.m.content === COACH_MESSAGE_DELETED ? (
+                    <span className="italic opacity-70">{COACH_MESSAGE_DELETED}</span>
+                  ) : (
+                    item.m.content
+                  )}
                   <div
-                    className={`text-[10px] mt-1 ${item.m.sender_role === "coach" ? "text-white/70" : "text-gs-muted"}`}
+                    className={`text-[10px] mt-1 flex items-center gap-2 ${item.m.sender_role === "coach" ? "text-white/70" : "text-gs-muted"}`}
                   >
-                    {item.m.sender_role === "user" ? "사용자 · " : "코치 · "}
-                    {new Date(item.m.created_at).toLocaleString("ko-KR", {
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    <span>
+                      {item.m.sender_role === "user" ? "사용자 · " : "코치 · "}
+                      {new Date(item.m.created_at).toLocaleString("ko-KR", {
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    {item.m.sender_role === "coach" &&
+                      !item.m.id.startsWith("tmp-") &&
+                      item.m.content !== COACH_MESSAGE_DELETED &&
+                      editingId !== item.m.id && (
+                        <span className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(item.m)}
+                            disabled={pending}
+                            className="underline hover:text-white"
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(item.m)}
+                            disabled={pending}
+                            className="underline hover:text-white"
+                          >
+                            삭제
+                          </button>
+                        </span>
+                      )}
                   </div>
                 </div>
               </div>

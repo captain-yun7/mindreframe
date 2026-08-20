@@ -98,6 +98,22 @@ export function useCoachMessagesRealtime(
           append({ ...m, session_id: m.session_id ?? sid });
         },
       );
+      // 코치 메시지 수정/삭제(내용 교체) 반영
+      channel.on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "coach_chat_messages",
+          filter: `session_id=eq.${sid}`,
+        },
+        (payload) => {
+          const m = payload.new as CoachMessage;
+          setMessages((prev) =>
+            prev.map((p) => (p.id === m.id ? { ...p, content: m.content } : p)),
+          );
+        },
+      );
     }
 
     // status 콜백 — Supabase 라이브러리가 SUBSCRIBED/CHANNEL_ERROR/TIMED_OUT/CLOSED 전달

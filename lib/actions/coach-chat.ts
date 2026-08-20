@@ -457,6 +457,41 @@ export async function sendCoachReply(sessionId: string, content: string) {
   return { ok: true as const, message: data as CoachMessage };
 }
 
+/** 코치 메시지 오타 수정. 코치가 보낸 메시지만 대상 (운영 소수 가정 — coach/admin 모두 허용). */
+export async function updateCoachMessage(messageId: string, content: string) {
+  const c = await requireCoach();
+  if (!c.ok) return { ok: false as const, error: c.error };
+  const trimmed = content.trim();
+  if (!trimmed) return { ok: false as const, error: "메시지를 입력해주세요" };
+
+  const { supabaseAdmin } = await import("@/lib/supabase-admin");
+  const { data: msg } = await supabaseAdmin
+    .from("coach_chat_messages")
+    .select("id, sender_role, session_id")
+    .eq("id", messageId)
+    .maybeSingle();
+  const m = msg as { sender_role?: string; session_id?: string } | null;
+  if (!m) return { ok: false as const, error: "메시지를 찾을 수 없어요" };
+  if (m.sender_role !== "coach") {
+    return { ok: false as const, error: "코치가 보낸 메시지만 수정할 수 있어요" };
+  }
+
+  const { error } = await supabaseAdmin
+    .from("coach_chat_messages")
+    .update({ content: trimmed })
+    .eq("id", messageId);
+  if (error) return { ok: false as const, error: "메시지 수정에 실패했어요" };
+
+  revalidatePath(`/admin/coach/${m.session_id}`);
+  return { ok: true as const };
+}
+
+/** 코치 메시지 삭제 — 내용을 삭제 표시로 교체 (realtime UPDATE로 유저 화면에도 즉시 반영). */
+export async function deleteCoachMessage(messageId: string) {
+  const { COACH_MESSAGE_DELETED } = await import("@/lib/coach/message-constants");
+  return updateCoachMessage(messageId, COACH_MESSAGE_DELETED);
+}
+
 /** 사용자의 모든 세션 + 메시지 (어드민 단일 스레드 뷰 용). */
 export type CoachThread = {
   sessions: CoachSessionSummary[];

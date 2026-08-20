@@ -10,6 +10,7 @@ import {
   sendCoachMessage,
 } from "@/lib/actions/coach-chat";
 import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
+import { COACH_MESSAGE_DELETED } from "@/lib/coach/message-constants";
 import { useTypingIndicator } from "@/lib/hooks/use-typing-indicator";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
 import { RealtimeStatusDot } from "@/components/realtime-status-dot";
@@ -167,7 +168,11 @@ export function CoachThreadClient({
                       : "bg-gs-surface-muted border border-gs-line-soft"
                   }`}
                 >
-                  {item.m.content}
+                  {item.m.content === COACH_MESSAGE_DELETED ? (
+                    <span className="italic opacity-70">{COACH_MESSAGE_DELETED}</span>
+                  ) : (
+                    item.m.content
+                  )}
                   <div
                     className={`text-[10px] mt-1 ${item.m.sender_role === "user" ? "text-white/70" : "text-gs-muted"}`}
                   >
