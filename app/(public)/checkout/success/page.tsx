@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { confirmOrder } from "@/lib/actions/payments";
 import { getPlanSpec } from "@/lib/payments/plans";
+import { getCurrentUser } from "@/lib/supabase-server";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { PhoneRegister } from "./phone-register";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 
@@ -36,6 +39,23 @@ export default async function CheckoutSuccessPage({
   if (!result.ok) return renderError(result.error);
 
   const spec = await getPlanSpec(result.plan);
+
+  // 알림톡 수신용 휴대폰 미등록이면 등록 섹션 노출
+  let needsPhone = false;
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      const supabase = await createSupabaseServerClient();
+      const { data } = await supabase
+        .from("users")
+        .select("phone_number")
+        .eq("id", user.id)
+        .single();
+      needsPhone = !(data as { phone_number?: string | null } | null)?.phone_number;
+    }
+  } catch {
+    // 조회 실패 시 섹션 생략
+  }
   const expires = result.expiresAt ? new Date(result.expiresAt) : null;
   const expiresText = expires
     ? `${expires.getFullYear()}.${String(expires.getMonth() + 1).padStart(2, "0")}.${String(expires.getDate()).padStart(2, "0")}`
@@ -61,6 +81,8 @@ export default async function CheckoutSuccessPage({
             <Row label="이용 만료" value={expiresText} />
             <Row label="주문 번호" value={orderId} mono />
           </div>
+
+          {needsPhone && <PhoneRegister />}
 
           <div className="mt-7 flex gap-3">
             <Link
