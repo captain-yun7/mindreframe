@@ -88,7 +88,11 @@ export function AdminUserActions({
       const r = await adminUpdateUserPhone(userId, phone);
       if (r.ok) setPhoneSaved(true);
       toast.show(
-        r.ok ? "휴대폰 등록 완료 — 알림톡 발송이 시작돼요" : r.error,
+        r.ok
+          ? r.startsTomorrow
+            ? "휴대폰 등록 완료 — 18시 이후라 1일차 알림톡은 내일 아침에 발송돼요"
+            : "휴대폰 등록 완료 — 1일차 알림톡이 즉시 발송돼요"
+          : r.error,
         r.ok ? "success" : "error",
       );
     });

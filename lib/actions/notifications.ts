@@ -31,17 +31,19 @@ export async function startNotifications(userId: string, phoneNumber: string) {
     return { ok: false as const, error: "휴대폰 번호 형식이 올바르지 않아요" };
   }
   const supabase = await createSupabaseServerClient();
+  const { resolveNotificationStart } = await import("@/lib/notifications/start-date");
+  const start = resolveNotificationStart();
   const { error } = await supabase
     .from("users")
     .update({
       phone_number: cleaned,
-      notifications_started_at: new Date().toISOString().slice(0, 10),
+      notifications_started_at: start.startDate,
     })
     .eq("id", userId);
   if (error) return { ok: false as const, error: "휴대폰 번호 등록 실패" };
 
-  // 1일차 알림 즉시 발송 (best-effort)
-  {
+  // 18시 이전 등록이면 1일차 알림 즉시 발송 (best-effort)
+  if (start.immediate) {
     const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
     sendDayOneNotificationNow(userId).catch((e) => {
       console.error("[startNotifications] day-1 notification failed:", e);
@@ -77,8 +79,11 @@ export async function updatePhoneNumber(phoneNumber: string) {
   const update: Record<string, unknown> = { phone_number: cleaned };
   const startedAt = (existing as { notifications_started_at?: string | null } | null)
     ?.notifications_started_at;
+  const { resolveNotificationStart } = await import("@/lib/notifications/start-date");
+  const start = resolveNotificationStart();
   if (!startedAt) {
-    update.notifications_started_at = new Date().toISOString().slice(0, 10);
+    // 18시 이후 등록이면 1일차를 다음날로 (심야 발송 방지 — 고객 정책)
+    update.notifications_started_at = start.startDate;
   }
 
   const { error } = await supabase
@@ -87,8 +92,8 @@ export async function updatePhoneNumber(phoneNumber: string) {
     .eq("id", user.id);
   if (error) return { ok: false as const, error: "휴대폰 번호 저장 실패" };
 
-  // 최초 등록(오늘이 1일차)이면 1일차 알림 즉시 발송 (best-effort)
-  if (!startedAt) {
+  // 최초 등록 + 18시 이전이면 1일차 알림 즉시 발송 (best-effort)
+  if (!startedAt && start.immediate) {
     const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
     sendDayOneNotificationNow(user.id).catch((e) => {
       console.error("[updatePhoneNumber] day-1 notification failed:", e);
@@ -98,5 +103,5 @@ export async function updatePhoneNumber(phoneNumber: string) {
   revalidatePath("/mypage");
   revalidatePath("/dashboard");
   revalidatePath("/study/today/play");
-  return { ok: true as const };
+  return { ok: true as const, startsTomorrow: !startedAt && !start.immediate };
 }

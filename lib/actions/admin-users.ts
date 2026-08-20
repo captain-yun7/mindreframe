@@ -35,7 +35,9 @@ export async function adminUpdateUserPlan(
   }
 
   // 유료 플랜 수동 부여 시 결제 플로우와 동일하게 알림 시작.
-  // 번호 있고 아직 미시작(started_at NULL)인 경우만 오늘로 세팅 (기존 시작일은 보존).
+  // 번호 있고 아직 미시작(started_at NULL)인 경우만 세팅 (기존 시작일은 보존).
+  // 18시 이후면 1일차를 다음날로, 이전이면 오늘 + 1일차 즉시 발송.
+  let sendDayOne = false;
   if (plan !== "free") {
     const { data: cur } = await supabaseAdmin
       .from("users")
@@ -44,12 +46,22 @@ export async function adminUpdateUserPlan(
       .single();
     const c = cur as { phone_number?: string | null; notifications_started_at?: string | null } | null;
     if (c?.phone_number && !c.notifications_started_at) {
-      update.notifications_started_at = todayKst();
+      const { resolveNotificationStart } = await import("@/lib/notifications/start-date");
+      const start = resolveNotificationStart();
+      update.notifications_started_at = start.startDate;
+      sendDayOne = start.immediate;
     }
   }
 
   const { error } = await supabaseAdmin.from("users").update(update).eq("id", userId);
   if (error) return { ok: false as const, error: error.message };
+
+  if (sendDayOne) {
+    const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
+    sendDayOneNotificationNow(userId).catch((e) => {
+      console.error("[adminUpdateUserPlan] day-1 notification failed:", e);
+    });
+  }
 
   await writeAudit({
     adminUserId: guard.userId,
@@ -164,15 +176,18 @@ export async function adminUpdateUserPhone(userId: string, phoneNumber: string) 
     updated_at: new Date().toISOString(),
   };
   // 최초 등록이면 결제/마이페이지 플로우와 동일하게 알림 시작일 세팅
+  // (18시 이후 등록이면 1일차를 다음날로 — 심야 발송 방지)
+  const { resolveNotificationStart } = await import("@/lib/notifications/start-date");
+  const start = resolveNotificationStart();
   if (!startedAt) {
-    update.notifications_started_at = todayKst();
+    update.notifications_started_at = start.startDate;
   }
 
   const { error } = await supabaseAdmin.from("users").update(update).eq("id", userId);
   if (error) return { ok: false as const, error: error.message };
 
-  // 알림 최초 시작 시 1일차 즉시 발송 (마이페이지 등록 경로와 동일, best-effort)
-  if (!startedAt) {
+  // 알림 최초 시작 + 18시 이전이면 1일차 즉시 발송 (마이페이지 등록 경로와 동일, best-effort)
+  if (!startedAt && start.immediate) {
     const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
     sendDayOneNotificationNow(userId).catch((e) => {
       console.error("[adminUpdateUserPhone] day-1 notification failed:", e);
@@ -188,7 +203,7 @@ export async function adminUpdateUserPhone(userId: string, phoneNumber: string) 
 
   revalidatePath(`/admin/users/${userId}`);
   revalidatePath("/admin/users");
-  return { ok: true as const };
+  return { ok: true as const, startsTomorrow: !startedAt && !start.immediate };
 }
 
 export async function adminUpdateUserTelegramChatId(

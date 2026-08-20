@@ -3,7 +3,7 @@
  * 서버가 UTC라도 한국 자정에 날짜가 넘어가도록 함.
  */
 
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+export const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 /** KST 기준 오늘 날짜 (YYYY-MM-DD). */
 export function todayKst(): string {
