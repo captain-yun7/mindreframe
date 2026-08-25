@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getVideoUrl } from "@/lib/video/r2-video";
-import { computeDayNumber } from "@/lib/coach/day-number";
 import { todayKst, isoWeekKst } from "@/lib/dates";
 
 /**
@@ -25,18 +24,9 @@ export async function logDailyVideoWatch(dayNumber: number) {
     return { ok: false as const, error: "day_number는 1~100" };
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("notifications_started_at")
-    .eq("id", user.id)
-    .single();
-  const startedAt =
-    (profile as { notifications_started_at?: string | null } | null)
-      ?.notifications_started_at ?? null;
-  // F252 — 알림 시작 사용자는 startedAt 기준, 미시작은 가입일(created_at) 경과일 기준.
-  // 위변조 방지 — myDay와 일치해야만 카운트.
-  const myDay =
-    computeDayNumber(startedAt) ?? computeDayNumber(user.created_at) ?? 1;
+  // 결제일(plan_started_at) 우선 기준 (2026-08-25). 위변조 방지 — myDay와 일치해야만 카운트.
+  const { getUserDayNumber } = await import("@/lib/user/plan-day");
+  const myDay = await getUserDayNumber(supabase, user.id, user.created_at);
   if (myDay !== dayNumber) {
     return {
       ok: false as const,
@@ -88,18 +78,10 @@ export async function getTodayDailyVideo(): Promise<TodayDailyVideo> {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, reason: "no_user" };
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("notifications_started_at")
-    .eq("id", user.id)
-    .single();
-  const startedAt =
-    (profile as { notifications_started_at?: string | null } | null)
-      ?.notifications_started_at ?? null;
-  // F252 — 알림 시작 사용자는 그 기준일자로, 미시작 사용자는 가입일(created_at) 경과일로 진도 계산.
-  // 예: 가입 당일 → day 1, 가입 후 3일 → day 3. (시청 여부와 무관하게 일자에 따라 자동 진행)
-  const dayNumber =
-    computeDayNumber(startedAt) ?? computeDayNumber(user.created_at) ?? 1;
+  // 결제일(plan_started_at) 우선 기준으로 진도 계산 (2026-08-25).
+  // 시청 여부와 무관하게 일자에 따라 자동 진행.
+  const { getUserDayNumber } = await import("@/lib/user/plan-day");
+  const dayNumber = await getUserDayNumber(supabase, user.id, user.created_at);
 
   let row:
     | { title: string; video_url: string | null; duration_seconds: number | null }
