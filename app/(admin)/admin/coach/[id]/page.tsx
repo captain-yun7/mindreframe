@@ -40,7 +40,7 @@ export default async function CoachAdminSessionPage({
   // J5 / F152: phone_number, notification_hour 추가
   const baseSelect =
     "id, status, started_at, ended_at, user_id, " +
-    "users:user_id (id, nickname, email, plan, plan_expires_at, " +
+    "users:user_id (id, nickname, email, plan, plan_expires_at, plan_started_at, " +
     "phone_number, notification_hour, " +
     "notifications_started_at, coach_session_adjustment, created_at)";
   type SessionUserRow = {
@@ -49,6 +49,7 @@ export default async function CoachAdminSessionPage({
     email?: string | null;
     plan?: string | null;
     plan_expires_at?: string | null;
+    plan_started_at?: string | null;
     phone_number?: string | null;
     notification_hour?: number | null;
     notifications_started_at?: string | null;
@@ -74,7 +75,7 @@ export default async function CoachAdminSessionPage({
     if (
       res.error &&
       (res.error.code === "42703" ||
-        /coach_session_adjustment|notifications_started_at|plan_expires_at|email|phone_number|notification_hour/.test(
+        /coach_session_adjustment|notifications_started_at|plan_expires_at|plan_started_at|email|phone_number|notification_hour/.test(
           res.error.message,
         ))
     ) {
@@ -110,7 +111,10 @@ export default async function CoachAdminSessionPage({
   const plan = normalizePlan(su?.plan);
   const limit = getCoachWeeklyLimit(plan);
   const used = (usedRes.data as number | null) ?? 0;
-  const dayNumber = computeDayNumber(su?.notifications_started_at);
+  // 100일 차수 = 결제일(plan_started_at) 우선, 없으면 기존 알림 시작일 기준 (2026-08-25)
+  const dayNumber =
+    computeDayNumber(su?.plan_started_at) ??
+    computeDayNumber(su?.notifications_started_at);
   const daysIntoWeek = daysSinceWeekStartKst();
   const warning = getCoachWarningLevel(plan, daysIntoWeek, used);
 
@@ -136,6 +140,7 @@ export default async function CoachAdminSessionPage({
             plan={plan}
             planExpiresAt={su?.plan_expires_at ?? null}
             createdAt={su?.created_at ?? null}
+            planStartedAt={su?.plan_started_at ?? null}
             notificationsStartedAt={su?.notifications_started_at ?? null}
             phoneNumber={su?.phone_number ?? null}
             notificationHour={su?.notification_hour ?? null}

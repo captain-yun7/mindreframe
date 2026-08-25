@@ -13,6 +13,7 @@ interface Props {
   plan: Plan;
   planExpiresAt: string | null;
   createdAt: string | null;
+  planStartedAt?: string | null;
   notificationsStartedAt: string | null;
   phoneNumber: string | null;
   notificationHour: number | null;
@@ -73,10 +74,10 @@ export function CoachUserInfoPanel(p: Props) {
         }
       />
       <Row
-        label="가입일"
+        label="결제일"
         value={
-          p.createdAt
-            ? new Date(p.createdAt).toLocaleDateString("ko-KR")
+          p.planStartedAt
+            ? new Date(p.planStartedAt + "T00:00:00+09:00").toLocaleDateString("ko-KR")
             : "-"
         }
       />
