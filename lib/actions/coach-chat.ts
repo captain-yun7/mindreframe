@@ -447,10 +447,12 @@ export async function sendCoachReply(sessionId: string, content: string) {
     // ignore (컬럼 부재 등)
   }
 
-  // 답변 알림 — 유저의 phone_number가 있으면 알림톡 발송 (실패해도 답변 자체는 성공)
-  notifyUserOfCoachReply(sessionId).catch((e) => {
-    console.error("coach reply notification failed:", e);
-  });
+  // 코치 답변 알림톡 발송 중단 (2026-08-25 고객 요청 — 시간 약속제 운영이라 불필요 + 건당 비용 절감)
+  // 재활성화하려면 아래 주석 해제. (유저→코치 텔레그램 알림은 유지)
+  // notifyUserOfCoachReply(sessionId).catch((e) => {
+  //   console.error("coach reply notification failed:", e);
+  // });
+  void notifyUserOfCoachReply; // unused 경고 억제 (함수는 보존)
 
   revalidatePath(`/admin/coach/${sessionId}`);
   revalidatePath("/admin/coach");
