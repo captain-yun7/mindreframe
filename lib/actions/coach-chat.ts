@@ -9,6 +9,7 @@ export type CoachMessage = {
   id: string;
   sender_role: "user" | "coach";
   content: string;
+  image_key?: string | null;
   created_at: string;
   session_id: string;
 };
@@ -142,23 +143,34 @@ export async function endCoachSession(sessionId: string) {
 }
 
 /** 유저용 메시지 전송. 상담사 전용은 sendCoachReply 사용. INSERT 결과 row 반환. */
-export async function sendCoachMessage(sessionId: string, content: string) {
+export async function sendCoachMessage(
+  sessionId: string,
+  content: string,
+  imageKey?: string | null,
+) {
   const r = await requireUser();
   if (!r.ok) return { ok: false as const, error: r.error };
-  const trimmed = content.trim();
+  const trimmed = content.trim() || (imageKey ? "(사진)" : "");
   if (!trimmed) return { ok: false as const, error: "메시지를 입력해주세요" };
 
+  const insertRow: Record<string, unknown> = {
+    session_id: sessionId,
+    sender_id: r.user.id,
+    sender_role: "user",
+    content: trimmed,
+  };
+  if (imageKey) insertRow.image_key = imageKey;
   const { data, error } = await r.supabase
     .from("coach_chat_messages")
-    .insert({
-      session_id: sessionId,
-      sender_id: r.user.id,
-      sender_role: "user",
-      content: trimmed,
-    })
-    .select("id, sender_role, content, created_at, session_id")
+    .insert(insertRow)
+    .select("id, sender_role, content, image_key, created_at, session_id")
     .single();
-  if (error || !data) return { ok: false as const, error: "메시지 전송에 실패했어요" };
+  if (error || !data) {
+    if (imageKey && error && (error.code === "42703" || /image_key/.test(error.message))) {
+      return { ok: false as const, error: "사진 전송 기능이 아직 활성화되지 않았어요" };
+    }
+    return { ok: false as const, error: "메시지 전송에 실패했어요" };
+  }
 
   // E-2: 코치에게 텔레그램 알림 (best-effort, fire-and-forget)
   notifyCoachOfUserMessage(sessionId, r.user.id, trimmed).catch((e) => {
@@ -418,23 +430,34 @@ export async function listActiveSessionsForCoach(
   return { ok: true as const, sessions: results };
 }
 
-export async function sendCoachReply(sessionId: string, content: string) {
+export async function sendCoachReply(
+  sessionId: string,
+  content: string,
+  imageKey?: string | null,
+) {
   const c = await requireCoach();
   if (!c.ok) return { ok: false as const, error: c.error };
-  const trimmed = content.trim();
+  const trimmed = content.trim() || (imageKey ? "(사진)" : "");
   if (!trimmed) return { ok: false as const, error: "메시지를 입력해주세요" };
 
+  const insertRow: Record<string, unknown> = {
+    session_id: sessionId,
+    sender_id: c.user.id,
+    sender_role: "coach",
+    content: trimmed,
+  };
+  if (imageKey) insertRow.image_key = imageKey;
   const { data, error } = await c.supabase
     .from("coach_chat_messages")
-    .insert({
-      session_id: sessionId,
-      sender_id: c.user.id,
-      sender_role: "coach",
-      content: trimmed,
-    })
-    .select("id, sender_role, content, created_at, session_id")
+    .insert(insertRow)
+    .select("id, sender_role, content, image_key, created_at, session_id")
     .single();
-  if (error || !data) return { ok: false as const, error: "답변 전송에 실패했어요" };
+  if (error || !data) {
+    if (imageKey && error && (error.code === "42703" || /image_key/.test(error.message))) {
+      return { ok: false as const, error: "사진 전송 기능이 아직 활성화되지 않았어요" };
+    }
+    return { ok: false as const, error: "답변 전송에 실패했어요" };
+  }
 
   // first_coach_reply_at 멱등 업데이트 (best-effort, 컬럼 부재 시 무시)
   try {
@@ -494,6 +517,29 @@ export async function deleteCoachMessage(messageId: string) {
   return updateCoachMessage(messageId, COACH_MESSAGE_DELETED);
 }
 
+/** 세션 목록의 메시지 일괄 조회 — image_key 컬럼 미적용 환경 fallback 포함. */
+async function fetchMessages(
+  client: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  sessionIds: string[],
+): Promise<CoachMessage[]> {
+  const res = await client
+    .from("coach_chat_messages")
+    .select("id, sender_role, content, image_key, created_at, session_id")
+    .in("session_id", sessionIds)
+    .order("created_at", { ascending: true })
+    .limit(500);
+  if (res.error && (res.error.code === "42703" || /image_key/.test(res.error.message))) {
+    const r2 = await client
+      .from("coach_chat_messages")
+      .select("id, sender_role, content, created_at, session_id")
+      .in("session_id", sessionIds)
+      .order("created_at", { ascending: true })
+      .limit(500);
+    return (r2.data ?? []) as CoachMessage[];
+  }
+  return (res.data ?? []) as CoachMessage[];
+}
+
 /** 사용자의 모든 세션 + 메시지 (어드민 단일 스레드 뷰 용). */
 export type CoachThread = {
   sessions: CoachSessionSummary[];
@@ -540,13 +586,7 @@ export async function getCoachThreadForUser(
   const sessionIds = sessions.map((s) => s.id);
   let messages: CoachMessage[] = [];
   if (sessionIds.length > 0) {
-    const { data: msgs } = await c.supabase
-      .from("coach_chat_messages")
-      .select("id, sender_role, content, created_at, session_id")
-      .in("session_id", sessionIds)
-      .order("created_at", { ascending: true })
-      .limit(500);
-    messages = (msgs ?? []) as CoachMessage[];
+    messages = await fetchMessages(c.supabase, sessionIds);
   }
 
   const activeSession = sessions.find((s) => s.status === "active") ?? null;
@@ -599,13 +639,7 @@ export async function getMyCoachThread(): Promise<
   const ids = sessions.map((s) => s.id);
   let messages: CoachMessage[] = [];
   if (ids.length > 0) {
-    const { data: msgs } = await r.supabase
-      .from("coach_chat_messages")
-      .select("id, sender_role, content, created_at, session_id")
-      .in("session_id", ids)
-      .order("created_at", { ascending: true })
-      .limit(500);
-    messages = (msgs ?? []) as CoachMessage[];
+    messages = await fetchMessages(r.supabase, ids);
   }
 
   const activeSession = sessions.find((s) => s.status === "active") ?? null;

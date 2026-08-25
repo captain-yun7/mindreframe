@@ -12,6 +12,7 @@ import {
   deleteCoachMessage,
 } from "@/lib/actions/coach-chat";
 import { COACH_MESSAGE_DELETED } from "@/lib/coach/message-constants";
+import { ChatImage, uploadChatImage } from "@/components/chat/chat-image";
 import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
 import { useTypingIndicator } from "@/lib/hooks/use-typing-indicator";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
@@ -100,6 +101,35 @@ export function CoachReplyClient({
           m.id === tempId
             ? { ...r.message, session_id: activeSession.id }
             : m,
+        ),
+      );
+    });
+  }
+
+  function handleImageSelect(file: File | null) {
+    if (!file || !activeSession) return;
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const optimistic: CoachMessage = {
+      id: tempId,
+      sender_role: "coach",
+      content: "📷 사진 전송 중...",
+      created_at: new Date().toISOString(),
+      session_id: activeSession.id,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    startTransition(async () => {
+      const up = await uploadChatImage(activeSession.id, file);
+      const r = up.ok
+        ? await sendCoachReply(activeSession.id, "", up.imageKey)
+        : up;
+      if (!r.ok) {
+        toast.show(r.error, "error");
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        return;
+      }
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...r.message, session_id: activeSession.id } : m,
         ),
       );
     });
@@ -244,6 +274,8 @@ export function CoachReplyClient({
                     </div>
                   ) : item.m.content === COACH_MESSAGE_DELETED ? (
                     <span className="italic opacity-70">{COACH_MESSAGE_DELETED}</span>
+                  ) : item.m.image_key ? (
+                    <ChatImage imageKey={item.m.image_key} />
                   ) : (
                     item.m.content
                   )}
@@ -264,14 +296,16 @@ export function CoachReplyClient({
                       item.m.content !== COACH_MESSAGE_DELETED &&
                       editingId !== item.m.id && (
                         <span className="flex gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(item.m)}
-                            disabled={pending}
-                            className="underline hover:text-white"
-                          >
-                            수정
-                          </button>
+                          {!item.m.image_key && (
+                            <button
+                              type="button"
+                              onClick={() => startEdit(item.m)}
+                              disabled={pending}
+                              className="underline hover:text-white"
+                            >
+                              수정
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => handleDelete(item.m)}
@@ -314,6 +348,23 @@ export function CoachReplyClient({
             disabled={pending}
             className="flex-1 min-w-0 px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
           />
+          <label
+            className={`shrink-0 px-2.5 py-2 rounded-[10px] border border-gs-line-soft text-base cursor-pointer ${pending ? "opacity-50 pointer-events-none" : "hover:bg-gs-surface-muted"}`}
+            aria-label="사진 첨부"
+            title="사진 첨부 (10MB 이하)"
+          >
+            📷
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              disabled={pending}
+              onChange={(e) => {
+                handleImageSelect(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
+            />
+          </label>
           <button
             type="button"
             onClick={handleSend}

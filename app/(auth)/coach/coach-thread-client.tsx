@@ -11,6 +11,7 @@ import {
 } from "@/lib/actions/coach-chat";
 import { useCoachMessagesRealtime } from "@/lib/hooks/use-coach-messages-realtime";
 import { COACH_MESSAGE_DELETED } from "@/lib/coach/message-constants";
+import { ChatImage, uploadChatImage } from "@/components/chat/chat-image";
 import { useTypingIndicator } from "@/lib/hooks/use-typing-indicator";
 import { renderWithSeparators } from "@/lib/coach/thread-render";
 import { RealtimeStatusDot } from "@/components/realtime-status-dot";
@@ -117,6 +118,35 @@ export function CoachThreadClient({
     });
   }
 
+  function handleImageSelect(file: File | null) {
+    if (!file || !activeSession) return;
+    const tempId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const optimistic: CoachMessage = {
+      id: tempId,
+      sender_role: "user",
+      content: "📷 사진 전송 중...",
+      created_at: new Date().toISOString(),
+      session_id: activeSession.id,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    startTransition(async () => {
+      const up = await uploadChatImage(activeSession.id, file);
+      const r = up.ok
+        ? await sendCoachMessage(activeSession.id, "", up.imageKey)
+        : up;
+      if (!r.ok) {
+        toast.show(r.error, "error");
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        return;
+      }
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === tempId ? { ...r.message, session_id: activeSession.id } : m,
+        ),
+      );
+    });
+  }
+
   return (
     <div className="mt-4 rounded-toss-card border-2 border-gs-gold-border bg-[#fff5ec] p-1">
     <Card className="p-0 overflow-hidden !rounded-[16px]">
@@ -170,6 +200,8 @@ export function CoachThreadClient({
                 >
                   {item.m.content === COACH_MESSAGE_DELETED ? (
                     <span className="italic opacity-70">{COACH_MESSAGE_DELETED}</span>
+                  ) : item.m.image_key ? (
+                    <ChatImage imageKey={item.m.image_key} />
                   ) : (
                     item.m.content
                   )}
@@ -215,6 +247,23 @@ export function CoachThreadClient({
             disabled={pending}
             className="flex-1 min-w-0 px-3 py-2 rounded-[10px] border border-gs-line-soft text-sm focus:outline-none focus:ring-2 focus:ring-gs-blue/40"
           />
+          <label
+            className={`shrink-0 px-2.5 py-2 rounded-[10px] border border-gs-line-soft text-base cursor-pointer ${pending ? "opacity-50 pointer-events-none" : "hover:bg-gs-surface-muted"}`}
+            aria-label="사진 첨부"
+            title="사진 첨부 (10MB 이하)"
+          >
+            📷
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              disabled={pending}
+              onChange={(e) => {
+                handleImageSelect(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
+            />
+          </label>
           <button
             type="button"
             onClick={handleSend}
