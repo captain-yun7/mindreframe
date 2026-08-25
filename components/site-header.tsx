@@ -200,10 +200,14 @@ export function SiteHeader() {
 
           {isLoggedIn ? (
             <>
-              <span className="flex items-center gap-px text-[13px] tracking-[-0.02em] text-gs-text-strong px-2 py-1.5 whitespace-nowrap">
+              <Link
+                href="/mypage"
+                title="마이페이지"
+                className="flex items-center gap-px text-[13px] tracking-[-0.02em] text-gs-text-strong px-2 py-1.5 rounded-full whitespace-nowrap hover:bg-gs-surface-mid transition-colors duration-200"
+              >
                 <span className="font-bold">{userName}</span>
                 <span className="text-gs-muted-soft">님</span>
-              </span>
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}
@@ -332,10 +336,15 @@ export function SiteHeader() {
                 >
                   {isLoggedIn ? (
                     <div className="flex items-center justify-between px-3 gap-3">
-                      <span className="text-[15px] tracking-[-0.02em] text-gs-text-strong">
+                      <Link
+                        href="/mypage"
+                        title="마이페이지"
+                        onClick={() => setMenuOpen(false)}
+                        className="text-[15px] tracking-[-0.02em] text-gs-text-strong"
+                      >
                         <span className="font-bold">{userName}</span>
                         <span className="text-gs-muted-soft ml-px">님</span>
-                      </span>
+                      </Link>
                       <button
                         type="button"
                         onClick={handleLogout}
