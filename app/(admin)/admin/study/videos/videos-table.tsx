@@ -54,6 +54,16 @@ export function VideosTable({ rows: initial }: { rows: VideoRow[] }) {
       toast.show("영상 파일만 업로드 가능합니다", "error");
       return;
     }
+    // HEVC(H.265) 사전 차단 — 일부 기기에서 화면이 안 나오고 소리만 재생됨 (7~10일차 실사례)
+    const { detectVideoCodec } = await import("@/lib/video/detect-codec");
+    const codec = await detectVideoCodec(file);
+    if (codec === "hevc") {
+      toast.show(
+        "이 영상은 HEVC(H.265) 형식이라 일부 기기에서 재생되지 않아요. 촬영 설정을 '높은 호환성(H.264)'으로 바꾸거나, 편집 앱에서 H.264(MP4)로 내보낸 뒤 다시 업로드해주세요.",
+        "error",
+      );
+      return;
+    }
     setUploadingDay(dayNumber);
     setProgressMap((p) => ({ ...p, [dayNumber]: 0 }));
 
