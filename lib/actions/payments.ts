@@ -108,10 +108,22 @@ export async function confirmOrder(input: {
     .eq("order_id", input.orderId);
   if (updatePaymentError) return { ok: false, error: updatePaymentError.message };
 
-  const { error: updateUserError } = await supabaseAdmin
-    .from("users")
-    .update({ plan: spec2.slug, plan_expires_at: expiresAt })
-    .eq("id", payment.user_id);
+  // plan_started_at = 결제일 (100일 차수 기산점). 컬럼 미적용 환경 fallback.
+  const { todayKst } = await import("@/lib/dates");
+  let updateUserError = (
+    await supabaseAdmin
+      .from("users")
+      .update({ plan: spec2.slug, plan_expires_at: expiresAt, plan_started_at: todayKst() })
+      .eq("id", payment.user_id)
+  ).error;
+  if (updateUserError && (updateUserError.code === "42703" || /plan_started_at/.test(updateUserError.message))) {
+    updateUserError = (
+      await supabaseAdmin
+        .from("users")
+        .update({ plan: spec2.slug, plan_expires_at: expiresAt })
+        .eq("id", payment.user_id)
+    ).error;
+  }
   if (updateUserError) return { ok: false, error: updateUserError.message };
 
   revalidatePath("/mypage");

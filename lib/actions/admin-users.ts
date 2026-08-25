@@ -63,6 +63,16 @@ export async function adminUpdateUserPlan(
     });
   }
 
+  // 유료 부여 시 100일 차수 기산점(plan_started_at) 세팅 — 최초 1회만 (기존 시작일 보존).
+  // 컬럼 미적용 환경에서는 조용히 skip (best-effort).
+  if (plan !== "free") {
+    await supabaseAdmin
+      .from("users")
+      .update({ plan_started_at: todayKst() })
+      .eq("id", userId)
+      .is("plan_started_at", null);
+  }
+
   await writeAudit({
     adminUserId: guard.userId,
     action: "user.update_plan",

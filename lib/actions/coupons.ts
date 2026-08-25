@@ -86,14 +86,31 @@ export async function redeemCoupon(code: string) {
   const expires = new Date();
   expires.setDate(expires.getDate() + row.duration_days);
 
-  const { error: ue } = await supabaseAdmin
-    .from("users")
-    .update({
-      plan: row.plan,
-      plan_expires_at: expires.toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", user.id);
+  // plan_started_at = 쿠폰 등록일 (100일 차수 기산점). 컬럼 미적용 환경 fallback.
+  const { todayKst } = await import("@/lib/dates");
+  let ue = (
+    await supabaseAdmin
+      .from("users")
+      .update({
+        plan: row.plan,
+        plan_expires_at: expires.toISOString(),
+        plan_started_at: todayKst(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id)
+  ).error;
+  if (ue && (ue.code === "42703" || /plan_started_at/.test(ue.message))) {
+    ue = (
+      await supabaseAdmin
+        .from("users")
+        .update({
+          plan: row.plan,
+          plan_expires_at: expires.toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id)
+    ).error;
+  }
   if (ue) return { ok: false as const, error: ue.message };
 
   // 4) redemption 기록 — UNIQUE 위반은 race condition 마지막 보호망

@@ -43,7 +43,17 @@ export async function activateBetaPlan(plan: Plan, phoneNumber?: string) {
     update.notifications_started_at = new Date().toISOString().slice(0, 10);
   }
 
-  const { error } = await supabase.from("users").update(update).eq("id", user.id);
+  // plan_started_at = 활성화일 (100일 차수 기산점). 컬럼 미적용 환경 fallback.
+  const { todayKst } = await import("@/lib/dates");
+  let error = (
+    await supabase
+      .from("users")
+      .update({ ...update, plan_started_at: todayKst() })
+      .eq("id", user.id)
+  ).error;
+  if (error && (error.code === "42703" || /plan_started_at/.test(error.message))) {
+    error = (await supabase.from("users").update(update).eq("id", user.id)).error;
+  }
 
   if (error) return { ok: false as const, error: error.message };
 
