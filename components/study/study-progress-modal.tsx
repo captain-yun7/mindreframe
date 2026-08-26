@@ -27,7 +27,19 @@ const PRAISE_VARIANTS = [
   "함께 가요! 지식의 한 걸음을 응원해요 ✨",
 ];
 
-function pickRandom(): string {
+const FIRST_PRAISE = "멋진 시작입니다! 첫걸음을 내디뎠어요 🌱";
+const FIRST_SEEN_KEY = "study_praise_first_seen";
+
+function pickPraise(): string {
+  // 첫 진행에는 "레벨 상승" 대신 시작 축하 문구 (2026-08-26 고객 피드백)
+  try {
+    if (!localStorage.getItem(FIRST_SEEN_KEY)) {
+      localStorage.setItem(FIRST_SEEN_KEY, "1");
+      return FIRST_PRAISE;
+    }
+  } catch {
+    // localStorage 불가 환경 — 랜덤으로
+  }
   return PRAISE_VARIANTS[Math.floor(Math.random() * PRAISE_VARIANTS.length)];
 }
 
@@ -54,7 +66,7 @@ export function StudyProgressLink({
 
   useEffect(() => {
     // CSR 시점에 랜덤 선정 — hydration mismatch 방지를 위해 effect에서 한 번만
-    setPraise(message ?? pickRandom());
+    setPraise(message ?? pickPraise());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
