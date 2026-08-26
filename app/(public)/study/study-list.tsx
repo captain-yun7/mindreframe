@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { StudyGroup, StudyItem } from "@/lib/study-content";
 import { IntroVideoCard } from "@/components/study/intro-video-card";
-import { StudyProgressLink } from "@/components/study/study-progress-modal";
 
 export function StudyList({
   core,
@@ -136,18 +135,19 @@ function match(it: StudyItem, term: string) {
 }
 
 function StudyCard({ item }: { item: StudyItem }) {
-  // K4·F165 — 코어 글 클릭 시 응원 카드 모달
+  // 목록에서 글 "진입"은 모달 없이 바로 이동 (2026-08-26 고객 피드백 —
+  // 읽기 전에 "다음 글로 이동" 응원 카드가 떠서 상황과 안 맞음).
+  // 응원 모달은 글을 읽고 다음 글로 넘어갈 때([slug] 페이지 하단)만 유지.
   return (
-    <StudyProgressLink
+    <Link
       href={`/study/${item.slug}`}
-      nextTitle={item.title}
       className="text-left block w-full bg-white rounded-toss-card p-5 shadow-toss-card border border-gs-line-soft hover:-translate-y-1 hover:shadow-toss-card-hover transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40"
     >
       <h3 className="text-base font-extrabold tracking-[-0.02em] leading-snug">
         {item.title}
       </h3>
       <p className="mt-2 text-[13px] text-gs-muted">{item.sub}</p>
-    </StudyProgressLink>
+    </Link>
   );
 }
 
