@@ -518,6 +518,9 @@ export async function deleteCoachMessage(messageId: string) {
 }
 
 /** 세션 목록의 메시지 일괄 조회 — image_key 컬럼 미적용 환경 fallback 포함. */
+// 한도 초과 시 오래된 메시지부터 제외 — 최신순으로 가져와 뒤집어야 최근 메시지가 잘리지 않음
+const MESSAGE_FETCH_LIMIT = 500;
+
 async function fetchMessages(
   client: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   sessionIds: string[],
@@ -526,18 +529,18 @@ async function fetchMessages(
     .from("coach_chat_messages")
     .select("id, sender_role, content, image_key, created_at, session_id")
     .in("session_id", sessionIds)
-    .order("created_at", { ascending: true })
-    .limit(500);
+    .order("created_at", { ascending: false })
+    .limit(MESSAGE_FETCH_LIMIT);
   if (res.error && (res.error.code === "42703" || /image_key/.test(res.error.message))) {
     const r2 = await client
       .from("coach_chat_messages")
       .select("id, sender_role, content, created_at, session_id")
       .in("session_id", sessionIds)
-      .order("created_at", { ascending: true })
-      .limit(500);
-    return (r2.data ?? []) as CoachMessage[];
+      .order("created_at", { ascending: false })
+      .limit(MESSAGE_FETCH_LIMIT);
+    return ((r2.data ?? []) as CoachMessage[]).reverse();
   }
-  return (res.data ?? []) as CoachMessage[];
+  return ((res.data ?? []) as CoachMessage[]).reverse();
 }
 
 /** 사용자의 모든 세션 + 메시지 (어드민 단일 스레드 뷰 용). */
