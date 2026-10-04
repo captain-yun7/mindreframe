@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { Plan } from "@/lib/auth/plan";
 import { writeAudit } from "@/lib/actions/_audit";
 import { todayKst } from "@/lib/dates";
+import { PROGRAM_DAYS } from "@/lib/coach/day-number";
 
 async function ensureAdmin(): Promise<
   { ok: true; userId: string } | { ok: false; error: string }
@@ -41,10 +42,22 @@ export async function adminUpdateUserPlan(
   if (plan !== "free") {
     const { data: cur } = await supabaseAdmin
       .from("users")
-      .select("phone_number, notifications_started_at")
+      .select("phone_number, notifications_started_at, plan_expires_at")
       .eq("id", userId)
       .single();
-    const c = cur as { phone_number?: string | null; notifications_started_at?: string | null } | null;
+    const c = cur as {
+      phone_number?: string | null;
+      notifications_started_at?: string | null;
+      plan_expires_at?: string | null;
+    } | null;
+    // 기간 미입력 + 유효한 만료일 없음 → 기본 100일. 만료일 없는 유료 계정은
+    // 만료 크론이 100일 차수 종료 시 강등하므로, 재부여가 다음 자정에 풀리는 것 방지.
+    const hasValidExpiry = !!c?.plan_expires_at && new Date(c.plan_expires_at) > new Date();
+    if (expiresInDays === null && !hasValidExpiry) {
+      const d = new Date();
+      d.setDate(d.getDate() + PROGRAM_DAYS);
+      update.plan_expires_at = d.toISOString();
+    }
     if (c?.phone_number && !c.notifications_started_at) {
       const { resolveNotificationStart } = await import("@/lib/notifications/start-date");
       const start = resolveNotificationStart();
