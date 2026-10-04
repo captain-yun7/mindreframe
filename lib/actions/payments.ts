@@ -73,6 +73,14 @@ export async function confirmOrder(input: {
       .maybeSingle();
     return { ok: true, plan: spec.slug, expiresAt: u?.plan_expires_at ?? "" };
   }
+  // 승인 요청은 대기 주문에만. 환불·실패 주문의 성공 URL 재진입 시 토스 재호출로
+  // 상태가 failed로 덮어써지는 것 방지.
+  if (payment.status !== "pending") {
+    return {
+      ok: false,
+      error: payment.status === "refunded" ? "환불된 결제예요" : "이미 처리된 주문이에요. 다시 결제해주세요",
+    };
+  }
   if (payment.amount !== input.amount) return { ok: false, error: "결제 금액이 일치하지 않습니다" };
 
   const spec2 = await getPlanSpec(payment.plan);
