@@ -4,7 +4,6 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { confirmTossPayment } from "@/lib/payments/toss";
 import { getPlanSpec, type PaidPlan } from "@/lib/payments/plans";
-import { revalidatePath } from "next/cache";
 
 type CreateOrderResult =
   | { ok: true; orderId: string; orderName: string; amount: number; customerEmail: string | null; customerName: string | null }
@@ -125,9 +124,6 @@ export async function confirmOrder(input: {
     ).error;
   }
   if (updateUserError) return { ok: false, error: updateUserError.message };
-
-  revalidatePath("/mypage");
-  revalidatePath("/dashboard");
 
   return { ok: true, plan: spec2.slug, expiresAt };
 }
