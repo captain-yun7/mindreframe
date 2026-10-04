@@ -58,7 +58,14 @@ export default async function AdminPaymentsPage({
       .select(includeRefund ? `${baseSelect}, refunded_at` : baseSelect, { count: "exact" })
       .order("created_at", { ascending: false })
       .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-    if (status) qb = qb.eq("status", status);
+    // 기본 화면은 대기 제외 — 결제 페이지 진입만으로 생기는 주문이 실결제 건을 가리지 않게.
+    if (status === "all") {
+      // 필터 없음
+    } else if (status) {
+      qb = qb.eq("status", status);
+    } else {
+      qb = qb.neq("status", "pending");
+    }
     if (safeQ) {
       const ors = [`order_id.ilike.%${safeQ}%`];
       if (matchedUserIds.length > 0) ors.push(`user_id.in.(${matchedUserIds.join(",")})`);
@@ -144,9 +151,10 @@ export default async function AdminPaymentsPage({
             label: "상태",
             value: status,
             options: [
-              { value: "", label: "전체 상태" },
+              { value: "", label: "대기 제외" },
+              { value: "all", label: "전체 (대기 포함)" },
               { value: "paid", label: "완료" },
-              { value: "pending", label: "대기" },
+              { value: "pending", label: "대기 (미결제 이탈)" },
               { value: "failed", label: "실패" },
               { value: "refunded", label: "환불" },
             ],
