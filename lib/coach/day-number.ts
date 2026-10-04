@@ -13,14 +13,24 @@ import { KST_OFFSET_MS } from "@/lib/dates";
 export function computeDayNumber(
   startedAt: string | null | undefined,
 ): number | null {
+  const day = computeRawDayNumber(startedAt);
+  if (day === null) return null;
+  if (day < 1) return 1;
+  if (day > PROGRAM_DAYS) return PROGRAM_DAYS;
+  return day;
+}
+
+export const PROGRAM_DAYS = 100;
+
+/** clamp 없는 일차 — 101 이상이면 100일 프로그램이 끝난 것. */
+export function computeRawDayNumber(
+  startedAt: string | null | undefined,
+): number | null {
   const startDate = toKstDateUtcMs(startedAt);
   if (startDate === null) return null;
   const todayDate = toKstDateUtcMs(new Date().toISOString());
   if (todayDate === null) return null;
-  const day = Math.floor((todayDate - startDate) / 86_400_000) + 1;
-  if (day < 1) return 1;
-  if (day > 100) return 100;
-  return day;
+  return Math.floor((todayDate - startDate) / 86_400_000) + 1;
 }
 
 /** KST 기준 날짜(자정)의 UTC ms. date-only 문자열은 그대로 그 날짜로 해석. */
