@@ -133,5 +133,19 @@ export async function confirmOrder(input: {
   }
   if (updateUserError) return { ok: false, error: updateUserError.message };
 
+  // 환불로 알림이 꺼진 뒤 재결제한 유저: 번호는 이미 있어 성공 페이지 등록 칸이 안 뜨므로 여기서 알림 재개
+  const { data: notif } = await supabaseAdmin
+    .from("users")
+    .select("phone_number, notifications_started_at")
+    .eq("id", payment.user_id)
+    .single();
+  const n = notif as { phone_number?: string | null; notifications_started_at?: string | null } | null;
+  if (n?.phone_number && !n.notifications_started_at) {
+    await supabaseAdmin
+      .from("users")
+      .update({ notifications_started_at: todayKst() })
+      .eq("id", payment.user_id);
+  }
+
   return { ok: true, plan: spec2.slug, expiresAt };
 }
