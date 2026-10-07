@@ -136,11 +136,13 @@ export async function adminRefundPayment(input: AdminRefundInput) {
   }
 
   // 4) 사용자 plan 강등 (풀 환불 — free + expires=null)
+  //    알림톡도 함께 중단 (2026-10-07 고객 요청: 환불 시 알림 자동 OFF)
   await supabaseAdmin
     .from("users")
     .update({
       plan: "free",
       plan_expires_at: null,
+      notifications_started_at: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", payment.user_id);

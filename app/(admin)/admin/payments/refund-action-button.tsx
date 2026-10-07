@@ -31,7 +31,7 @@ export function RefundActionButton({ paymentId, amount, within7Days }: Props) {
     }
     if (
       !confirm(
-        `${amount.toLocaleString()}원 전액을 환불할까요? 사용자 plan이 free로 강등됩니다.`,
+        `${amount.toLocaleString()}원 전액을 환불할까요? 사용자 plan이 free로 강등되고 알림톡도 중단됩니다.`,
       )
     )
       return;
