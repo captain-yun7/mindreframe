@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { LogoutButton } from "./logout-button";
 import { NotificationSettings } from "./notification-settings";
 import { CoachViewConsentToggle } from "./coach-view-consent-toggle";
+import { SubscriptionManage } from "./subscription-manage";
+import { getLiveSubscription, type SubscriptionRow } from "@/lib/billing/subscription";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 
@@ -29,7 +31,10 @@ export default async function MyPage() {
     allowCoachViewExercise: false,
   };
 
+  let subscription: SubscriptionRow | null = null;
   if (user) {
+    // subscriptions 테이블 미적용 환경에서도 마이페이지는 떠야 함
+    subscription = await getLiveSubscription(user.id).catch(() => null);
     // allow_coach_view_exercise 컬럼 미적용 환경 fallback
     let data: Record<string, unknown> | null = null;
     {
@@ -128,7 +133,7 @@ export default async function MyPage() {
               <div className="flex items-center justify-between">
                 <span className="text-[13px] text-gs-muted">현재 플랜</span>
                 <span data-testid="profile-plan" className="text-sm font-bold uppercase">
-                  {profile.plan}
+                  {profile.plan === "monthly" ? "월 구독" : profile.plan}
                 </span>
               </div>
             </div>
@@ -139,6 +144,14 @@ export default async function MyPage() {
           <Card className="mt-4 shadow-toss-card">
             <CardTitle>구독 & 결제</CardTitle>
             <div className="mt-4 space-y-2">
+              {subscription && subscription.status !== "incomplete" && subscription.status !== "expired" && (
+                <SubscriptionManage
+                  status={subscription.status}
+                  periodEnd={subscription.current_period_end}
+                  amount={subscription.amount ?? 9900}
+                  cardLabel={subscription.card_label}
+                />
+              )}
               <Link
                 href="/pricing"
                 className="block w-full py-3 text-center rounded-toss-button border border-gs-line-soft bg-white text-sm font-bold hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card transition-all"
