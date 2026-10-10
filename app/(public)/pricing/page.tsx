@@ -4,6 +4,7 @@ import { computeRecommendedPlan, normalizePlan, type Plan } from "@/lib/auth/pla
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getUserProfileForGuard } from "@/lib/auth/user-profile-guard";
 import { CouponRedeemForm } from "./coupon-redeem-form";
+import { checkEligibility, MONTHLY_PRICE, type Eligibility } from "@/lib/billing/subscription";
 import { PageFade } from "@/components/motion/page-fade";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
@@ -138,16 +139,13 @@ export default async function PricingPage({
       }));
   }
 
-  // 월 구독은 2회 이상 결제자만 노출 (재구매 충성 고객 한정)
-  let showMonthly = false;
+  // 월 구독은 100일 이용권 2회 결제 완료자만 노출 (재구매 충성 고객 한정)
+  let monthly: Eligibility | null = null;
   let surveyRecommended: Plan | null = null;
   let currentPlan: Plan = "free";
   if (user) {
-    const [paymentsRes, surveyRes, profile] = await Promise.all([
-      supabase
-        .from("payments")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id),
+    const [monthlyRes, surveyRes, profile] = await Promise.all([
+      checkEligibility(user.id),
       supabase
         .from("survey_responses")
         .select("depression_score, anxiety_score")
@@ -157,7 +155,7 @@ export default async function PricingPage({
         .maybeSingle(),
       getUserProfileForGuard(user.id),
     ]);
-    showMonthly = (paymentsRes.count ?? 0) >= 2;
+    monthly = monthlyRes;
 
     if (surveyRes.data) {
       surveyRecommended = computeRecommendedPlan(
@@ -289,8 +287,8 @@ export default async function PricingPage({
             );
           })}
         </StaggerList>
-        {/* 월 구독 — 2회 이상 결제자 한정 노출 */}
-        {showMonthly && (
+        {/* 월 구독 — 100일 이용권 2회 결제 완료자 한정 노출 */}
+        {monthly && (monthly.eligible || monthly.reason === "already_subscribed" || monthly.reason === "active_plan") && (
           <FadeIn>
             <div className="max-w-[480px] mx-auto mt-8 bg-white border border-gs-line-soft rounded-toss-card p-6 text-center shadow-toss-card">
               <div className="text-[11px] font-bold text-gs-navy-bright mb-1">
@@ -298,18 +296,29 @@ export default async function PricingPage({
               </div>
               <h3 className="text-base font-extrabold tracking-[-0.02em] mb-1">월 구독</h3>
               <div className="flex items-baseline justify-center gap-1 mb-1">
-                <span className="text-3xl font-extrabold tracking-[-0.03em]">9,900</span>
+                <span className="text-3xl font-extrabold tracking-[-0.03em]">{MONTHLY_PRICE.toLocaleString()}</span>
                 <span className="text-sm text-gs-muted-soft">원/월</span>
               </div>
               <p className="text-[13px] text-gs-muted-light mb-4">
-                가짜생각 분석기 1회/일 · 언제든 해지 가능
+                가짜생각 분석기·생각쓰레기통 1회/일 · 코칭 제외 · 언제든 해지 가능
               </p>
-              <button
-                type="button"
-                className="w-full py-3 rounded-toss-button border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft cursor-pointer hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40 focus-visible:ring-offset-2"
-              >
-                월 구독 시작하기
-              </button>
+              {monthly.eligible ? (
+                <Link
+                  href="/subscribe"
+                  className="block w-full py-3 rounded-toss-button border border-gs-line-mid bg-white text-sm font-bold text-gs-text-soft hover:bg-gs-navy-50 hover:-translate-y-0.5 hover:shadow-toss-card transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gs-navy-bright/40 focus-visible:ring-offset-2"
+                >
+                  월 구독 시작하기
+                </Link>
+              ) : monthly.reason === "already_subscribed" ? (
+                <Link
+                  href="/mypage"
+                  className="block w-full py-3 rounded-toss-button bg-gs-navy-50 text-sm font-bold text-gs-navy-bright"
+                >
+                  이용 중 · 마이페이지에서 관리
+                </Link>
+              ) : (
+                <p className="py-3 rounded-toss-button bg-gs-navy-50 text-sm text-gs-text-soft">{monthly.message}</p>
+              )}
             </div>
           </FadeIn>
         )}
