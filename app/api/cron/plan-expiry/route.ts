@@ -2,13 +2,17 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { isAdminUser } from "@/lib/auth/plan";
 import { PROGRAM_DAYS, computeRawDayNumber } from "@/lib/coach/day-number";
+import { renewDueSubscriptions } from "@/lib/billing/subscription";
 
 /**
  * 만료된 유료 플랜을 free로 강등 (만료일 경과 + 만료일 없는 계정의 100일 종료).
+ * 강등 전에 월 구독 자동결제 갱신을 먼저 돌려, 갱신된 구독자가 강등되지 않게 함.
  * Vercel Cron이 매일 자정 KST(= UTC 15:00)에 호출.
  * 보안: CRON_SECRET 검증.
  */
 export const dynamic = "force-dynamic";
+// 자동결제 승인 1건당 최대 60초
+export const maxDuration = 300;
 
 export async function GET(request: Request) {
   const expected = process.env.CRON_SECRET;
@@ -18,6 +22,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
   }
+
+  const renewal = await renewDueSubscriptions().catch((e: unknown) => ({
+    renewed: 0,
+    failed: 0,
+    ended: 0,
+    errors: [e instanceof Error ? e.message : String(e)],
+  }));
 
   const now = new Date().toISOString();
   const buildExpiryQuery = (withDeletedFilter: boolean) => {
@@ -49,6 +60,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     downgraded: data?.length ?? 0,
     downgradedNoExpiry: noExpiry.count,
+    subscriptions: renewal,
   });
 }
 
