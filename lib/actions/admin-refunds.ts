@@ -53,13 +53,14 @@ export async function adminRefundPayment(input: AdminRefundInput) {
     plan: string;
     status: string;
     payment_key: string | null;
+    payment_type: string | null;
     paid_at: string | null;
     refunded_at: string | null;
   };
   const res = await supabaseAdmin
     .from("payments")
     .select(
-      "id, user_id, amount, plan, status, payment_key, paid_at, refunded_at",
+      "id, user_id, amount, plan, status, payment_key, payment_type, paid_at, refunded_at",
     )
     .eq("id", input.paymentId)
     .maybeSingle();
@@ -94,6 +95,7 @@ export async function adminRefundPayment(input: AdminRefundInput) {
     const tossResult = await cancelTossPayment({
       paymentKey: payment.payment_key,
       cancelReason: input.reason,
+      billing: payment.payment_type === "subscription",
     });
     if (!tossResult.ok) {
       if (tossResult.code === "NOT_CONFIGURED") {
@@ -146,6 +148,10 @@ export async function adminRefundPayment(input: AdminRefundInput) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", payment.user_id);
+
+  // 환불로 무료 전환 → 월 구독 자동결제도 중단 (다음 달 재과금 방지)
+  const { endSubscriptionNow } = await import("@/lib/billing/subscription");
+  await endSubscriptionNow(payment.user_id, "결제 환불").catch(() => {});
 
   await writeAudit({
     adminUserId: g.userId,

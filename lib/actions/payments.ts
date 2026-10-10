@@ -133,6 +133,10 @@ export async function confirmOrder(input: {
   }
   if (updateUserError) return { ok: false, error: updateUserError.message };
 
+  // 100일 이용권으로 바꾸면 월 구독 자동결제는 중단
+  const { endSubscriptionNow } = await import("@/lib/billing/subscription");
+  await endSubscriptionNow(payment.user_id, "100일 이용권 결제로 전환").catch(() => {});
+
   // 환불로 알림이 꺼진 뒤 재결제한 유저: 번호는 이미 있어 성공 페이지 등록 칸이 안 뜨므로 여기서 알림 재개
   const { data: notif } = await supabaseAdmin
     .from("users")

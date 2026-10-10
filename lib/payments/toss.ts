@@ -2,8 +2,8 @@ import "server-only";
 
 const TOSS_API = "https://api.tosspayments.com/v1";
 
-function authHeaderOrNull(): string | null {
-  const secret = process.env.TOSS_SECRET_KEY;
+function authHeaderOrNull(secretOverride?: string): string | null {
+  const secret = secretOverride ?? process.env.TOSS_SECRET_KEY;
   if (!secret) return null;
   const encoded = Buffer.from(`${secret}:`).toString("base64");
   return `Basic ${encoded}`;
@@ -69,6 +69,8 @@ export async function confirmTossPayment(
 export type TossCancelInput = {
   paymentKey: string;
   cancelReason: string;
+  /** 월 구독(자동결제) 건은 결제한 MID의 키(TOSS_BILLING_SECRET_KEY)로 취소해야 함 */
+  billing?: boolean;
 };
 
 /**
@@ -84,7 +86,9 @@ export async function cancelTossPayment(
   | { ok: true; payment: TossPayment }
   | { ok: false; code: string; message: string }
 > {
-  const auth = authHeaderOrNull();
+  const auth = input.billing
+    ? (process.env.TOSS_BILLING_SECRET_KEY ? authHeaderOrNull(process.env.TOSS_BILLING_SECRET_KEY) : null)
+    : authHeaderOrNull();
   if (!auth) {
     return {
       ok: false,

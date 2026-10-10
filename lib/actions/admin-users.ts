@@ -27,6 +27,9 @@ export async function adminUpdateUserPlan(
 ) {
   const guard = await ensureAdmin();
   if (!guard.ok) return guard;
+  if (plan === "monthly") {
+    return { ok: false as const, error: "월 구독은 회원이 카드 등록으로 직접 신청해야 해요" };
+  }
 
   const update: Record<string, unknown> = { plan, updated_at: new Date().toISOString() };
   if (expiresInDays !== null) {
@@ -68,6 +71,10 @@ export async function adminUpdateUserPlan(
 
   const { error } = await supabaseAdmin.from("users").update(update).eq("id", userId);
   if (error) return { ok: false as const, error: error.message };
+
+  // 플랜을 직접 바꾸면 월 구독 자동결제는 중단 (안 하면 다음 달에 다시 monthly로 덮어씀)
+  const { endSubscriptionNow } = await import("@/lib/billing/subscription");
+  await endSubscriptionNow(userId, `관리자 플랜 변경(${plan})`).catch(() => {});
 
   if (sendDayOne) {
     const { sendDayOneNotificationNow } = await import("@/lib/notifications/send-day-one");
