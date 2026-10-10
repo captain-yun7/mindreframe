@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth/admin";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminUserActions } from "./admin-user-actions";
 import { DeleteUserButton } from "./delete-user-button";
+import { getLiveSubscription } from "@/lib/billing/subscription";
 
 interface UserDetail {
   id: string;
@@ -115,6 +116,8 @@ export default async function AdminUserDetailPage({
   const coachSessions = coachSessionsRes.data ?? [];
   const notifications = recentNotificationsRes.data ?? [];
   const payments = paymentsRes.data ?? [];
+  const subscription = await getLiveSubscription(user.id).catch(() => null);
+  const SUB_STATUS: Record<string, string> = { active: "이용 중", past_due: "결제 재시도 중", cancelled: "해지 예정" };
 
   return (
     <>
@@ -218,6 +221,26 @@ export default async function AdminUserDetailPage({
           )}
         </div>
       </Card>
+
+      {subscription && (
+        <Card className="mt-4">
+          <CardTitle>월 구독</CardTitle>
+          <div className="mt-3 text-sm space-y-1">
+            <div>
+              <b>{SUB_STATUS[subscription.status] ?? subscription.status}</b> ·{" "}
+              {(subscription.amount ?? 9900).toLocaleString()}원/월
+              {subscription.card_label ? ` · ${subscription.card_label}` : ""}
+            </div>
+            <div className="text-gs-muted text-xs">
+              {subscription.status === "cancelled" ? "이용 종료" : "다음 결제"}{" "}
+              {new Date(subscription.current_period_end).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" })}
+              {subscription.failed_attempts > 0 &&
+                ` · 결제 실패 ${subscription.failed_attempts}회 (${subscription.last_failure_message ?? ""})`}
+            </div>
+            <p className="text-xs text-gs-muted">플랜을 직접 바꾸거나 결제를 환불하면 자동결제가 중단돼요.</p>
+          </div>
+        </Card>
+      )}
 
       <Card className="mt-4">
         <CardTitle>결제 이력 (최근 10)</CardTitle>

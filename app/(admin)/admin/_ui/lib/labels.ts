@@ -53,6 +53,7 @@ export const PLAN_LABEL: Record<string, string> = {
   light: "라이트",
   pro: "프로",
   premium: "프리미엄",
+  monthly: "월 구독",
 };
 
 export const PLAN_TONE: Record<string, BadgeTone> = {
@@ -60,6 +61,7 @@ export const PLAN_TONE: Record<string, BadgeTone> = {
   light: "primary",
   pro: "primary",
   premium: "success",
+  monthly: "primary",
 };
 
 /** 권한 */

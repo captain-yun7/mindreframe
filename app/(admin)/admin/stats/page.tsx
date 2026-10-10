@@ -59,7 +59,7 @@ export default async function AdminStatsPage() {
     const p = (u.plan as string) ?? "free";
     planMap.set(p, (planMap.get(p) ?? 0) + 1);
   }
-  const plans = ["free", "light", "pro", "premium"].map((p) => ({
+  const plans = ["free", "light", "pro", "premium", "monthly"].map((p) => ({
     name: p,
     count: planMap.get(p) ?? 0,
   }));
