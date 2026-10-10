@@ -38,6 +38,7 @@ export type { Plan, UsageFeature };
  */
 export const PLAN_DAILY_LIMIT: Record<Plan, number> = {
   free: 0,
+  monthly: 1,
   light: 5,
   pro: 7,
   premium: Number.MAX_SAFE_INTEGER,

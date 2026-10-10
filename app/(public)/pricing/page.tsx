@@ -11,6 +11,7 @@ import { StaggerList, StaggerItem } from "@/components/motion/stagger-list";
 /** K3·F162 — A안: 현재 = 비활성 라벨, 상위 = 업그레이드, 하위 = 그대로 (선택 가능). */
 const PLAN_RANK_FOR_CARD: Record<Plan, number> = {
   free: 0,
+  monthly: 0.5, // 월 구독자에게 100일 플랜은 전부 업그레이드
   light: 1,
   pro: 2,
   premium: 3,

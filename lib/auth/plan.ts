@@ -6,12 +6,14 @@
  *   light     라이트 (254,000원/100일) — 가짜생각 분석기 5회/일, 주 1회 1:1 코칭, 쓰레기통/루틴/알고가기/성장방
  *   pro       프로 (394,000원/100일)   — 라이트 전체 + 가짜생각 분석기 7회/일 + 주 2회 1:1 코칭 + 행동연습장 + 명상
  *   premium   프리미엄 (694,000원/100일) — 프로 전체 + 가짜생각 분석기 무제한/일 + 주 4회 1:1 코칭 + 우선 지원
+ *   monthly   월 구독 (9,900원/월 자동결제) — 2회 이상 결제자 전용. 분석기·쓰레기통 1회/일, 코칭 제외 나머지 전부
  */
 
-export type Plan = "free" | "light" | "pro" | "premium";
+export type Plan = "free" | "light" | "pro" | "premium" | "monthly";
 
 const PLAN_RANK: Record<Plan, number> = {
   free: 0,
+  monthly: 1, // 라우트 가드상 라이트와 동급 — 코칭 차단은 canAccessFeature에서
   light: 1,
   pro: 2,
   premium: 3,
@@ -46,6 +48,7 @@ export const UNLIMITED = Number.MAX_SAFE_INTEGER;
 export const PLAN_FEATURE_LIMITS: Record<Plan, Record<UsageFeature, number>> = {
   free: { analyzer: 0, trash: 0, exercise: 0, meditation: 0 },
   light: { analyzer: 5, trash: 5, exercise: UNLIMITED, meditation: UNLIMITED },
+  monthly: { analyzer: 1, trash: 1, exercise: UNLIMITED, meditation: UNLIMITED },
   pro: { analyzer: 7, trash: 7, exercise: UNLIMITED, meditation: UNLIMITED },
   premium: {
     analyzer: UNLIMITED,
@@ -73,6 +76,7 @@ export type FeatureKey = "analyzer" | "trash" | "exercise" | "meditation" | "coa
 export const PLAN_FEATURE_ACCESS: Record<Plan, Record<FeatureKey, boolean>> = {
   free: { analyzer: false, trash: false, exercise: false, meditation: false, coach: false },
   light: { analyzer: true, trash: true, exercise: true, meditation: true, coach: true },
+  monthly: { analyzer: true, trash: true, exercise: true, meditation: true, coach: false },
   pro: { analyzer: true, trash: true, exercise: true, meditation: true, coach: true },
   premium: { analyzer: true, trash: true, exercise: true, meditation: true, coach: true },
 };
@@ -115,6 +119,8 @@ export function normalizePlan(raw: string | null | undefined): Plan {
       return "pro";
     case "premium":
       return "premium";
+    case "monthly":
+      return "monthly";
     default:
       return "free";
   }

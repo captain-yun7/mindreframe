@@ -1,22 +1,24 @@
 import type { Plan } from "@/lib/auth/plan";
 
 export type PaidPlan = Exclude<Plan, "free">;
+/** 100일 단건 결제 플랜 (월 구독은 자동결제라 별도 — lib/billing) */
+export type OneTimePlan = Exclude<PaidPlan, "monthly">;
 
 export type PlanSpec = {
-  slug: PaidPlan;
+  slug: OneTimePlan;
   name: string;
   amount: number;
   durationDays: number;
 };
 
 /** F88 — DB 미적용 환경 fallback. plans 테이블 시드와 동일 값. */
-export const PLAN_SPECS: Record<PaidPlan, PlanSpec> = {
+export const PLAN_SPECS: Record<OneTimePlan, PlanSpec> = {
   light: { slug: "light", name: "라이트", amount: 254000, durationDays: 100 },
   pro: { slug: "pro", name: "프로", amount: 394000, durationDays: 100 },
   premium: { slug: "premium", name: "프리미엄", amount: 694000, durationDays: 100 },
 };
 
-function isPaidPlan(slug: string | null | undefined): slug is PaidPlan {
+function isPaidPlan(slug: string | null | undefined): slug is OneTimePlan {
   return slug === "light" || slug === "pro" || slug === "premium";
 }
 
@@ -40,7 +42,7 @@ export async function getPlanSpec(
       .maybeSingle();
     if (!error && data) {
       const row = data as {
-        slug: PaidPlan;
+        slug: OneTimePlan;
         name: string;
         amount: number;
         duration_days: number;
