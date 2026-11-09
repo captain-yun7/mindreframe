@@ -1,6 +1,7 @@
 import { PageHeader } from "../_ui/page-header";
 import { requireAdmin } from "@/lib/auth/admin";
 import { SettingsForm } from "./settings-form";
+import { CODE_OWNED_SETTING_KEYS, FALLBACK_SETTINGS } from "@/lib/site-settings";
 
 interface SettingRow {
   key: string;
@@ -83,7 +84,10 @@ export default async function AdminSettingsPage() {
     .from("site_settings")
     .select("key, value, description");
 
-  const existing = (data ?? []) as SettingRow[];
+  // 코드 소유 키는 실제 노출값(코드 값)을 보여줌
+  const existing = ((data ?? []) as SettingRow[]).map((r) =>
+    CODE_OWNED_SETTING_KEYS.has(r.key) ? { ...r, value: FALLBACK_SETTINGS[r.key] ?? r.value } : r,
+  );
   const existingKeys = new Set(existing.map((r) => r.key));
 
   // 누락된 키는 빈 값으로 placeholder row 추가 (어드민이 INSERT할 수 있도록 노출)

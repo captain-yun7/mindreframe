@@ -187,7 +187,7 @@ export const FALLBACK_POPUP_EXERCISE_STEP3 =
 export const FALLBACK_POPUP_EXERCISE_STEP4_PRAISE =
   '{"title":"용기 레벨 1 획득 🏆","body":"오늘 한 걸음을 내디뎠어요.\\n\\n결과가 아쉬워도, 시도한 사실 자체가 성장이에요. 이 기록은 평생 남아요.","cta":"성장방에서 확인하기"}';
 
-const FALLBACK_SETTINGS: Record<string, string> = {
+export const FALLBACK_SETTINGS: Record<string, string> = {
   service_name: "가짜생각",
   company_name: "마인드시어터",
   contact_email: "support@mindreframe.net",
@@ -279,6 +279,12 @@ export function parseSettingJson<T>(
   return tryParse(fallbackJsonString);
 }
 
+/**
+ * 어드민에서 잠긴(코드/배포로만 변경) 키 중 DB 옛 값이 남아 코드 변경을 가리는 키.
+ * 이 키들은 DB 값을 무시하고 항상 코드 값을 사용.
+ */
+export const CODE_OWNED_SETTING_KEYS = new Set(["landing_stats"]);
+
 export async function getSiteSettings(): Promise<Record<string, string>> {
   try {
     const supabase = await createSupabaseServerClient();
@@ -288,7 +294,7 @@ export async function getSiteSettings(): Promise<Record<string, string>> {
 
     const out: Record<string, string> = { ...FALLBACK_SETTINGS };
     for (const row of data) {
-      if (row.key && typeof row.value === "string") {
+      if (row.key && typeof row.value === "string" && !CODE_OWNED_SETTING_KEYS.has(row.key)) {
         out[row.key] = row.value;
       }
     }
