@@ -170,17 +170,22 @@ export function isPlanGateEnabled(): boolean {
 
 /**
  * 설문 점수(우울 0~27, 불안 0~21) 기반 추천 플랜 계산.
- * 백분율 환산 후 합산하여 라이트/프로/프리미엄 분기.
+ * 각각 백분율 환산 후 합산(0~200) → 30점 만점으로 환산해 구간 분기.
+ * 구간(2026-10-06 고객 요청): 0~10 라이트 / 11~21 프로 / 22~30 프리미엄
  * `/survey`와 `/pricing` 양쪽에서 동일하게 사용해야 일관성 유지.
  */
+export function computeSeverityScore30(depressionScore: number, anxietyScore: number): number {
+  const depPercent = Math.round((depressionScore / 27) * 100);
+  const anxPercent = Math.round((anxietyScore / 21) * 100);
+  return Math.round(((depPercent + anxPercent) / 200) * 30);
+}
+
 export function computeRecommendedPlan(
   depressionScore: number,
   anxietyScore: number,
 ): Plan {
-  const depPercent = Math.round((depressionScore / 27) * 100);
-  const anxPercent = Math.round((anxietyScore / 21) * 100);
-  const total = depPercent + anxPercent;
-  if (total > 140) return "premium";
-  if (total > 100) return "pro";
+  const score = computeSeverityScore30(depressionScore, anxietyScore);
+  if (score >= 22) return "premium";
+  if (score >= 11) return "pro";
   return "light";
 }

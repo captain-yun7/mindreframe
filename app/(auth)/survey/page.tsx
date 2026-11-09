@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitSurvey } from "@/lib/actions/survey";
+import { computeRecommendedPlan } from "@/lib/auth/plan";
 import { useToast } from "@/components/ui/toast";
 
 // ─── 설문 데이터 정의 ───
@@ -254,12 +255,11 @@ export default function SurveyPage() {
 
       {/* F23 — 추천 플랜 카드 (점수 기반) */}
       {(() => {
-        // 추천 룰: 부담 합 100 이하 → 라이트, 100~140 → 프로, 140 초과 → 프리미엄
-        const total = depPercent + anxPercent;
+        const recommendedKey = computeRecommendedPlan(depRaw, anxRaw);
         const recommended =
-          total > 140
+          recommendedKey === "premium"
             ? { key: "premium", label: "프리미엄", reason: "전담 코치와 함께 깊이 있는 변화를" }
-            : total > 100
+            : recommendedKey === "pro"
               ? { key: "pro", label: "프로", reason: "행동연습장·명상·1:1 코칭으로 입체적 케어를" }
               : { key: "light", label: "라이트", reason: "분석기와 기록으로 부드러운 시작을" };
 
