@@ -25,7 +25,7 @@ import {
 
 const reviews = [
   {
-    text: '"14일 베타 참여를 하며 5년간 먹던 불안약을 끊을 수 있을 거란 희망이 생겼어요."',
+    text: '"실수하면 자책하고 원망했는데, 스스로 가짜생각을 찾고 편안해졌다는 게 놀랍네요"',
     tag: "40대 직장인 · 사회불안",
     gender: "female" as const,
     gradientId: "gF1",

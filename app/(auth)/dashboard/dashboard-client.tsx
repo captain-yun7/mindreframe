@@ -199,7 +199,7 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
         open={gratitudePraiseOpen}
         onOpenChange={setGratitudePraiseOpen}
         title="감사일기 저장 완료 🙏"
-        body="오늘의 감사 한 줄, 성장방에 잘 들어갔어요."
+        body="오늘의 감사, 성장방에 잘 들어갔어요."
         ctaLabel="확인"
         autoCloseMs={0}
       />
@@ -394,7 +394,7 @@ export function DashboardClient({ initial }: { initial: DashboardInitial }) {
               <Card className="mt-4 scroll-mt-28 shadow-toss-card" id="gratitudeCard">
                 <CardTitle>감사일기</CardTitle>
                 <CardDescription>
-                  오늘의 감사 한 줄. 저장하면 성장방에 날짜별로 쌓입니다.
+                  오늘의 감사 1개~5개, 애써 찾아주세요.
                 </CardDescription>
 
                 {savedGratitude && (

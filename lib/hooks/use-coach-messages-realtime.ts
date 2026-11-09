@@ -71,6 +71,19 @@ export function useCoachMessagesRealtime(
     });
   }, []);
 
+  /**
+   * 전송 응답으로 옵티미스틱(tmp-*)을 실 메시지로 교체.
+   * Realtime INSERT가 응답보다 먼저 와서 dedup 윈도우를 놓치면 실 메시지가 이미 append돼 있음
+   * → 그 경우 tmp만 제거 (같은 메시지 2개 표시 버그, 2026-10-06 고객 제보).
+   */
+  const confirmOptimistic = useCallback((tempId: string, real: CoachMessage) => {
+    setMessages((prev) =>
+      prev.some((p) => p.id === real.id)
+        ? prev.filter((p) => p.id !== tempId)
+        : prev.map((p) => (p.id === tempId ? real : p)),
+    );
+  }, []);
+
   // 구독 key는 sessionIds.join("|")로 안정화
   const sessionsKey = sessionIds.join("|");
 
@@ -134,5 +147,5 @@ export function useCoachMessagesRealtime(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionsKey, append]);
 
-  return { messages, setMessages, append, status };
+  return { messages, setMessages, append, confirmOptimistic, status };
 }

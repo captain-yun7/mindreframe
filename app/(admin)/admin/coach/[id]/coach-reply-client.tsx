@@ -36,7 +36,7 @@ export function CoachReplyClient({
   const [activeSession, setActiveSession] =
     useState<CoachSessionSummary | null>(initActive);
   const sessionIdsForRealtime = activeSession ? [activeSession.id] : [];
-  const { messages, setMessages, status } = useCoachMessagesRealtime(
+  const { messages, setMessages, confirmOptimistic, status } = useCoachMessagesRealtime(
     initialMessages,
     sessionIdsForRealtime,
   );
@@ -96,13 +96,7 @@ export function CoachReplyClient({
         setInput(content);
         return;
       }
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === tempId
-            ? { ...r.message, session_id: activeSession.id }
-            : m,
-        ),
-      );
+      confirmOptimistic(tempId, { ...r.message, session_id: activeSession.id });
     });
   }
 
@@ -127,11 +121,7 @@ export function CoachReplyClient({
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         return;
       }
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === tempId ? { ...r.message, session_id: activeSession.id } : m,
-        ),
-      );
+      confirmOptimistic(tempId, { ...r.message, session_id: activeSession.id });
     });
   }
 
