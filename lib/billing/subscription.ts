@@ -26,6 +26,7 @@ export const MONTHLY_PRICE = 9900;
 export const MONTHLY_NAME = "월 구독";
 export const REQUIRED_PAID_COUNT = 2;
 const MAX_FAILED_ATTEMPTS = 3;
+const REVIEW_TEST_EMAIL = "pgtest@mindreframe.net";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type SubscriptionStatus = "incomplete" | "active" | "past_due" | "cancelled" | "expired";
@@ -106,7 +107,11 @@ export async function checkEligibility(userId: string): Promise<Eligibility> {
   const u = user as { email: string | null; role: string | null; plan: string | null; plan_expires_at: string | null } | null;
   if (!u) return { eligible: false, reason: "hidden", message: "회원 정보를 찾을 수 없어요" };
 
-  const testers = (process.env.BILLING_TEST_EMAILS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  // 토스 정기결제 심사용 테스트 계정은 기본 포함 (심사 담당자가 결제창 확인)
+  const testers = [
+    REVIEW_TEST_EMAIL,
+    ...(process.env.BILLING_TEST_EMAILS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+  ];
   const isTester = isAdminUser(u.email, u.role) || (!!u.email && testers.includes(u.email));
   if (!isBillingLive() && !isTester) {
     return { eligible: false, reason: "hidden", message: "월 구독 결제가 아직 준비되지 않았어요" };
