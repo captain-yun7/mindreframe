@@ -54,6 +54,9 @@ export default async function SubscribePage({
               <span className="text-4xl font-extrabold tracking-[-0.03em]">{MONTHLY_PRICE.toLocaleString()}</span>
               <span className="text-sm text-gs-muted-soft">원 / 월</span>
             </div>
+            <p className="mt-3 text-sm text-gs-text-soft">
+              이용기간: 결제일로부터 1개월 (매달 자동 갱신)
+            </p>
           </div>
         </FadeIn>
 

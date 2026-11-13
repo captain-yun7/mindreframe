@@ -299,6 +299,7 @@ export default async function PricingPage({
                 <span className="text-3xl font-extrabold tracking-[-0.03em]">{MONTHLY_PRICE.toLocaleString()}</span>
                 <span className="text-sm text-gs-muted-soft">원/월</span>
               </div>
+              <p className="text-[13px] text-gs-text-soft mb-1">이용기간 1개월 · 매달 자동결제</p>
               <p className="text-[13px] text-gs-muted-light mb-4">
                 가짜생각 분석기·생각쓰레기통 1회/일 · 코칭 제외 · 언제든 해지 가능
               </p>
