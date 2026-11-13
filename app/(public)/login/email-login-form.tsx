@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { emailLogin, type EmailLoginResult } from "@/lib/actions/email-login";
 
 /**
@@ -12,6 +12,10 @@ export function EmailLoginForm({ next }: { next?: string }) {
     EmailLoginResult | null,
     FormData
   >(emailLogin, null);
+
+  useEffect(() => {
+    if (state?.ok) window.location.assign(state.to);
+  }, [state]);
 
   return (
     <details className="w-full mt-2 text-left">
@@ -43,10 +47,10 @@ export function EmailLoginForm({ next }: { next?: string }) {
         ) : null}
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || !!state?.ok}
           className="w-full h-12 rounded-toss-button bg-gs-navy-bright text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {pending ? "로그인 중..." : "로그인"}
+          {pending || state?.ok ? "로그인 중..." : "로그인"}
         </button>
       </form>
     </details>
