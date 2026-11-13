@@ -29,11 +29,14 @@ export function SiteHeader() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
+  const loadedUserIdRef = useRef<string | null | undefined>(undefined);
+  const [sessionVersion, setSessionVersion] = useState(0);
 
   useEffect(() => {
     async function load() {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
+      loadedUserIdRef.current = data.user?.id ?? null;
       if (data.user) {
         // 운영자 이메일 화이트리스트 — 세션 토큰·RLS 이슈와 무관하게 즉시 admin 인식
         const ADMIN_EMAILS = [
@@ -58,7 +61,18 @@ export function SiteHeader() {
       load();
     });
     return () => subscription.subscription.unsubscribe();
-  }, []);
+  }, [sessionVersion]);
+
+  // 서버 액션 로그인(이메일 로그인)은 쿠키만 바뀌어 onAuthStateChange가 오지 않음
+  // → 라우트가 바뀔 때 세션을 대조해 다르면 다시 불러옴
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const loaded = loadedUserIdRef.current;
+      if (loaded !== undefined && (data.session?.user.id ?? null) !== loaded) {
+        setSessionVersion((v) => v + 1);
+      }
+    });
+  }, [pathname]);
 
   // 라우트 변경 시 메뉴 자동 닫힘
   useEffect(() => {
